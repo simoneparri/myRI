@@ -2,8 +2,8 @@
 
 ## Stato e autorizzazioni
 
-- Autorizzato: Step 0, workspace multi-agente.
-- Step 1 non autorizzato: attendere conferma esplicita dell'utente.
+- Step 0 completato e approvato dall'utente, commit f8ba44d.
+- Autorizzato: Step 1, struttura monorepo, ER e migrazioni con test.
 - Step 2 richiede una ulteriore conferma dopo ER e migrazioni dello Step 1.
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
@@ -13,42 +13,43 @@ Verificati con parsing YAML/JSON frontmatter, destinazioni handoff/deleghe,
 restrizioni strumenti reviewer, link locali e assenza di backend/frontend.
 Resta da verificare discovery ed esecuzione in una sessione VS Code interattiva.
 
-## Proposte preliminari, non decisioni approvate
+## Scelte di struttura dello Step 1, in attesa di approvazione finale
 
 - Monorepo backend/ e frontend/, Maven Wrapper, package per dominio con layer
   controller/service/repository/dto/mapper; contratti REST sotto /api/v1.
-- Preferenza BIGINT AUTO_INCREMENT per semplicita, indici compatti e nessuna
-  esigenza distribuita monoutente. Confronto con UUID BINARY(16) nello Step 1.
-- Preferenza sessione server con cookie HttpOnly, SameSite e CSRF, nginx same-origin;
-  BCrypt e futura autenticazione OIDC/Keycloak. Confermare in ADR prima del backend.
+- BIGINT AUTO_INCREMENT per semplicita, indici compatti e nessuna esigenza
+  distribuita monoutente; confronto con UUID BINARY(16) in ADR 0001.
+- Sessione server con cookie HttpOnly, SameSite e CSRF, nginx same-origin,
+  BCrypt e futura autenticazione OIDC/Keycloak: strategia confermata.
 - MySQL 8.x con patch/digest da fissare all'implementazione; test mysql:8.
-  Java 21 e Spring Boot 3 vincolati dalla richiesta; verificare supporto e
-  compatibilita di minor/patch e dipendenze prima di sceglierle.
+  Java 21, Spring Boot parent 3.5.16 e Flyway 11.20.3 per supporto MySQL 8.4.
+  Maven Wrapper 3.9.12 con checksum distribuzione; nessuna API applicativa ancora.
 - Angular ultima LTS verificata nello Step 3, non latest a prescindere.
 - Runtime DB con soli privilegi DML necessari; credenziali migrazioni distinte
   con privilegi DDL limitati allo schema, da progettare con il bootstrap.
 
-## Decisioni da chiedere nello Step 1
+## Decisioni confermate dall'utente nello Step 1
 
-1. CRUD vs RAL immutabile: proponiamo append-only con correzioni mediante nuove
-   voci e persona archiviata; definire cancellazioni per le altre entita e audit.
-2. Manager: relazione opzionale a una persona, riferimento esterno o entrambi?
-   Definire prevenzione di auto-riporto e cicli.
-3. Task: uno solo tra persona/career talk/aumento oppure piu collegamenti?
-   Se un task punta a un talk/aumento, definire derivazione della persona e coerenza.
-4. Aumento: importo come incremento o RAL target? Importo e percentuale alternativi
-   o entrambi? Definire base di calcolo, arrotondamento, decorrenza e valuta.
-   Approvazione non implica automaticamente creazione RAL senza scelta esplicita.
-5. Ricorrenza: frequenze supportate, fuso, comportamento al completamento,
-   scadenze saltate e chiave di deduplicazione.
-6. Career talk non recente: valore iniziale N, persone mai incontrate,
-   attivi/inattivi, uso della data suggerita e deduplicazione notifiche.
-7. Timeline: data di evento vs registrazione, gestione eventi futuri e parita;
-   fuso di visualizzazione per oggi, scaduti e prossimi 7 giorni.
-8. Account unico: bootstrap iniziale e recupero password senza password predefinite;
-   sessione proposta da confermare, nessuna registrazione pubblica.
+1. Nessuna cancellazione fisica: archiviazione/annullamento per tutte le entita,
+   RAL/audit append-only senza modifiche distruttive.
+2. Manager interno opzionale oppure esterno testuale, alternativi; vietati
+   auto-riporto e cicli.
+3. Task con piu collegamenti simultanei, purche della stessa persona.
+4. Importo aumento come RAL desiderata; importo e percentuale possono coesistere
+   se coerenti con la base. Approvazione con generazione RAL opzionale esplicita,
+   atomica e non duplicabile, stessa valuta e decorrenza obbligatoria se generata.
+5. Ricorrenza giornaliera/settimanale/mensile: al completamento una sola prossima
+   occorrenza futura, saltando le scadenze perse.
+6. Europe/Rome configurabile per calendario e UI; timestamp UTC.
+7. Reminder career talk: N iniziale 3 mesi configurabile, persone attive,
+   data assunzione come riferimento per chi non ha incontri; deduplicazione.
+8. Sessione/CSRF, bootstrap account unico da ambiente solo al primo avvio,
+   recupero password con comando amministrativo locale, nessuna registrazione.
 
-Non scegliere queste semantiche durante la sola creazione del workspace.
+Dettagli proposti per l'approvazione dello schema: ADR 0001 (date/ordine timeline,
+finestre calendario, arrotondamenti e ancoraggio ricorrenze) e ADR 0002 (API).
+Macchina a stati degli aumenti, riapertura esiti e modifica post-invio vanno
+chiarite all'avvio dello Step 2 prima di implementarne i comandi.
 
 ## Step 0 - workspace
 
@@ -80,6 +81,19 @@ se Docker non e disponibile.
 Criteri: schema aderente a ER, migrazioni reali verificate, decisioni approvate,
 UTF8/collation/UTC espliciti. Commit logico schema/struttura.
 Stop: richiedere conferma prima dello Step 2.
+
+Realizzato: backend/pom.xml, Maven Wrapper, V1 (nove tabelle), V2 (trigger di
+protezione), harness SchemaMigrationTest, frontend/README.md, ADR con ER e
+contratto REST preliminare. Nessuna API, login o UI anticipata.
+
+Verifica eseguita: Maven Wrapper verify con JDK 21 completo, Flyway 11.20.3 e
+Testcontainers mysql:8 (MySQL 8.4): **14 test, zero fallimenti/errori/skipped**.
+V1 su schema vuoto, fixture fittizia, upgrade V2 con storico preservato,
+validate e successiva migrate senza modifiche. Verificati anche YAML/JSON
+del workspace, link documentali locali e assenza errori whitespace.
+L'ambiente aveva solo JRE, cache Maven parzialmente non scrivibile e repository
+aziendali non raggiungibili: usati JDK, cache e settings isolati nella sessione,
+senza cambiare configurazioni globali. Nessun fallback H2 o test saltato.
 
 ## Step 2 - backend e sicurezza
 

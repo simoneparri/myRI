@@ -1,8 +1,8 @@
 # myRI
 
 People management self-hosted per un team lead, monoutente con autenticazione
-obbligatoria. **Stato: solo Step 0, workspace multi-agente; applicazione non ancora
-implementata e non avviabile.**
+obbligatoria. **Stato: Step 1, workspace e schema MySQL con test;
+API/UI e avvio applicativo non ancora implementati.**
 
 Funzioni previste: anagrafica/contatti, RAL con storico immutabile, richieste
 di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
@@ -18,7 +18,7 @@ Leggere [guida agenti](docs/agents.md), [regole condivise](AGENTS.md) e
 [piano con gate di conferma](docs/plan.md). Aprire questa radice in VS Code,
 scegliere orchestrator e verificare discovery con Chat Diagnostics.
 
-## Struttura proposta, da approvare
+## Struttura
 
 ```text
 .github/                 istruzioni, agenti, prompt
@@ -34,8 +34,15 @@ compose.yaml             db, backend, frontend nginx (Step 2/3)
 .env.example             configurazione senza segreti (con compose)
 ```
 
-Solo workspace e documenti Step 0 esistono. Non sono presenti scheletro applicativo,
-SQL o decisioni architetturali gia approvate.
+Disponibili workspace, backend Maven con migrazioni/test e frontend/ come spazio
+riservato documentato. Compose, script di backup e .env.example saranno creati
+insieme ai servizi che configurano, non come file fittizi non funzionanti.
+
+Il [modello dati con ER Mermaid](docs/adr/0001-domain-and-schema.md) descrive nove
+tabelle, PK BIGINT, RAL/audit append-only, archiviazione senza cancellazioni fisiche
+e collegamenti task coerenti per persona. Il [contratto preliminare REST e
+autenticazione](docs/adr/0002-authentication-and-api.md) prepara il backend con
+sessione/CSRF e futura integrazione OIDC, senza implementarlo nello Step 1.
 
 ## Avvio, configurazione e backup previsti
 
@@ -58,12 +65,39 @@ Script e istruzioni di restore verranno realizzati e verificati su dati fittizi
 allo Step 4/5. Non usare questi comandi ora: i file non esistono ancora.
 Non versionare `.env`, dump, export personali o credenziali.
 
-## Verifiche previste
+## Verifica dello schema disponibile
 
-Backend: `cd backend && ./mvnw verify`, unit test service e Testcontainers
-`mysql:8` con le migrazioni di produzione. Frontend: build, test ed e2e con
+Prerequisiti: **JDK 21 completo (non solo JRE)**, Docker funzionante, accesso a
+Maven Central e Docker Hub per dipendenze/immagini. Maven Wrapper 3.9.12 con
+checksum distribuzione; Spring Boot parent 3.5.16, Flyway/flyway-mysql 11.20.3.
+
+```sh
+cd backend
+./mvnw verify
+```
+
+Il test avvia un MySQL effimero `mysql:8`, applica V1 a schema vuoto, inserisce
+dati fittizi e aggiorna a V2, verificando conservazione e protezione dello storico.
+Usa le stesse migrazioni di produzione, valida Flyway e verifica il no-op
+di una successiva migrate. Controlla tipi,
+charset/collation, FK/indici, immutabilita RAL/audit, soft archive, account unico,
+collegamenti task, ricorrenza strutturale e deduplicazione.
+Il container di test pubblica una porta effimera per JDBC: e un harness locale,
+non il futuro compose di produzione, che non pubblichera MySQL.
+Non usa DB/dati reali e non salta automaticamente i test se Docker manca.
+
+Se le impostazioni Maven personali puntano a mirror aziendali non raggiungibili,
+usare `./mvnw -s /percorso/settings-personali.xml verify` con configurazione propria;
+non modificare configurazioni globali o versionare credenziali.
+Se la cache utente non e scrivibile, impostare `-Dmaven.repo.local=/percorso/scrivibile`.
+
+## Verifiche dei prossimi step
+
+Backend: aggiungere unit test service e integrazione delle API. Frontend: build, test ed e2e con
 runner da fissare nello Step 3. Compose: `docker compose config --quiet`.
-I comandi applicativi non sono ancora disponibili.
+I comandi frontend/compose non sono ancora disponibili.
 
-Il prossimo passo richiede conferma esplicita: struttura monorepo, decisioni di
-dominio, ER e migrazioni MySQL dello **Step 1**, poi nuovo punto di approvazione.
+Il prossimo passo richiede conferma esplicita dello schema/ADR:
+**Step 2, backend con API e sicurezza**. Le regole cross-row (cicli manager,
+percentuale vs RAL base, transizioni di stato) richiedono i service e relativi
+test; non sono falsamente considerate garantite dai soli vincoli SQL.

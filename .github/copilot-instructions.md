@@ -31,6 +31,9 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
   Flyway in `backend/src/main/resources/db/migration/`, schema validato da Hibernate.
   Mai riscrivere migrazioni applicate.
 - Storico RAL mai sovrascritto; generazione RAL da aumento atomica e non duplicabile.
+- Nessuna cancellazione fisica: archiviazione/annullamento. Manager interno/esterno
+  alternativi; task con piu riferimenti solo per la stessa persona. Importo aumento
+  come RAL target, coerente con l'eventuale percentuale: vedi ADR 0001.
 - Unit test sui service; Testcontainers `mysql:8` con migrazioni reali, non H2;
   test frontend/e2e dei flussi. Seed fittizi solo sotto profilo Spring `dev`.
 
@@ -47,7 +50,10 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 - Backup `mysqldump --single-transaction`, retention validata, permessi privati.
   Non disabilitare approvazioni, CSRF, TLS o controlli di sicurezza per aggirare errori.
 
-## Comandi pianificati (non ancora eseguibili nello Step 0)
+## Comandi
+
+Dallo Step 1 `cd backend && ./mvnw verify` esegue i test schema e richiede
+JDK 21 completo e Docker. Gli altri comandi restano previsti per i prossimi step.
 
 ```sh
 cd backend && ./mvnw verify

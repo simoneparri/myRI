@@ -32,6 +32,9 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
   non modificare migrazioni gia applicate. Hibernate valida, non genera lo schema.
 - RAL append-only: nessuna modifica o cancellazione distruttiva dello storico.
   Approvazione aumento ed eventuale RAL atomiche e protette da duplicazioni.
+- Nessuna cancellazione fisica di alcuna entita: archiviazione/annullamento.
+  Manager interno/esterno alternativi; task con piu riferimenti solo se coerenti
+  per persona. Importo richiesto = RAL target, coerente con eventuale percentuale.
 - Unit test service, integrazione Testcontainers `mysql:8` con Flyway di produzione,
   test UI/e2e per i flussi toccati. Seed solo fittizio e solo con profilo `dev`.
 
@@ -49,7 +52,11 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 - Backup `mysqldump --single-transaction`, retention validata, file privati e restore verificabile.
 - Non disabilitare protezioni, approvazioni strumenti o controlli TLS per far passare test.
 
-## Comandi previsti, non ancora disponibili allo Step 0
+## Comandi
+
+Disponibile dallo Step 1: `cd backend && ./mvnw verify` verifica lo schema su
+Testcontainers MySQL e richiede JDK 21 completo e Docker. Gli altri comandi
+dipendono da file e servizi dei prossimi step.
 
 ```sh
 cd backend && ./mvnw verify
@@ -62,5 +69,5 @@ docker compose down
 ./scripts/backup.sh
 ```
 
-Non eseguirli finche i relativi file/script non esistono. Lo Step 3 deve allineare
+Non eseguire comandi finche i relativi file/script non esistono. Lo Step 3 deve allineare
 i comandi frontend al runner scelto. Non usare `docker compose down -v` sui dati reali.
