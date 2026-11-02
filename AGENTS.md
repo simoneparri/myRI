@@ -6,8 +6,8 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 ## Processo
 
 - Leggere `docs/plan.md`: implementare solo lo step esplicitamente autorizzato.
-- Step 0: solo workspace. Attendere conferma prima dello Step 1.
-- Step 1: proposta monorepo, ER e migrazioni; attendere conferma prima dello Step 2.
+- Step 0/1 completati e approvati. Lo Step 2 e autorizzato; non anticipare la UI
+  Step 3 o scheduler/dashboard/export Step 4 nell'incarico backend.
 - Chiarire le decisioni comportamentali importanti prima di implementarle.
 - Ogni step implementativo include test pertinenti, documentazione e commit logico.
 - Non dichiarare eseguiti comandi non eseguiti; segnalare blocchi e verifiche mancanti.
@@ -54,9 +54,10 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 
 ## Comandi
 
-Disponibile dallo Step 1: `cd backend && ./mvnw verify` verifica lo schema su
-Testcontainers MySQL e richiede JDK 21 completo e Docker. Gli altri comandi
-dipendono da file e servizi dei prossimi step.
+Disponibile: `cd backend && ./mvnw verify` verifica schema, service e API su
+Testcontainers MySQL e richiede JDK 21 completo e Docker.
+Compose DB/backend e operativo dopo compilazione privata di .env; nessuna porta
+host pubblicata fino al frontend. Frontend/e2e/backup restano per i prossimi step.
 
 ```sh
 cd backend && ./mvnw verify

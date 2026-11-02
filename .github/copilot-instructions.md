@@ -9,8 +9,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 
 ## Processo e struttura
 
-- Eseguire solo lo step autorizzato. Step 0 solo workspace; conferma prima dello
-  Step 1 e altra conferma prima dello Step 2. Non anticipare implementazioni.
+- Eseguire solo lo step autorizzato: Step 0/1 approvati, Step 2 autorizzato.
+  Non anticipare frontend Step 3 o scheduler/dashboard/export Step 4.
 - Monorepo previsto `backend/`, `frontend/`, `docs/`, `scripts/`, `compose.yaml`.
 - Test mirati, documentazione e commit logico per ogni step implementativo.
   Un solo integratore committa; subagent senza commit/push.
@@ -52,8 +52,9 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 
 ## Comandi
 
-Dallo Step 1 `cd backend && ./mvnw verify` esegue i test schema e richiede
-JDK 21 completo e Docker. Gli altri comandi restano previsti per i prossimi step.
+`cd backend && ./mvnw verify` verifica schema, service e API con JDK 21 completo
+e Docker. Compose DB/backend e operativo dopo configurazione privata di .env,
+senza porte host. Frontend/e2e/backup restano per i prossimi step.
 
 ```sh
 cd backend && ./mvnw verify

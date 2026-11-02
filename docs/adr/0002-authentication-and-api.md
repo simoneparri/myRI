@@ -1,4 +1,4 @@
-# ADR 0002 - sessione locale e contratto REST preliminare
+# ADR 0002 - sessione locale e contratto REST
 
 Stato: strategia approvata; API dello Step 2 implementate, dettagli in ../api.md.
 Data: 2026-11-02.
@@ -22,7 +22,8 @@ In futuro OIDC/Keycloak tramite configurazione Security separata, non autenticaz
 fittizia o dipendenza obbligatoria ora. Prima di abilitarlo definire associazione
 subject/provider all'account singleton e strategia di logout; migrazione dedicata.
 
-Spring Security proteggera tutte le risorse di dominio, export, audit e OpenAPI.
+Spring Security protegge tutte le risorse di dominio, audit e OpenAPI; gli export
+saranno protetti allo stesso modo quando implementati.
 Solo login/CSRF e healthcheck minimale strettamente necessario accessibili senza
 sessione, senza dettagli di infrastruttura o dati. Nessun body sensibile nei log.
 Restituire 401/403 JSON alle API, non redirect HTML; nessuna CORS permissiva.
@@ -73,7 +74,7 @@ completamento devono essere sicuri ai retry, non solo fidarsi della UI.
 Archive e annullamento sono comandi logici, non eliminazione. Non sono previsti
 endpoint pubblici di restore/unarchive prima di concordarne le regole.
 Gli endpoint dashboard/reminder/export vengono implementati solo allo Step 4.
-Il documento non sostituisce OpenAPI eseguibile, da aggiungere con il backend.
+Il documento non sostituisce OpenAPI eseguibile, disponibile nel backend.
 
 Aggiornamento Step 2: OpenAPI eseguibile e protetta ora disponibile. Comando
 reopen aggiunto per postponed -> draft. Le richieste restano modificabili dopo

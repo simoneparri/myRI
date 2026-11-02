@@ -1,8 +1,8 @@
 # myRI
 
 People management self-hosted per un team lead, monoutente con autenticazione
-obbligatoria. **Stato: Step 1, workspace e schema MySQL con test;
-API/UI e avvio applicativo non ancora implementati.**
+obbligatoria. **Stato: Step 2, backend REST con sicurezza e MySQL;
+frontend Angular previsto allo Step 3.**
 
 Funzioni previste: anagrafica/contatti, RAL con storico immutabile, richieste
 di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
@@ -26,46 +26,99 @@ scegliere orchestrator e verificare discovery con Chat Diagnostics.
 docs/
   agents.md              uso e compatibilita degli agenti
   plan.md                step, autorizzazioni e criteri di accettazione
-  adr/                   decisioni, ER Mermaid e contratti (Step 1)
-backend/                 Java 21, Boot 3, Maven Wrapper (Step 1/2)
+  adr/                   decisioni, ER Mermaid e contratti
+  api.md                 API implementate e autenticazione
+backend/                 Java 21, Boot 3, Maven Wrapper, API e test
 frontend/                Angular LTS, Material, standalone (Step 3)
-scripts/                 backup e operativita (step successivi)
-compose.yaml             db, backend, frontend nginx (Step 2/3)
-.env.example             configurazione senza segreti (con compose)
+scripts/mysql/           inizializzazione utenti DB a privilegi separati
+compose.yaml             db e backend; frontend nginx allo Step 3
+.env.example             configurazione senza segreti
 ```
 
-Disponibili workspace, backend Maven con migrazioni/test e frontend/ come spazio
-riservato documentato. Compose, script di backup e .env.example saranno creati
-insieme ai servizi che configurano, non come file fittizi non funzionanti.
+Disponibili workspace, backend Maven con API, migrazioni e test, Dockerfile,
+compose DB/backend e frontend/ come spazio riservato documentato.
 
 Il [modello dati con ER Mermaid](docs/adr/0001-domain-and-schema.md) descrive nove
 tabelle, PK BIGINT, RAL/audit append-only, archiviazione senza cancellazioni fisiche
-e collegamenti task coerenti per persona. Il [contratto preliminare REST e
-autenticazione](docs/adr/0002-authentication-and-api.md) prepara il backend con
-sessione/CSRF e futura integrazione OIDC, senza implementarlo nello Step 1.
+e collegamenti task coerenti per persona. Il [contratto REST e autenticazione](docs/adr/0002-authentication-and-api.md) definisce
+sessione/CSRF e futura integrazione OIDC. I dettagli effettivi sono nella
+[guida API](docs/api.md).
 
-## Avvio, configurazione e backup previsti
+## Avvio e configurazione
 
-A implementazione completata il percorso previsto sara copiare `.env.example`
-in `.env`, impostare credenziali proprie, quindi:
+Copiare `.env.example` in `.env`, compilare tutte le password vuote e APP_USERNAME,
+quindi, con Docker e Compose v2:
 
 ```sh
+cp .env.example .env
+chmod 600 .env
+# Compilare .env con credenziali proprie prima dell'avvio.
 docker compose up --build -d
 ```
 
-Il frontend sara l'unico servizio pubblicato su localhost; nginx inoltrera le API.
-MySQL avra volume persistente, rete interna e healthcheck. Backend senza porta
-host, timezone UTC; account DB applicativo non root e account migrazioni separato.
-Valori delle variabili, porta frontend e bootstrap account saranno documentati
-insieme all'implementazione, senza password predefinite.
+Nello Step 2 nessuna porta e pubblicata, neanche per il backend. I servizi sono
+verificabili senza esporre dati:
+
+```sh
+docker compose ps
+docker compose exec backend wget --quiet -O - http://127.0.0.1:8080/health
+docker compose down
+```
+
+Allo Step 3 nginx sara l'unico servizio pubblicato su localhost e inoltrera le API.
+MySQL 8.4.13 usa volume persistente /var/lib/mysql, rete interna e healthcheck;
+il backend parte solo dopo service_healthy, esegue Flyway e valida lo schema JPA.
+L'immagine backend esegue Java 21 come UID 10001, filesystem read-only e tmpfs /tmp.
+Non usare down -v: cancellerebbe i dati.
+
+| Variabile | Uso |
+| --- | --- |
+| DB_NAME | Schema (default myri, nome lowercase ASCII) |
+| DB_USERNAME / DB_PASSWORD | Runtime DML non root; username lowercase ASCII, massimo 32 caratteri |
+| DB_MIGRATION_USERNAME / DB_MIGRATION_PASSWORD | Utenza distinta per Flyway e grant per tabella |
+| DB_ROOT_PASSWORD | Solo inizializzazione/amministrazione MySQL, non fornita al backend |
+| APP_USERNAME / APP_PASSWORD | Bootstrap account unico solo se assente |
+| APP_TIMEZONE | Europe/Rome predefinito, istanti DB sempre UTC |
+| COOKIE_SECURE | false per HTTP locale; true quando si abilita HTTPS |
+| SPRING_PROFILES_ACTIVE | default; dev inserisce fixture solo su DB privo di persone |
+
+Password applicativa: almeno 12 caratteri, massimo 72 byte UTF-8 per evitare
+troncamenti BCrypt. Credenziali DB distinte, nessuna password predefinita.
+Root resta interno al DB; Flyway dispone di CREATE/ALTER/INDEX/REFERENCES/TRIGGER
+e SELECT/INSERT/UPDATE con GRANT OPTION limitati allo schema. Il callback
+afterMigrate assegna DML per tabella al runtime, SELECT/INSERT soltanto su
+salary/audit_event, nessun DELETE o DDL. Non riutilizzare account amministrativi.
+log_bin_trust_function_creators=1 consente i trigger senza assegnare SUPER a Flyway.
+
+Gli script MySQL iniziali girano soltanto su volume vuoto: cambiare password
+nel .env non ruota automaticamente quelle di un DB esistente. Su dati esistenti
+occorre una procedura amministrativa esplicita, senza eliminare il volume.
+Flyway V1/V2 non sono state modificate; V3 aggiunge la chiave idempotenza RAL.
+
+Bootstrap applicativo non cambia la password a un account gia esistente.
+Per reset amministrativo locale, senza scrivere la password nella cronologia:
+
+```sh
+read -rs -p 'Nuova password: ' APP_RESET_PASSWORD; printf '\n'
+export APP_RESET_PASSWORD
+docker compose run --rm --no-deps -e APP_RESET_PASSWORD backend --myri.reset-password=true
+unset APP_RESET_PASSWORD
+```
+
+Il comando usa un processo non-web, aggiorna BCrypt ed esce. Richiede DB avviato;
+le vecchie sessioni sono invalidate alla richiesta successiva. Le sessioni non
+persistono tra riavvii del backend. Non inviare password come argomenti CLI.
+L'eventuale .env rimane privato e non deve contenere dati da copiare nei prompt.
+
+## Backup previsto allo Step 4
 
 Backup previsto: `./scripts/backup.sh`, basato su
 `mysqldump --single-transaction`, retention configurabile e permessi privati.
 Script e istruzioni di restore verranno realizzati e verificati su dati fittizi
-allo Step 4/5. Non usare questi comandi ora: i file non esistono ancora.
+allo Step 4/5. Non usare ancora il comando di backup: lo script non esiste.
 Non versionare `.env`, dump, export personali o credenziali.
 
-## Verifica dello schema disponibile
+## Build e verifiche backend
 
 Prerequisiti: **JDK 21 completo (non solo JRE)**, Docker funzionante, accesso a
 Maven Central e Docker Hub per dipendenze/immagini. Maven Wrapper 3.9.12 con
@@ -76,12 +129,14 @@ cd backend
 ./mvnw verify
 ```
 
-Il test avvia un MySQL effimero `mysql:8`, applica V1 a schema vuoto, inserisce
-dati fittizi e aggiorna a V2, verificando conservazione e protezione dello storico.
+I test avviano MySQL effimero `mysql:8`. Lo schema viene creato da V1 e aggiornato
+a V2/V3, verificando conservazione e protezione dello storico.
 Usa le stesse migrazioni di produzione, valida Flyway e verifica il no-op
 di una successiva migrate. Controlla tipi,
 charset/collation, FK/indici, immutabilita RAL/audit, soft archive, account unico,
-collegamenti task, ricorrenza strutturale e deduplicazione.
+collegamenti task, ricorrenza e deduplicazione. I test API usano account DB
+migrazioni/runtime distinti con gli stessi privilegi del compose, login e CSRF
+reali, validazione, filtri, audit, rollback e scritture concorrenti.
 Il container di test pubblica una porta effimera per JDBC: e un harness locale,
 non il futuro compose di produzione, che non pubblichera MySQL.
 Non usa DB/dati reali e non salta automaticamente i test se Docker manca.
@@ -91,13 +146,16 @@ usare `./mvnw -s /percorso/settings-personali.xml verify` con configurazione pro
 non modificare configurazioni globali o versionare credenziali.
 Se la cache utente non e scrivibile, impostare `-Dmaven.repo.local=/percorso/scrivibile`.
 
-## Verifiche dei prossimi step
+Il package produce un JAR Spring Boot eseguibile; `./mvnw verify` non richiede
+.env o un DB locale preesistente. Solo il profilo dev inserisce fixture fittizie.
+La build Docker non riesegue i test: eseguire verify prima di distribuire
+un'immagine modificata.
 
-Backend: aggiungere unit test service e integrazione delle API. Frontend: build, test ed e2e con
-runner da fissare nello Step 3. Compose: `docker compose config --quiet`.
-I comandi frontend/compose non sono ancora disponibili.
+## Prossimi step
 
-Il prossimo passo richiede conferma esplicita dello schema/ADR:
-**Step 2, backend con API e sicurezza**. Le regole cross-row (cicli manager,
-percentuale vs RAL base, transizioni di stato) richiedono i service e relativi
-test; non sono falsamente considerate garantite dai soli vincoli SQL.
+Step 3: Angular LTS/Material e nginx same-origin. Step 4: scheduler/notifiche,
+dashboard, viste todolist e export/backup. Step 5: hardening, review e consegna.
+La ricorrenza transazionale al completamento task e gia presente nello Step 2.
+
+Le regole cross-row (cicli manager, percentuale vs RAL base, transizioni di stato)
+sono nei service e nei test; non si affidano soltanto ai CHECK SQL.

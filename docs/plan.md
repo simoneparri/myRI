@@ -4,7 +4,7 @@
 
 - Step 0 completato e approvato dall'utente, commit f8ba44d.
 - Step 1 completato e approvato dall'utente, commit 3f2a102.
-- Autorizzato: Step 2, backend con API e sicurezza.
+- Step 2 completato: backend con API e sicurezza.
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
@@ -110,16 +110,26 @@ con CSRF anche per login/logout, cookie HttpOnly/SameSite, bootstrap BCrypt,
 reset amministrativo e invalidazione tramite versione credenziali.
 Verificati 3 unit test account e 3 integrazioni MySQL per login reale, rotazione
 sessione, password rimossa dal principal, round-trip CSRF e protezione OpenAPI.
-API di dominio e operativita Docker in corso; Step 2 non ancora completo.
+Commit: `822d96f feat(backend): add Spring Boot and session authentication`.
 
 Incremento 2b: service/repository/DTO e mapper, CRUD senza delete fisico,
 filtri/paginazione, RAL append-only con requestKey (V3), aumenti e audit atomici,
 career talk, task e completamento ricorrente idempotente, timeline e API lettura
 notifiche. OpenAPI protetta con schemi univoci e numeri precisi.
-Suite completa: 50 test passati, nessun errore/fallimento/skipped, inclusi
+Suite completa: 51 test passati, nessun errore/fallimento/skipped, inclusi
 rollback su audit fallito e concorrenza su approvazione, RAL, manager e task.
 Gli account test MySQL replicano migrazioni/runtime distinti a privilegi minimi.
-Docker e documentazione operativa in verifica finale prima di completare lo step.
+Commit: `55ab02c feat(api): implement people management services and financial audit`.
+
+Incremento 2c: Dockerfile non-root, compose DB/backend a rete interna senza porte,
+healthcheck/dipendenza healthy, volume persistente, credenziali runtime/migrator
+distinte, .env.example e README operativo. Seed dev atomico su DB vuoto.
+Verificati build e avvio Docker reali, health, login con CSRF, API e OpenAPI
+autenticate, reset password come processo non-web, revoca sessione precedente,
+password persistita al riavvio e fixture non duplicata. Rimossi container,
+network e solo volume fittizio dedicati alla verifica. Nessun dato reale usato.
+Frontend, scheduler, dashboard, viste todolist ed export/backup non anticipati;
+restano agli step successivi. Hardening/review finali restano allo Step 5.
 
 ## Step 3 - frontend
 
