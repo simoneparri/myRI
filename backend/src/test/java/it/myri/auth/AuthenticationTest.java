@@ -17,6 +17,21 @@ class AuthenticationTest extends IntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired AppUserRepository users;
+    @Autowired AccountService accounts;
+
+    @Test
+    void passwordResetRevokesPreviouslyAuthenticatedSessions() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        mvc.perform(post("/api/v1/auth/login").session(session).with(csrf())
+                .param("username", "owner").param("password", "fictitious-test-password"))
+                .andExpect(status().isNoContent());
+        accounts.reset("fictitious-test-password");
+        mvc.perform(get("/api/v1/auth/me").session(session)).andExpect(status().isUnauthorized());
+        assertTrue(session.isInvalid());
+        mvc.perform(post("/api/v1/auth/login").with(csrf())
+                .param("username", "owner").param("password", "fictitious-test-password"))
+                .andExpect(status().isNoContent());
+    }
 
     @Test
     void protectedApisAndOpenApiNeverRedirectToHtml() throws Exception {

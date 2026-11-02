@@ -32,6 +32,9 @@ public final class Queries {
     }
 
     public static <T> Specification<T> equal(String field, Object value) {
+        if (value instanceof Long id && field.endsWith("Id") && id <= 0) {
+            throw ApiException.invalid("Identificativo filtro non valido.");
+        }
         return (root, query, cb) -> value == null ? cb.conjunction() : cb.equal(root.get(field), value);
     }
 
@@ -52,6 +55,8 @@ public final class Queries {
     }
 
     public static <T> Specification<T> between(String field, Instant from, Instant to) {
+        Dates.check(from);
+        Dates.check(to);
         if (from != null && to != null && from.isAfter(to)) {
             throw ApiException.invalid("Intervallo date non valido.");
         }

@@ -20,16 +20,26 @@ public abstract class IntegrationTest {
 
     static {
         MYSQL.start();
+        try (var connection = java.sql.DriverManager.getConnection(
+                MYSQL.getJdbcUrl(), "root", MYSQL.getPassword());
+                var sql = connection.createStatement()) {
+            sql.execute("CREATE USER 'runtime_test'@'%' IDENTIFIED BY 'ephemeral-runtime-password'");
+            sql.execute("CREATE USER 'migration_test'@'%' IDENTIFIED BY 'ephemeral-migration-password'");
+            sql.execute("GRANT CREATE, ALTER, INDEX, REFERENCES, TRIGGER, SELECT, INSERT, UPDATE "
+                    + "ON myri_api_test.* TO 'migration_test'@'%' WITH GRANT OPTION");
+        } catch (java.sql.SQLException exception) {
+            throw new IllegalStateException("Impossibile inizializzare utenti DB effimeri.", exception);
+        }
     }
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry properties) {
         properties.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        properties.add("spring.datasource.username", MYSQL::getUsername);
-        properties.add("spring.datasource.password", MYSQL::getPassword);
+        properties.add("spring.datasource.username", () -> "runtime_test");
+        properties.add("spring.datasource.password", () -> "ephemeral-runtime-password");
         properties.add("spring.flyway.url", MYSQL::getJdbcUrl);
-        properties.add("spring.flyway.user", MYSQL::getUsername);
-        properties.add("spring.flyway.password", MYSQL::getPassword);
+        properties.add("spring.flyway.user", () -> "migration_test");
+        properties.add("spring.flyway.password", () -> "ephemeral-migration-password");
         properties.add("myri.bootstrap.username", () -> "owner");
         properties.add("myri.bootstrap.password", () -> "fictitious-test-password");
     }

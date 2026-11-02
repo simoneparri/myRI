@@ -112,6 +112,15 @@ Verificati 3 unit test account e 3 integrazioni MySQL per login reale, rotazione
 sessione, password rimossa dal principal, round-trip CSRF e protezione OpenAPI.
 API di dominio e operativita Docker in corso; Step 2 non ancora completo.
 
+Incremento 2b: service/repository/DTO e mapper, CRUD senza delete fisico,
+filtri/paginazione, RAL append-only con requestKey (V3), aumenti e audit atomici,
+career talk, task e completamento ricorrente idempotente, timeline e API lettura
+notifiche. OpenAPI protetta con schemi univoci e numeri precisi.
+Suite completa: 50 test passati, nessun errore/fallimento/skipped, inclusi
+rollback su audit fallito e concorrenza su approvazione, RAL, manager e task.
+Gli account test MySQL replicano migrazioni/runtime distinti a privilegi minimi.
+Docker e documentazione operativa in verifica finale prima di completare lo step.
+
 ## Step 3 - frontend
 
 Prerequisito: contratti/backend dello Step 2. Verificare e fissare Angular LTS.

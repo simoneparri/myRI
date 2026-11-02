@@ -259,7 +259,9 @@ mutabile; notification usa read_at/archived_at, non updated_at.
 - V1 crea nove tabelle, indici, CHECK e FK; risolve la dipendenza circolare
   salary/raise_request aggiungendo la FK della sorgente dopo le due CREATE TABLE.
 - V2 aggiunge trigger append-only, anti-delete e anti-auto-riporto.
-- Flyway con flyway-mysql; Hibernate ddl-auto=validate allo Step 2.
+- V3 (Step 2) aggiunge salary.request_key nullable con UNIQUE per idempotenza
+  degli inserimenti manuali; le righe storiche V1/V2 rimangono inalterate.
+- Flyway con flyway-mysql; Hibernate ddl-auto=validate attivo nello Step 2.
 - Harness con Spring Boot parent 3.5.16 e Java 21. Flyway 11.20.3 fissato
   esplicitamente per supportare MySQL 8.4 senza l'avviso del ramo 10
   gestito dal parent. Versioni verificate su Maven Central; niente Boot 4
@@ -283,3 +285,10 @@ coerenza task, deduplicazione e unicita RAL generata.
 I test service per regole cross-row e concorrenza appartengono agli Step 2/4:
 lo schema da solo non garantisce assenza di cicli, coerenza percentuale/base,
 macchina a stati, autorizzazioni o completezza dell'audit transazionale.
+
+Step 2: tali regole sono ora verificate nei service e nei test API/concorrenza.
+La parte transazionale della ricorrenza e stata implementata insieme al comando
+complete, per non introdurre un completamento parziale da cambiare allo Step 4.
+Scheduler, dashboard e suggerimenti automatici restano nello Step 4.
+Per timeline date-only, sortAt normalizza la data alla mezzanotte UTC solo per
+l'ordinamento; eventDate conserva la data civile senza fingere un'ora reale.

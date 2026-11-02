@@ -11,6 +11,7 @@ public class AuthController {
     public record Identity(Long id, String username) {}
 
     @GetMapping("/api/v1/auth/csrf")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
     public Map<String, String> csrf(CsrfToken csrf) {
         return Map.of("headerName", csrf.getHeaderName(), "parameterName", csrf.getParameterName(),
                 "token", csrf.getToken());
@@ -22,6 +23,7 @@ public class AuthController {
     }
 
     @GetMapping("/health")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
     public Map<String, String> health() {
         return Map.of("status", "UP");
     }

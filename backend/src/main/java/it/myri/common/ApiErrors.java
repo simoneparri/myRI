@@ -18,6 +18,21 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class ApiErrors {
     private static final Logger LOG = LoggerFactory.getLogger(ApiErrors.class);
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    ProblemDetail method(Exception exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.METHOD_NOT_ALLOWED, "Metodo non consentito.");
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    ProblemDetail notFound(Exception exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Risorsa non trovata.");
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    ProblemDetail denied(Exception exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Operazione non autorizzata.");
+    }
+
     @ExceptionHandler(ApiException.class)
     ProblemDetail domain(ApiException exception) {
         return ProblemDetail.forStatusAndDetail(exception.status, exception.getMessage());
@@ -26,7 +41,7 @@ public class ApiErrors {
     @ExceptionHandler({
         MethodArgumentNotValidException.class, ConstraintViolationException.class,
         HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-        HandlerMethodValidationException.class
+        HandlerMethodValidationException.class, org.springframework.web.bind.MissingServletRequestParameterException.class
     })
     ProblemDetail validation(Exception exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,

@@ -1,6 +1,6 @@
 # ADR 0002 - sessione locale e contratto REST preliminare
 
-Stato: strategia autenticazione confermata; contratto proposto per lo Step 2.
+Stato: strategia approvata; API dello Step 2 implementate, dettagli in ../api.md.
 Data: 2026-11-02.
 
 ## Autenticazione
@@ -74,6 +74,12 @@ Archive e annullamento sono comandi logici, non eliminazione. Non sono previsti
 endpoint pubblici di restore/unarchive prima di concordarne le regole.
 Gli endpoint dashboard/reminder/export vengono implementati solo allo Step 4.
 Il documento non sostituisce OpenAPI eseguibile, da aggiungere con il backend.
+
+Aggiornamento Step 2: OpenAPI eseguibile e protetta ora disponibile. Comando
+reopen aggiunto per postponed -> draft. Le richieste restano modificabili dopo
+invio; approvate/rifiutate definitive. POST RAL richiede requestKey per retry
+idempotenti. Tipi JSON e schemi OpenAPI degli ID/importi sono stringhe esplicite.
+Vedi [API implementate](../api.md) per login form/CSRF, DTO e transizioni.
 
 ## Approvazione aumento proposta
 

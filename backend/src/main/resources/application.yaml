@@ -24,6 +24,7 @@ spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true
+      accept-float-as-int: false
 server:
   address: ${SERVER_ADDRESS:0.0.0.0}
   port: 8080

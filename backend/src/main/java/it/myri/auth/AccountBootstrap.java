@@ -6,6 +6,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 @Component
+@org.springframework.core.annotation.Order(0)
 public class AccountBootstrap implements ApplicationRunner {
     private final AccountService accounts;
     private final String username;
