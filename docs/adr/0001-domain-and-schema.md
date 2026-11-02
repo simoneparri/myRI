@@ -1,7 +1,6 @@
 # ADR 0001 - dominio, struttura e schema MySQL
 
-Stato: scelte di dominio confermate dall'utente; schema proposto per approvazione
-al termine dello Step 1. Data: 2026-11-02.
+Stato: approvato al termine dello Step 1. Data: 2026-11-02.
 
 ## Contesto e decisioni
 
@@ -76,10 +75,11 @@ L'archiviazione non elimina riferimenti storici.
   stessa persona/valuta. La generazione richiede stato approved nel service.
 - RAL, stato aumento e audit nella stessa transazione; lock della richiesta
   e optimistic version. Nessuna seconda creazione al retry.
-- Le richieste restano modificabili secondo una macchina a stati da definire
-  nello Step 2; prima dell'implementazione chiarire riapertura di esiti,
-  revoca di approvazioni e modifica dei valori dopo l'invio.
-  Non modificare la base/persona/valuta di una richiesta gia materializzata.
+- Conferma Step 2: richieste modificabili in draft e submitted, senza cambio
+  implicito di stato; submitted puo passare ad approved/rejected/postponed.
+  Postponed puo tornare in draft con esito azzerato. Approved/rejected definitivi:
+  nuova trattativa richiede nuova richiesta. Archiviazione sempre logica.
+  Persona/base/valuta non sono trasferibili a un'altra richiesta tramite PUT.
 - outcome_on obbligatoria per gli stati con esito, non prima di requested_on.
   L'audit memorizza attore, azione, riferimenti e nomi dei campi, non payload
   o snapshot indiscriminati. Gli importi restano nello storico protetto.

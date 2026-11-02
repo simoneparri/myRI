@@ -3,8 +3,8 @@
 ## Stato e autorizzazioni
 
 - Step 0 completato e approvato dall'utente, commit f8ba44d.
-- Autorizzato: Step 1, struttura monorepo, ER e migrazioni con test.
-- Step 2 richiede una ulteriore conferma dopo ER e migrazioni dello Step 1.
+- Step 1 completato e approvato dall'utente, commit 3f2a102.
+- Autorizzato: Step 2, backend con API e sicurezza.
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
@@ -13,7 +13,7 @@ Verificati con parsing YAML/JSON frontmatter, destinazioni handoff/deleghe,
 restrizioni strumenti reviewer, link locali e assenza di backend/frontend.
 Resta da verificare discovery ed esecuzione in una sessione VS Code interattiva.
 
-## Scelte di struttura dello Step 1, in attesa di approvazione finale
+## Scelte di struttura dello Step 1 approvate
 
 - Monorepo backend/ e frontend/, Maven Wrapper, package per dominio con layer
   controller/service/repository/dto/mapper; contratti REST sotto /api/v1.
@@ -48,8 +48,8 @@ Resta da verificare discovery ed esecuzione in una sessione VS Code interattiva.
 
 Dettagli proposti per l'approvazione dello schema: ADR 0001 (date/ordine timeline,
 finestre calendario, arrotondamenti e ancoraggio ricorrenze) e ADR 0002 (API).
-Macchina a stati degli aumenti, riapertura esiti e modifica post-invio vanno
-chiarite all'avvio dello Step 2 prima di implementarne i comandi.
+Conferma Step 2: richieste modificabili anche dopo invio, senza cambio di stato;
+approvate/rifiutate definitive. Le rimandate possono tornare in bozza.
 
 ## Step 0 - workspace
 
@@ -104,6 +104,13 @@ Devops fornisce servizi DB/backend locali necessari alla verifica.
 Test: service, MySQL/Flyway, validazione, sessione/CSRF o ADR alternativo,
 audit atomico, concorrenza e aumento->RAL idempotente.
 Commit logici: infrastruttura backend; dominio/API; autenticazione/audit.
+
+Incremento 2a: applicazione Boot, configurazione Flyway/JPA validate, sessione
+con CSRF anche per login/logout, cookie HttpOnly/SameSite, bootstrap BCrypt,
+reset amministrativo e invalidazione tramite versione credenziali.
+Verificati 3 unit test account e 3 integrazioni MySQL per login reale, rotazione
+sessione, password rimossa dal principal, round-trip CSRF e protezione OpenAPI.
+API di dominio e operativita Docker in corso; Step 2 non ancora completo.
 
 ## Step 3 - frontend
 
