@@ -1,0 +1,188 @@
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: (
+        plain-family: 'system-ui',
+        brand-family: 'system-ui',
+      ),
+      density: 0,
+    )
+  );
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #172d40;
+  background: #f5f8fc;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #d6e0ea;
+  flex-wrap: wrap;
+}
+.brand {
+  font-size: 1.65rem;
+  font-weight: 750;
+  color: #004d7b;
+  text-decoration: none;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.user {
+  margin-left: auto;
+}
+main {
+  max-width: 1440px;
+  margin: auto;
+  padding: 1.5rem;
+}
+h1,
+h2 {
+  font-weight: 650;
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+.filters mat-form-field {
+  width: 220px;
+}
+.editor-form {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+.editor-form mat-form-field {
+  width: 100%;
+}
+.error {
+  padding: 0.8rem 1rem;
+  border-left: 4px solid #a12020;
+  color: #861919;
+  background: #fff0ef;
+  white-space: pre-wrap;
+}
+.muted {
+  color: #4b5c6e;
+  font-size: 0.9rem;
+}
+.table-scroll {
+  overflow-x: auto;
+  background: white;
+  border: 1px solid #d6e0ea;
+  border-radius: 0.5rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e6ed;
+  vertical-align: top;
+}
+th {
+  background: #eaf1f8;
+}
+td {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.actions {
+  min-width: 200px;
+  white-space: normal;
+}
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #697b8c;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+}
+.archived {
+  background: #f0f2f5;
+}
+.selected {
+  background: #e1eefb;
+}
+.timeline {
+  padding-left: 1.5rem;
+}
+.timeline li {
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid #d6e0ea;
+}
+dt {
+  font-weight: 650;
+  margin-top: 1rem;
+}
+dd {
+  margin: 0.25rem 0 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.login {
+  max-width: 460px;
+  padding: 2rem 0;
+}
+.skip-link,
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.skip-link:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  padding: 1rem;
+  display: block;
+}
+@media (max-width: 650px) {
+  main {
+    padding: 0.75rem;
+  }
+  header {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  .user {
+    display: none;
+  }
+  .section-heading {
+    flex-wrap: wrap;
+  }
+}

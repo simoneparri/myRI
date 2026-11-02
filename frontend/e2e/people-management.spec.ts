@@ -1,0 +1,245 @@
+import { test, expect, Page, Locator } from '@playwright/test';
+
+const username = process.env['E2E_USERNAME'];
+const password = process.env['E2E_PASSWORD'];
+if (!username || !password)
+  throw new Error(
+    'E2E_USERNAME and E2E_PASSWORD are required for an isolated fictitious database.',
+  );
+
+async function login(page: Page) {
+  await page.goto('/people');
+  await expect(page.getByRole('heading', { name: 'Accedi a myRI' })).toBeVisible();
+  await page.getByLabel('Nome utente').fill(username!);
+  await page.getByLabel('Password', { exact: true }).fill(password!);
+  await page.getByRole('button', { name: 'Accedi', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Persone', exact: true })).toBeVisible();
+}
+async function choose(dialog: Locator, label: string, option: string | RegExp) {
+  await dialog.getByLabel(label, { exact: true }).click();
+  await dialog.page().getByRole('option', { name: option }).click();
+}
+async function save(page: Page) {
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+}
+async function confirm(page: Page) {
+  await page.getByRole('dialog').getByRole('button', { name: 'Conferma', exact: true }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+}
+
+test('real session, CRUD, immutable salary, raise approval, recurrence, timeline and logout', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const runtimeErrors: string[] = [];
+  page.on('pageerror', (error) => runtimeErrors.push(error.name));
+  await login(page);
+  const suffix = Date.now().toString();
+  const firstName = 'PersonaE2E' + suffix;
+  await page.getByRole('button', { name: 'Nuova persona', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
+  await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
+  await dialog.getByLabel('Email', { exact: true }).fill(`e2e-${suffix}@example.test`);
+  await dialog.getByLabel('Data assunzione').fill('2026-01-02');
+  await save(page);
+  await page.getByLabel('Cerca', { exact: true }).fill(firstName);
+  await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
+  let row = page.getByRole('row').filter({ hasText: firstName });
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Ruolo', { exact: true }).fill('Team engineer');
+  await save(page);
+  await expect(row).toContainText('Team engineer');
+  await row.getByRole('link', { name: 'Scheda', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
+  ).toBeVisible();
+  const personUrl = page.url();
+
+  await page.getByRole('tab', { name: 'Contatti', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo contatto', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Tipo', { exact: true }).fill('Chat');
+  await dialog.getByLabel('Recapito o riferimento').fill('fittizio.test');
+  await save(page);
+  row = page.getByRole('row').filter({ hasText: 'fittizio.test' });
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Note', { exact: true }).fill('Nota fittizia');
+  await save(page);
+  await expect(row).toContainText('Nota fittizia');
+  await row.getByRole('button', { name: 'Dettagli', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('Nota fittizia');
+  await page.getByRole('dialog').getByRole('button', { name: 'Chiudi', exact: true }).click();
+  await row.getByRole('button', { name: 'Archivia', exact: true }).click();
+  await confirm(page);
+  await expect(row).toHaveCount(0);
+  await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
+  await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
+  await expect(row).toContainText('Archiviato');
+  await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
+
+  await page.getByRole('tab', { name: 'RAL', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuova voce RAL', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.00');
+  await dialog.getByLabel('Decorrenza', { exact: true }).fill('2026-01-02');
+  await dialog.getByLabel('Motivo della variazione').fill('RAL fittizia iniziale');
+  await save(page);
+  row = page.getByRole('row').filter({ hasText: 'RAL fittizia iniziale' });
+  await expect(row).toContainText('45.000,00');
+  await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
+  await expect(row.getByRole('button', { name: 'Archivia', exact: true })).toHaveCount(0);
+
+  await page.getByRole('tab', { name: 'Aumenti', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuova richiesta', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await choose(dialog, 'RAL base', /45.000,00 EUR/);
+  await dialog.getByLabel('Data richiesta', { exact: true }).fill('2026-10-01');
+  await dialog.getByLabel('RAL annua target (non incremento)', { exact: true }).fill('48000.00');
+  await dialog.getByLabel('Motivazione', { exact: true }).fill('Percorso fittizio');
+  await save(page);
+  row = page.getByRole('row').filter({ hasText: '48.000,00' });
+  await row.getByRole('button', { name: 'Invia', exact: true }).click();
+  await confirm(page);
+  await expect(row).toContainText('Inviata');
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByLabel('Motivazione', { exact: true })
+    .fill('Trattativa fittizia aggiornata');
+  await save(page);
+  await expect(row).toContainText('Inviata');
+  await row.getByRole('button', { name: 'Approva', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Data esito', { exact: true }).fill('2026-11-02');
+  await choose(dialog, 'Generare nuova RAL?', 'Si');
+  await dialog.getByLabel('Decorrenza RAL (solo se generata)').fill('2026-12-01');
+  await save(page);
+  await expect(row).toContainText('Approvata');
+  await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'RAL', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: '48.000,00' })).toHaveCount(1);
+
+  await page.getByRole('tab', { name: 'Career talk', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo career talk', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Data e ora incontro (UTC)').fill('2026-10-15T10:00');
+  await dialog.getByLabel('Argomenti', { exact: true }).fill('Crescita fittizia');
+  await save(page);
+  row = page.getByRole('row').filter({ hasText: 'Crescita fittizia' });
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Prossimi passi').fill('Prossimi passi fittizi');
+  await save(page);
+  await expect(row).toContainText('15/10/26');
+
+  await page.getByRole('tab', { name: 'Task', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo task', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Titolo', { exact: true }).fill('Follow-up ' + suffix);
+  await dialog.getByLabel('Scadenza (UTC)').fill('2026-12-15T10:00');
+  await choose(dialog, 'Ricorrenza', 'Mensile');
+  await dialog.getByLabel('Intervallo ricorrenza').fill('1');
+  await choose(dialog, 'Career talk collegato', /2026-10-15/);
+  await save(page);
+  row = page.getByRole('row').filter({ hasText: 'Follow-up ' + suffix });
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByLabel('Descrizione', { exact: true })
+    .fill('Azione fittizia aggiornata');
+  await save(page);
+  await row.getByRole('button', { name: 'Completa', exact: true }).click();
+  await confirm(page);
+  await expect(page.getByRole('row').filter({ hasText: 'Follow-up ' + suffix })).toHaveCount(2);
+  await expect(page.getByRole('row').filter({ hasText: 'Completato' })).toHaveCount(1);
+  const successor = page
+    .getByRole('row')
+    .filter({ hasText: 'Follow-up ' + suffix })
+    .filter({ has: page.getByRole('button', { name: 'Annulla task', exact: true }) });
+  await successor.getByRole('button', { name: 'Annulla task', exact: true }).click();
+  await confirm(page);
+  await expect(page.getByRole('row').filter({ hasText: 'Annullato' })).toHaveCount(1);
+
+  await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
+  await expect(page.locator('.timeline')).toContainText('Variazione RAL');
+  await expect(page.locator('.timeline')).toContainText('Career talk');
+  await expect(page.locator('.timeline')).toContainText('Follow-up ' + suffix);
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(personUrl);
+  await page.getByRole('button', { name: 'Esci', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Accedi a myRI' })).toBeVisible();
+  await page.goto(personUrl);
+  await expect(page.getByRole('heading', { name: 'Accedi a myRI' })).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
+});
+
+test('invalid login, session expiration, server error, and narrow-screen navigation', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Nome utente').fill(username!);
+  await page.getByLabel('Password', { exact: true }).fill('fictitious-wrong-password');
+  await page.getByRole('button', { name: 'Accedi', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Nome utente o password non validi');
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('link', { name: 'Task', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Task', exact: true })).toBeVisible();
+  await page.route('**/api/v1/tasks?*', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/problem+json',
+      body: '{"detail":"Servizio temporaneamente non disponibile."}',
+    }),
+  );
+  await page.getByRole('button', { name: 'Ricarica', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Servizio temporaneamente non disponibile');
+  await page.unrouteAll();
+  await page.getByRole('button', { name: 'Nuovo task', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.context().clearCookies();
+  await page
+    .getByRole('dialog')
+    .getByLabel('Titolo', { exact: true })
+    .fill('Sessione fittizia scaduta');
+  await page.getByRole('dialog').getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Accedi a myRI' })).toBeVisible();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+});
+
+test('conflicts stay visible without replaying or discarding form values', async ({ page }) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Task', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo task', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  const title = 'Conflitto fittizio ' + Date.now();
+  await dialog.getByLabel('Titolo', { exact: true }).fill(title);
+  await save(page);
+  const row = page.getByRole('row').filter({ hasText: title });
+  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Descrizione', { exact: true }).fill('Modifica locale non persa');
+  let requests = 0;
+  await page.route('**/api/v1/tasks/*', (route) => {
+    if (route.request().method() !== 'PUT') return route.continue();
+    requests++;
+    return route.fulfill({
+      status: 409,
+      contentType: 'application/problem+json',
+      body: '{"detail":"Versione obsoleta."}',
+    });
+  });
+  await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Conflitto');
+  await expect(dialog.getByLabel('Descrizione', { exact: true })).toHaveValue(
+    'Modifica locale non persa',
+  );
+  expect(requests).toBe(1);
+  await dialog.getByRole('button', { name: 'Annulla', exact: true }).click();
+});
