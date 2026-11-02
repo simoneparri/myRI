@@ -1,0 +1,6 @@
+{
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "chat.useAgentsMdFile": true,
+  "chat.subagents.allowInvocationsFromSubagents": false,
+  "chat.subagents.defaultToAuto": false
+}
