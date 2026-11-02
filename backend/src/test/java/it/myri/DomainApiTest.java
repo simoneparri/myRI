@@ -152,6 +152,9 @@ class DomainApiTest extends IntegrationTest {
         input.put("motivation", "Edited after submission");
         request = send(put(path), input, 200);
         assertEquals("submitted", request.get("status").asText());
+        input.put("version", request.get("version").asText());
+        var noChange = send(put(path), input, 200);
+        assertEquals(request.get("version"), noChange.get("version"));
         var outcome = new HashMap<String, Object>();
         outcome.put("version", request.get("version").asText());
         outcome.put("outcomeOn", "2026-02-01");
@@ -274,6 +277,26 @@ class DomainApiTest extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
         mvc.perform(post("/api/v1/notifications").session(session).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void invalidCalendarAndFractionalIdentifiersAreRejectedBeforeDatabaseWrites() throws Exception {
+        var person = personInput();
+        person.put("hiredOn", "0001-01-01");
+        send(post("/api/v1/people"), person, 400);
+        var task = taskInput();
+        task.put("dueAt", "0001-01-01T10:00:00Z");
+        send(post("/api/v1/tasks"), task, 400);
+        task.put("dueAt", "+1000000000-12-31T23:59:59.999999999Z");
+        send(post("/api/v1/tasks"), task, 400);
+        mvc.perform(post("/api/v1/career-talks").session(session).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personId\":1.5,\"heldAt\":\"2026-01-01T10:00:00Z\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/tasks").session(session).param("personId", "-1"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/career-talks").session(session).param("from", "0001-01-01T00:00:00Z"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
