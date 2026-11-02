@@ -1,7 +1,8 @@
 # Backend REST - Step 2
 
 Implementato sotto `/api/v1` con sessione Spring Security. Backend e DB non
-pubblicano porte host: la UI/nginx verra aggiunta allo Step 3. I test HTTP
+pubblicano porte host: la UI/nginx dello Step 3 inoltra le API same-origin.
+I test HTTP
 integrati usano MockMvc con login reale, JPA e Testcontainers MySQL.
 
 ## Login e CSRF

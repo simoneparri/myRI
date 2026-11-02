@@ -25,6 +25,31 @@ services:
       retries: 30
       start_period: 30s
     restart: unless-stopped
+  frontend:
+    build: ./frontend
+    environment:
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Rome}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/config.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
   backend:
     build: ./backend
     environment:
@@ -44,6 +69,7 @@ services:
         condition: service_healthy
     networks:
       - database
+      - application
     read_only: true
     tmpfs:
       - /tmp
@@ -62,6 +88,7 @@ services:
 networks:
   database:
     internal: true
+  application:
 
 volumes:
   mysql_data:

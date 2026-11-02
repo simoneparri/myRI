@@ -6,8 +6,8 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 ## Processo
 
 - Leggere `docs/plan.md`: implementare solo lo step esplicitamente autorizzato.
-- Step 0/1 completati e approvati. Lo Step 2 e autorizzato; non anticipare la UI
-  Step 3 o scheduler/dashboard/export Step 4 nell'incarico backend.
+- Step 0/1/2 completati. Step 3 autorizzato dall'utente; non anticipare
+  scheduler/dashboard/export Step 4 nell'incarico frontend.
 - Chiarire le decisioni comportamentali importanti prima di implementarle.
 - Ogni step implementativo include test pertinenti, documentazione e commit logico.
 - Non dichiarare eseguiti comandi non eseguiti; segnalare blocchi e verifiche mancanti.
@@ -56,8 +56,10 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 
 Disponibile: `cd backend && ./mvnw verify` verifica schema, service e API su
 Testcontainers MySQL e richiede JDK 21 completo e Docker.
-Compose DB/backend e operativo dopo compilazione privata di .env; nessuna porta
-host pubblicata fino al frontend. Frontend/e2e/backup restano per i prossimi step.
+Compose completo operativo dopo compilazione privata di .env; soltanto nginx
+pubblica 127.0.0.1:8080. Angular 21 LTS/Material 21 con Node 24, Vitest e Playwright.
+Browser test soltanto su DB fittizio dedicato, con credenziali E2E da ambiente.
+Backup resta per lo Step 4.
 
 ```sh
 cd backend && ./mvnw verify

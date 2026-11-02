@@ -1,8 +1,8 @@
 # myRI
 
 People management self-hosted per un team lead, monoutente con autenticazione
-obbligatoria. **Stato: Step 2, backend REST con sicurezza e MySQL;
-frontend Angular previsto allo Step 3.**
+obbligatoria. **Stato: Step 3, frontend Angular LTS/Material e backend REST
+con sicurezza, MySQL e stack Docker completo.**
 
 Funzioni previste: anagrafica/contatti, RAL con storico immutabile, richieste
 di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
@@ -29,14 +29,15 @@ docs/
   adr/                   decisioni, ER Mermaid e contratti
   api.md                 API implementate e autenticazione
 backend/                 Java 21, Boot 3, Maven Wrapper, API e test
-frontend/                Angular LTS, Material, standalone (Step 3)
+frontend/                Angular 21 LTS, Material, standalone e browser test
 scripts/mysql/           inizializzazione utenti DB a privilegi separati
-compose.yaml             db e backend; frontend nginx allo Step 3
+compose.yaml             db, backend e frontend nginx
 .env.example             configurazione senza segreti
 ```
 
 Disponibili workspace, backend Maven con API, migrazioni e test, Dockerfile,
-compose DB/backend e frontend/ come spazio riservato documentato.
+compose completo e frontend per login, persone, contatti, RAL, aumenti,
+career talk, task e timeline.
 
 Il [modello dati con ER Mermaid](docs/adr/0001-domain-and-schema.md) descrive nove
 tabelle, PK BIGINT, RAL/audit append-only, archiviazione senza cancellazioni fisiche
@@ -56,8 +57,10 @@ chmod 600 .env
 docker compose up --build -d
 ```
 
-Nello Step 2 nessuna porta e pubblicata, neanche per il backend. I servizi sono
-verificabili senza esporre dati:
+Aprire **http://127.0.0.1:8080** e accedere con le credenziali applicative
+configurate. Solo nginx pubblica una porta su localhost; API e MySQL restano
+senza porte host. La porta UI e configurabile con `FRONTEND_PORT`.
+Verificare i servizi senza esporre dati:
 
 ```sh
 docker compose ps
@@ -65,7 +68,7 @@ docker compose exec backend wget --quiet -O - http://127.0.0.1:8080/health
 docker compose down
 ```
 
-Allo Step 3 nginx sara l'unico servizio pubblicato su localhost e inoltrera le API.
+Nginx serve la SPA e inoltra le API same-origin con cookie/CSRF, senza CORS.
 MySQL 8.4.13 usa volume persistente /var/lib/mysql, rete interna e healthcheck;
 il backend parte solo dopo service_healthy, esegue Flyway e valida lo schema JPA.
 L'immagine backend esegue Java 21 come UID 10001, filesystem read-only e tmpfs /tmp.
@@ -80,6 +83,7 @@ Non usare down -v: cancellerebbe i dati.
 | APP_USERNAME / APP_PASSWORD | Bootstrap account unico solo se assente |
 | APP_TIMEZONE | Europe/Rome predefinito, istanti DB sempre UTC |
 | COOKIE_SECURE | false per HTTP locale; true quando si abilita HTTPS |
+| FRONTEND_PORT | Porta nginx su 127.0.0.1 (default 8080) |
 | SPRING_PROFILES_ACTIVE | default; dev inserisce fixture solo su DB privo di persone |
 
 Password applicativa: almeno 12 caratteri, massimo 72 byte UTF-8 per evitare
@@ -153,7 +157,12 @@ un'immagine modificata.
 
 ## Prossimi step
 
-Step 3: Angular LTS/Material e nginx same-origin. Step 4: scheduler/notifiche,
+Frontend: [guida sviluppo, test e convenzioni UI](frontend/README.md).
+Angular 21 e l'ultima LTS verificata nella documentazione ufficiale; la 22 e
+Active. Node 24/npm e dipendenze sono dichiarati nel frontend e nel lockfile.
+Gli orari sono mostrati in APP_TIMEZONE; input e filtri data/ora sono UTC espliciti.
+
+Step 4: scheduler/notifiche,
 dashboard, viste todolist e export/backup. Step 5: hardening, review e consegna.
 La ricorrenza transazionale al completamento task e gia presente nello Step 2.
 

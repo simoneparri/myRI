@@ -5,6 +5,8 @@
 - Step 0 completato e approvato dall'utente, commit f8ba44d.
 - Step 1 completato e approvato dall'utente, commit 3f2a102.
 - Step 2 completato: backend con API e sicurezza.
+- Autorizzato dall'utente: Step 3, frontend e integrazione nginx.
+- Step 3 completato e committato; Step 4 non ancora autorizzato.
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
@@ -132,6 +134,39 @@ Frontend, scheduler, dashboard, viste todolist ed export/backup non anticipati;
 restano agli step successivi. Hardening/review finali restano allo Step 5.
 
 ## Step 3 - frontend
+
+Versione verificata il 2026-11-02 sulla tabella ufficiale Angular:
+21 LTS (fine supporto giugno 2027), 22 Active. Scelta Angular 21/Material 21,
+Node 24. Lockfile con versioni esatte; tool Node isolato in Docker perche
+Node/npm non presenti sull'host. Test Vitest/jsdom e Playwright Chromium.
+UI italiana con orari in APP_TIMEZONE; editing/filtri orari UTC espliciti,
+date civili e importi/ID stringa senza conversioni floating point.
+Completato: shell login/sessione/CSRF, guard e logout; liste paginabili con
+ricerca/filtri/errori/loading/empty, schede persona e timeline; CRUD di contatti,
+RAL, aumenti, career talk e task con versioni, riferimenti, ricorrenza,
+archiviazione confermata e dettaglio. Valori Long/BigDecimal sono mantenuti come
+stringhe; validazioni locali rispettano limiti Long, DECIMAL e Integer. Gestione
+403 dopo scadenza verifica la sessione e non ripete mai la mutazione; i dialog
+con dati precedenti si chiudono. Orari renderizzati in APP_TIMEZONE; input e
+filtri istanti esplicitamente UTC, date civili invariate.
+
+Compose ora integra nginx Angular same-origin, unico servizio pubblicato su
+127.0.0.1; backend e MySQL non hanno porte host e restano su reti separate.
+Immagine nginx non-root/read-only, header di sicurezza, CSP, log senza path/query
+e configurazione timezone runtime. Configurazione e browser test fittizi descritti
+in README e frontend/README.md. Nessun scheduler, dashboard, vista todolist o
+export/backup introdotto.
+
+Verifiche finali dopo `npm ci`: **20 test unitari/componenti, 0 fallimenti**;
+**3 flussi Playwright reali passati** su stack Compose MySQL/dev dedicato:
+CRUD/modifica/archivio, aumento e generazione RAL, career talk, ricorrenza,
+timeline, login/logout, sessione scaduta, errore server, viewport mobile e
+conflitto senza ritentare/perdere input. Build production Angular riuscita:
+chunk iniziale 465.87 kB entro il budget 500 kB. `docker compose config --quiet`,
+healthcheck e accesso localhost verificati; solo frontend esponeva 127.0.0.1.
+Il volume di prova e stato conservato, non avviato contro dati reali.
+
+Commit UI: `0ce0a8d feat(frontend): add Angular people management interface`.
 
 Prerequisito: contratti/backend dello Step 2. Verificare e fissare Angular LTS.
 Frontend-dev: login, persone/contatti, storico RAL, aumenti, career talk, task,
