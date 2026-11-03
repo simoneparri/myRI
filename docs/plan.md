@@ -6,7 +6,8 @@
 - Step 1 completato e approvato dall'utente, commit 3f2a102.
 - Step 2 completato: backend con API e sicurezza.
 - Step 3 completato e committato: frontend e integrazione nginx.
-- Step 4 autorizzato dall'utente e completato. Step 5 non ancora autorizzato.
+- Step 4 completato. Step 5 autorizzato dall'utente e completato con rischio
+  MEDIUM esplicitamente accettato (docs/review-step5.md).
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
@@ -217,6 +218,13 @@ Nessun dato reale usato; review e hardening finali restano allo Step 5.
 
 ## Step 5 - hardening e consegna
 
+Review statiche sicurezza e correttezza eseguite in sola lettura.
+Decisione utente: documentare il rischio MEDIUM delle credenziali migrator
+nel processo web, senza separare l'architettura in un job di migrazione.
+Correzioni funzionali: retry dopo archiviazione e data civile predefinita nel
+fuso applicativo. Rischio ancora aperto, non corretto; nessuna attestazione di
+isolamento completo del web tier rispetto ai privilegi migrazioni.
+
 Prerequisito: step funzionali completi. Devops/test-engineer completano verifiche
 upgrade, avvio pulito, persistenza, restore, README, .env.example e HTTPS opzionale.
 Security-reviewer e code-reviewer producono report read-only; le correzioni
@@ -224,6 +232,46 @@ passano agli specialisti con scope approvato e test di regressione.
 Criteri: nessun blocco non dichiarato, niente segreti/dati reali, permessi minimi,
 solo localhost frontend, build e test riproducibili, documentazione aderente.
 Commit logici: hardening e test; documentazione operativa finale.
+
+Realizzato: idempotenza complete/approve dopo archive, senza ripetere successori,
+RAL o audit e senza consentire nuove mutazioni su risorse aperte archiviate;
+payload approvazione diverso continua a produrre 409. Default outcomeOn nel
+calendario APP_TIMEZONE; helper condiviso con badge futuro RAL.
+Overlay HTTPS opzionale con TLS 1.2/1.3, solo localhost, frontend HTTP non
+pubblicato, cookie Secure forzato, proxy non-root/read-only e chiavi esterne.
+Harness Python HTTP riproducibile per stack fittizi con consenso esplicito,
+state privato e nessuna lettura di .env. Guida lifecycle/upgrade/rollback e
+report statici/rischi in docs/operations.md e docs/review-step5.md.
+
+Verifiche Step 5 eseguite:
+- **64 test backend**, nessun errore/fallimento/skipped: verify completo con
+  MySQL/Flyway V1-V4, poi suite API mirata dopo l'ultima aggiunta di regressione.
+- **26 test frontend**, quattro flussi Playwright reali su stack fittizio con
+  profilo default; build production 467.32 kB iniziali entro budget 500 kB.
+- Nuovo volume senza seed; creazione fixture, down/up con volume conservato,
+  dati/RAL/audit preservati e password bootstrap non sovrascritta cambiando
+  APP_PASSWORD del container. Account DB runtime rifiuta UPDATE salary,
+  DELETE person e CREATE TABLE (1142).
+- HTTPS su 127.0.0.1:18443 con certificato fittizio esplicitamente attendibile:
+  login/logout, CSRF, header, export, audit e cookie Secure via harness HTTP,
+  senza bypass certificati. Verificata assenza porte HTTP/DB/backend pubblicate.
+  La suite browser completa e stata eseguita in HTTP locale, non ripetuta in TLS.
+- Aggiornamento del volume Step 4 alla candidata Step 5: dieci checksum invariati
+  (nove tabelle e flyway_schema_history), scheduler fermo durante confronto,
+  health e validate riusciti. Nessuna nuova migrazione Step 5.
+- Backup finale via migrator, restore in volume nuovo e dieci checksum identici
+  all'origine quiescente; avvio e harness verificano gli stessi ID/dati/audit.
+  Harness backup simulato passato (permessi, lock, input, failure e retention).
+- Reset amministrativo reale sul solo restore fittizio: vecchia password
+  rifiutata, nuova accettata, sessioni precedenti revocate; poi password fittizia
+  originaria ripristinata. Header, esposizione loopback e container hardening
+  verificati a runtime. Link documentali e diff whitespace verificati.
+
+Limiti espliciti: rischio migrator accettato; backup non cifrati; nessuna scansione
+CVE automatica o verifica di discovery/esecuzione agenti in VS Code interattivo.
+Review statica senza garanzia di assenza vulnerabilita. Nessuna release, tag,
+push, distribuzione remota o nuova funzione autorizzata implicitamente.
+Stack di verifica fermati alla consegna, volumi fittizi conservati.
 
 ## Regole di integrazione
 

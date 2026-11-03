@@ -1,8 +1,14 @@
 # myRI
 
 People management self-hosted per un team lead, monoutente con autenticazione
-obbligatoria. **Stato: Step 4, reminder in-app, dashboard, todolist,
-andamento RAL, export persona e backup, oltre allo stack Angular/REST/MySQL.**
+obbligatoria. **Step 0-5 implementati: stack locale Angular/REST/MySQL,
+reminder, dashboard, todolist, andamento RAL, export e backup.**
+
+**Rischio accettato:** il backend conserva anche le credenziali DB di migrazione.
+Una compromissione del processo web puo aggirare i soli privilegi runtime
+e le protezioni append-only. L'utente ha scelto di documentarlo senza separare
+le migrazioni. Uso solo locale su host fidato; dettagli in
+[review finale](docs/review-step5.md) e [guida operativa](docs/operations.md).
 
 Funzioni disponibili: anagrafica/contatti, RAL con storico immutabile, richieste
 di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
@@ -74,6 +80,10 @@ MySQL 8.4.13 usa volume persistente /var/lib/mysql, rete interna e healthcheck;
 il backend parte solo dopo service_healthy, esegue Flyway e valida lo schema JPA.
 L'immagine backend esegue Java 21 come UID 10001, filesystem read-only e tmpfs /tmp.
 Non usare down -v: cancellerebbe i dati.
+HTTPS opzionale su localhost, aggiornamento e rollback sono descritti nella
+[guida operativa](docs/operations.md). `compose.https.yaml` richiede Compose
+>= 2.24.4, certificati attendibili privati fuori dal repository, elimina la
+porta HTTP e forza il cookie Secure.
 
 | Variabile | Uso |
 | --- | --- |
@@ -187,14 +197,17 @@ Il package produce un JAR Spring Boot eseguibile; `./mvnw verify` non richiede
 La build Docker non riesegue i test: eseguire verify prima di distribuire
 un'immagine modificata.
 
-## Prossimi step
+## Consegna e limiti
 
 Frontend: [guida sviluppo, test e convenzioni UI](frontend/README.md).
 Angular 21 e l'ultima LTS verificata nella documentazione ufficiale; la 22 e
 Active. Node 24/npm e dipendenze sono dichiarati nel frontend e nel lockfile.
 Gli orari sono mostrati in APP_TIMEZONE; input e filtri data/ora sono UTC espliciti.
 
-Resta lo Step 5: hardening, review e consegna, da autorizzare separatamente.
+Step 5: review statiche, regressioni corrette, HTTPS opzionale e verifiche
+operative. Nessuna release, push o pubblicazione remota automatica.
+La review non certifica assenza vulnerabilita; rischio migrator accettato,
+backup non cifrati e scansione CVE non effettuata sono espliciti nella guida.
 La ricorrenza transazionale al completamento task e gia presente nello Step 2.
 
 Le regole cross-row (cicli manager, percentuale vs RAL base, transizioni di stato)

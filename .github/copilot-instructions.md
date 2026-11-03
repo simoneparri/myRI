@@ -9,8 +9,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 
 ## Processo e struttura
 
-- Eseguire solo lo step autorizzato: Step 0/1/2/3 completati, Step 4 autorizzato
-  per reminder, dashboard, todolist, export e backup. Non anticipare lo Step 5.
+- Step 0-5 completati; review e rischio accettato in docs/review-step5.md.
+  Eseguire solo incarichi autorizzati, nessuna release o pubblicazione implicita.
 - Monorepo previsto `backend/`, `frontend/`, `docs/`, `scripts/`, `compose.yaml`.
 - Test mirati, documentazione e commit logico per ogni step implementativo.
   Un solo integratore committa; subagent senza commit/push.
@@ -49,6 +49,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
   volume persistente DB e healthcheck con dipendenza service_healthy.
 - Backup `mysqldump --single-transaction`, retention validata, permessi privati.
   Non disabilitare approvazioni, CSRF, TLS o controlli di sicurezza per aggirare errori.
+- Rischio accettato: web tier con credenziali migrator per Flyway/grant all'avvio.
+  Non dichiarare isolamento completo o rilievo risolto; vedi docs/operations.md.
 
 ## Comandi
 
@@ -69,5 +71,5 @@ docker compose down
 ./scripts/backup.sh
 ```
 
-Attendere la creazione dei file; allineare i comandi Angular al runner effettivo.
+HTTPS opzionale: docs/operations.md e compose.https.yaml (Compose >=2.24.4).
 Mai `docker compose down -v` su dati reali.

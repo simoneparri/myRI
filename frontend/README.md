@@ -87,8 +87,10 @@ questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
 
-## Limiti
+## Consegna e limiti
 
-Nessun hardening/review finale dello Step 5 anticipato. La timeline e paginata e filtrabile per tipo; per leggere
+Review/hardening Step 5 e limiti accettati sono in [guida operativa](../docs/operations.md).
+La data esito predefinita usa APP_TIMEZONE, non il giorno UTC del browser.
+La timeline e paginata e filtrabile per tipo; per leggere
 il dettaglio completo o modificarlo usare la scheda nella relativa tab.
 La UI non offre cancellazione fisica o modifica di RAL storiche.

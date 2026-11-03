@@ -1,0 +1,35 @@
+services:
+  frontend:
+    ports: !reset []
+  backend:
+    environment:
+      COOKIE_SECURE: "true"
+  tls:
+    image: nginxinc/nginx-unprivileged:1.28-alpine
+    user: "${TLS_UID:-101}:${TLS_GID:-101}"
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    ports:
+      - "127.0.0.1:${HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./scripts/nginx/https.conf:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERT_FILE:?Set TLS_CERT_FILE to a private absolute certificate path}:/run/tls/cert.pem:ro
+      - ${TLS_KEY_FILE:?Set TLS_KEY_FILE to a private absolute key path}:/run/tls/key.pem:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped

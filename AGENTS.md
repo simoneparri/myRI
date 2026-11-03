@@ -6,8 +6,8 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 ## Processo
 
 - Leggere `docs/plan.md`: implementare solo lo step esplicitamente autorizzato.
-- Step 0/1/2/3 completati. Step 4 autorizzato dall'utente:
-  reminder, dashboard, todolist, export e backup. Non anticipare lo Step 5.
+- Step 0-5 completati; review e rischio accettato in docs/review-step5.md.
+  Nessuna release, pubblicazione o estensione funzionale implicita.
 - Chiarire le decisioni comportamentali importanti prima di implementarle.
 - Ogni step implementativo include test pertinenti, documentazione e commit logico.
 - Non dichiarare eseguiti comandi non eseguiti; segnalare blocchi e verifiche mancanti.
@@ -51,6 +51,9 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
   Volume DB persistente; healthcheck DB e depends_on con service_healthy.
 - Backup `mysqldump --single-transaction`, retention validata, file privati e restore verificabile.
 - Non disabilitare protezioni, approvazioni strumenti o controlli TLS per far passare test.
+- Rischio esplicitamente accettato: il web tier conserva le credenziali migrator
+  per Flyway/grant all'avvio. Non dichiarare isolamento completo o rilievo risolto;
+  documentare il limite (docs/operations.md).
 
 ## Comandi
 
@@ -73,5 +76,5 @@ docker compose down
 ./scripts/backup.sh
 ```
 
-Non eseguire comandi finche i relativi file/script non esistono. Lo Step 3 deve allineare
-i comandi frontend al runner scelto. Non usare `docker compose down -v` sui dati reali.
+HTTPS opzionale: docs/operations.md, overlay compose.https.yaml (Compose >=2.24.4).
+Non usare `docker compose down -v` sui dati reali.
