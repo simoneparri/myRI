@@ -128,7 +128,8 @@ Approve riceve version, outcomeOn, outcomeNotes opzionali, createSalary boolean
 obbligatorio e effectiveOn se e solo se createSalary=true.
 Nessuna approvazione implicita crea RAL. Lock della richiesta, esito, eventuale
 RAL e audit sono atomici. Retry di approvazione gia registrata con lo stesso
-payload restituisce l'esito anche con la vecchia versione; payload differente
+payload restituisce l'esito anche con la vecchia versione e dopo archiviazione;
+payload differente
 produce 409. Una richiesta genera al massimo una RAL. Esito non precedente
 alla data richiesta; una nuova trattativa su un esito definitivo crea nuova richiesta.
 
@@ -139,7 +140,8 @@ ma riferiti alla stessa persona. Se omesso, personId viene derivato dai riferime
 PUT non puo modificare task done/cancelled; usare complete/cancel per chiuderli
 e archive per escluderli dalle viste ordinarie.
 
-Completamento restituisce `{task,nextOccurrence}` ed e sicuro ai retry.
+Completamento restituisce `{task,nextOccurrence}` ed e sicuro ai retry anche
+dopo archiviazione del task gia completato; non riapre o modifica l'archivio.
 La parte transazionale della ricorrenza e implementata insieme al completamento,
 senza attendere scheduler: frequenza daily/weekly/monthly, intervallo positivo,
 dueAt obbligatorio; prossimo evento futuro, scadenze perse saltate, nessuna deriva

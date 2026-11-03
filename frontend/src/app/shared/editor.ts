@@ -13,7 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Api, Payload, Row, errorMessage } from '../core/api';
-import { DisplayPipe, decimalDisplay, personLabel } from './format';
+import { DisplayPipe, TIMEZONE, calendarDate, decimalDisplay, personLabel } from './format';
 import { Field, Option, Resource, definitions, newLabel } from './schema';
 
 export interface EditorData {
@@ -173,6 +173,7 @@ export class Editor {
   private readonly ref = inject(MatDialogRef<Editor, boolean>);
   private readonly api = inject(Api);
   private readonly destroy = inject(DestroyRef);
+  private readonly timezone = inject(TIMEZONE);
   readonly fields: Field[];
   readonly title: string;
   readonly form = new FormRecord<FormControl<string>>({});
@@ -234,7 +235,7 @@ export class Editor {
         label: 'Data esito',
         type: 'date',
         required: true,
-        initial: new Date().toISOString().slice(0, 10),
+        initial: calendarDate(new Date(), this.timezone),
       },
       { key: 'outcomeNotes', label: 'Note esito', type: 'textarea', max: 10000 },
       ...(this.data.command === 'approve'

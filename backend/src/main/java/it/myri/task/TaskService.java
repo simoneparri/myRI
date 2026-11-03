@@ -65,7 +65,6 @@ public class TaskService {
 
     public TaskDtos.Completion complete(Long id, Long version) {
         Task task = tasks.lockById(id).orElseThrow(ApiException::missing);
-        Queries.editable(task);
         if (task.status.equals("done")) {
             return new TaskDtos.Completion(TaskDtos.view(task),
                     tasks.findBySourceTaskId(id).map(TaskDtos::view).orElse(null));

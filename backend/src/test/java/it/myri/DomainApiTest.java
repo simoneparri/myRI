@@ -220,6 +220,57 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void completedTasksRemainIdempotentAfterArchivalButOpenArchivedTasksCannotComplete() throws Exception {
+        var task = send(post("/api/v1/tasks"), taskInput(), 201);
+        String path = "/api/v1/tasks/" + task.get("id").asText();
+        var command = Map.of("version", task.get("version").asText());
+        var completion = send(post(path + "/complete"), command, 200);
+        send(post(path + "/archive"), Map.of("version", completion.get("task").get("version").asText()), 200);
+        var retry = send(post(path + "/complete"), command, 200);
+        assertEquals(completion.get("nextOccurrence").get("id"), retry.get("nextOccurrence").get("id"));
+        assertFalse(retry.get("task").get("archivedAt").isNull());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM task WHERE source_task_id=?", Integer.class, task.get("id").asText()));
+        var open = send(post("/api/v1/tasks"), taskInput(), 201);
+        String openPath = "/api/v1/tasks/" + open.get("id").asText();
+        send(post(openPath + "/archive"), Map.of("version", open.get("version").asText()), 200);
+        send(post(openPath + "/complete"), Map.of("version", open.get("version").asText()), 409);
+    }
+
+    @Test
+    void approvalsRemainIdempotentAfterArchivalWithoutRepeatingSalaryOrAudit() throws Exception {
+        for (boolean createSalary : new boolean[] {true, false}) {
+            String person = person();
+            var base = send(post("/api/v1/people/" + person + "/salaries"), salaryInput(), 201);
+            var request = send(post("/api/v1/raise-requests"), raiseInput(person, base.get("id").asText()), 201);
+            String path = "/api/v1/raise-requests/" + request.get("id").asText();
+            request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+            var command = new HashMap<String, Object>();
+            command.put("version", request.get("version").asText());
+            command.put("outcomeOn", "2026-02-01");
+            command.put("createSalary", createSalary);
+            if (createSalary) command.put("effectiveOn", "2026-03-01");
+            var approved = send(post(path + "/approve"), command, 200);
+            send(post(path + "/archive"), Map.of("version", approved.get("version").asText()), 200);
+            long audits = jdbc.queryForObject("SELECT COUNT(*) FROM audit_event WHERE person_id=?", Long.class, person);
+            var retry = send(post(path + "/approve"), command, 200);
+            assertEquals(approved.get("salaryId"), retry.get("salaryId"));
+            assertFalse(retry.get("archivedAt").isNull());
+            assertEquals(audits, jdbc.queryForObject("SELECT COUNT(*) FROM audit_event WHERE person_id=?", Long.class, person));
+            assertEquals(createSalary ? 2 : 1, jdbc.queryForObject("SELECT COUNT(*) FROM salary WHERE person_id=?", Integer.class, person));
+            command.put("outcomeOn", "2026-02-02");
+            send(post(path + "/approve"), command, 409);
+        }
+        String person = person();
+        var base = send(post("/api/v1/people/" + person + "/salaries"), salaryInput(), 201);
+        var request = send(post("/api/v1/raise-requests"), raiseInput(person, base.get("id").asText()), 201);
+        String path = "/api/v1/raise-requests/" + request.get("id").asText();
+        request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+        request = send(post(path + "/archive"), Map.of("version", request.get("version").asText()), 200);
+        send(post(path + "/approve"), Map.of("version", request.get("version").asText(),
+                "outcomeOn", "2026-02-01", "createSalary", false), 409);
+    }
+
+    @Test
     void timelineHasAllTypesAndFiltersPaginationAndCalendarDates() throws Exception {
         String person = person();
         var salary = send(post("/api/v1/people/" + person + "/salaries"), salaryInput(), 201);

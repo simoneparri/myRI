@@ -2,6 +2,17 @@ import { InjectionToken, Pipe, PipeTransform, inject } from '@angular/core';
 import { Row, Value } from '../core/api';
 
 export const TIMEZONE = new InjectionToken<string>('TIMEZONE', { factory: () => 'Europe/Rome' });
+export function calendarDate(instant: Date, zone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+  return ['year', 'month', 'day']
+    .map((type) => parts.find((part) => part.type === type)!.value)
+    .join('-');
+}
 export const labels: Record<string, string> = {
   active: 'Attiva',
   inactive: 'Non piu nel team',

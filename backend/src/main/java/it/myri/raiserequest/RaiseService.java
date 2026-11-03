@@ -112,7 +112,6 @@ public class RaiseService {
     public RaiseDtos.View approve(Long id, RaiseDtos.Outcome command) {
         Dates.check(command.effectiveOn());
         RaiseRequest request = lock(id);
-        Queries.editable(request);
         if (command.createSalary() != (command.effectiveOn() != null)) {
             throw ApiException.invalid("Decorrenza richiesta solo se si crea una RAL.");
         }

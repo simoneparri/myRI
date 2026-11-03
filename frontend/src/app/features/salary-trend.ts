@@ -2,7 +2,7 @@ import { Component, effect, inject, input, signal, untracked } from '@angular/co
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { Api, Page, Row, errorMessage } from '../core/api';
-import { DisplayPipe, TIMEZONE } from '../shared/format';
+import { DisplayPipe, TIMEZONE, calendarDate } from '../shared/format';
 import { italianPaginator } from '../shared/paginator';
 
 @Component({
@@ -88,10 +88,7 @@ export class SalaryTrend {
     });
   }
   future(row: Row): boolean {
-    return (
-      String(row['effectiveOn']) >
-      new Date().toLocaleDateString('sv-SE', { timeZone: this.timezone })
-    );
+    return String(row['effectiveOn']) > calendarDate(new Date(), this.timezone);
   }
   paginate(event: PageEvent): void {
     this.pageIndex = event.pageIndex;

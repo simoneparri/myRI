@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Api } from '../core/api';
 import { Editor, EditorData, payloadFor, validatorsFor } from './editor';
-import { decimalDisplay } from './format';
+import { TIMEZONE, decimalDisplay } from './format';
 import { canEdit, definitions } from './schema';
 
 describe('precision and validation', () => {
@@ -84,6 +84,7 @@ describe('Editor', () => {
     TestBed.configureTestingModule({
       imports: [Editor],
       providers: [
+        { provide: TIMEZONE, useValue: 'Europe/Rome' },
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close, disableClose: false } },
         { provide: Api, useValue: { post, put, choices: vi.fn().mockResolvedValue([]) } },
@@ -91,6 +92,21 @@ describe('Editor', () => {
     });
     return TestBed.createComponent(Editor).componentInstance;
   }
+  it('defaults outcome dates to the application calendar across UTC midnight', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-03T23:30:00Z'));
+    try {
+      const editor = create({
+        resource: 'raise-requests',
+        path: 'raise-requests',
+        command: 'approve',
+        row: { id: '2', version: '4' },
+      });
+      expect(editor.form.controls['outcomeOn'].value).toBe('2026-11-04');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('uses the same salary idempotency key on retry and surfaces the failed request', async () => {
     const editor = create({ resource: 'salaries', path: 'people/1/salaries', personId: '1' });
     await vi.waitFor(() => expect(editor.loading()).toBe(false));
