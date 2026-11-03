@@ -18,6 +18,9 @@ Verificati entrambe le configurazioni e gli overlay HTTPS, bootstrap Flyway
 contro MySQL fittizio separato con TLS verificato, rifiuto CA non attendibile,
 privilegi runtime e harness auth/CSRF/export/persistenza dopo riavvio.
 Regressione AuthenticationTest (4 test) e test backup superati.
+Su richiesta successiva aggiunto provisioning amministrativo esterno:
+schema nuovo e utenti runtime/migrator distinti TLS-only, password interattive,
+nessuna modifica ad account esistenti. Verificati unit test e SQL su MySQL 8 fittizio.
 
 Step 0 realizzato: nove agenti, quattro prompt, istruzioni e impostazioni.
 Verificati con parsing YAML/JSON frontmatter, destinazioni handoff/deleghe,

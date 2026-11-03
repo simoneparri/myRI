@@ -125,6 +125,39 @@ richiesto dal binary log). Verificare che il provider MySQL consenta questi
 privilegi e i DEFINER dei trigger prima dell'avvio; nessun fallback senza trigger.
 Non fornire credenziali root al backend. Resta il rischio migrator accettato.
 
+#### Creazione schema e utenze dedicate
+
+Lo script `scripts/mysql/provision-external.py` crea uno **schema nuovo** e le
+due utenze TLS-only richieste. Richiede Python 3 e il client **Oracle MySQL 8**
+(non MariaDB). Eseguirlo come DBA prima del primo avvio, non dentro Flyway.
+Non modifica password/grant di account esistenti: se schema o uno dei nomi
+utente esiste gia (con qualsiasi host), si ferma prima di apportare modifiche.
+Il runtime resta senza grant fino al callback Flyway.
+
+Preparare fuori dal repository un file amministrativo privato, modo 600,
+con sezione `[client]`, `user` e `password` del DBA. Non usare credenziali
+amministrative nel file env del backend e non passarle nella riga di comando.
+
+```sh
+python3 scripts/mysql/provision-external.py \
+  --admin-config /percorso/privato/mysql-admin.cnf \
+  --host mysql.example.internal --port 3306 \
+  --ssl-ca /percorso/privato/mysql-ca.pem \
+  --database myri --runtime-user myri_app --migration-user myri_migration
+```
+
+Le due password vengono chieste e confermate senza eco: riportarle privatamente
+in `DB_PASSWORD` e `DB_MIGRATION_PASSWORD` del file env. Non usare `set -x`,
+registrazione del terminale o file opzioni con `verbose`/tracing.
+Serve un terminale con input nascosto; non e consentito il fallback con eco.
+Il DBA deve poter leggere `mysql.user`, creare schema/utenti e assegnare i grant
+indicati sopra. Per amministrazione sul server locale si puo sostituire
+`--host ... --port ... --ssl-ca ...` con `--socket /percorso/mysql.sock`;
+le utenze applicative create richiedono comunque TLS.
+Lo script non cambia configurazioni globali del server o firewall.
+DDL MySQL non transazionale: in caso di errore possono rimanere risorse parziali;
+verificarle con il DBA, senza retry o cancellazioni automatiche.
+
 ```sh
 cp .env.external-db.example .env.external-db
 chmod 600 .env.external-db
