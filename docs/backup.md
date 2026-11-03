@@ -1,5 +1,11 @@
 # Backup e ripristino
 
+Questa procedura e `scripts/backup.sh` riguardano il Compose con **MySQL interno**.
+`compose.external-db.yaml` non contiene un servizio db: il relativo backup va
+eseguito dal DBA/provider o da un client MySQL con TLS verificato, credenziali
+private, stessi flag di consistenza/trigger e restore verificato.
+Il README descrive prerequisiti e differenze del database esterno.
+
 ## Creazione
 
 Richiede Bash, Docker Compose v2, GNU coreutils/find/sort, gzip e flock (Linux).

@@ -72,4 +72,6 @@ docker compose down
 ```
 
 HTTPS opzionale: docs/operations.md e compose.https.yaml (Compose >=2.24.4).
+MySQL esterno: compose.external-db.yaml autonomo, --env-file .env.external-db.
+Richiede provisioning DBA e TLS VERIFY_IDENTITY; backup.sh resta solo interno.
 Mai `docker compose down -v` su dati reali.

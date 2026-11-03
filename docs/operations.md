@@ -25,6 +25,12 @@ Risultati e condizioni in [review Step 5](review-step5.md).
 
 ## Avvio HTTP locale
 
+I comandi senza `-f` si riferiscono a MySQL interno. Per MySQL esterno usare
+sempre `--env-file .env.external-db -f compose.external-db.yaml`; prerequisiti
+DB/utenti/TLS nel README. HTTPS si aggiunge con `-f compose.https.yaml` anche
+alla variante esterna. Backup/restore via servizio db sono solo per la variante
+interna; per quella esterna operare con DBA/provider e client TLS verificato.
+
 Prerequisiti: Docker Engine e Compose v2; per l'overlay HTTPS, Compose >= 2.24.4
 (tag `!reset`). Non servono Java/Node sull'host se si usa la build Docker.
 Le immagini e dipendenze richiedono accesso ai rispettivi registry.

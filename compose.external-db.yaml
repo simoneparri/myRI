@@ -1,0 +1,66 @@
+services:
+  frontend:
+    build: ./frontend
+    environment:
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Rome}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/config.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: ${DB_HOST:?Set DB_HOST in the external database env file}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_SSL_MODE: VERIFY_IDENTITY
+      DB_NAME: ${DB_NAME:-myri}
+      DB_USERNAME: ${DB_USERNAME:-myri_app}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the external database env file}
+      DB_MIGRATION_USERNAME: ${DB_MIGRATION_USERNAME:-myri_migration}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?Set DB_MIGRATION_PASSWORD in the external database env file}
+      APP_USERNAME: ${APP_USERNAME:?Set APP_USERNAME in the external database env file}
+      APP_PASSWORD: ${APP_PASSWORD:?Set APP_PASSWORD in the external database env file}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Rome}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      REMINDERS_ENABLED: ${REMINDERS_ENABLED:-true}
+      CAREER_TALK_MONTHS: ${CAREER_TALK_MONTHS:-3}
+      REMINDERS_INTERVAL_MS: ${REMINDERS_INTERVAL_MS:-60000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  application:

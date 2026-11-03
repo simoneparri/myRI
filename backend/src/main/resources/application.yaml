@@ -2,7 +2,7 @@ spring:
   application:
     name: myri
   datasource:
-    url: jdbc:mysql://${DB_HOST:db}:${DB_PORT:3306}/${DB_NAME:myri}?serverTimezone=UTC&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+    url: jdbc:mysql://${DB_HOST:db}:${DB_PORT:3306}/${DB_NAME:myri}?serverTimezone=UTC&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&sslMode=${DB_SSL_MODE:PREFERRED}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:

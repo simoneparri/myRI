@@ -11,6 +11,14 @@
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
+Estensione autorizzata dopo Step 5: due Compose alternativi, MySQL interno
+predefinito ed esterno senza servizio db, env dedicato e README aggiornato.
+Nessun trasferimento automatico di dati o cambiamento del rischio migrator.
+Verificati entrambe le configurazioni e gli overlay HTTPS, bootstrap Flyway
+contro MySQL fittizio separato con TLS verificato, rifiuto CA non attendibile,
+privilegi runtime e harness auth/CSRF/export/persistenza dopo riavvio.
+Regressione AuthenticationTest (4 test) e test backup superati.
+
 Step 0 realizzato: nove agenti, quattro prompt, istruzioni e impostazioni.
 Verificati con parsing YAML/JSON frontmatter, destinazioni handoff/deleghe,
 restrizioni strumenti reviewer, link locali e assenza di backend/frontend.

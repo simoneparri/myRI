@@ -39,7 +39,9 @@ frontend/                Angular 21 LTS, Material, standalone e browser test
 scripts/mysql/           inizializzazione utenti DB a privilegi separati
 scripts/backup.sh        dump consistente, privato e con retention
 compose.yaml             db, backend e frontend nginx
+compose.external-db.yaml backend e frontend con MySQL esterno
 .env.example             configurazione senza segreti
+.env.external-db.example configurazione alternativa per MySQL esterno
 ```
 
 Disponibili workspace, backend Maven con API, migrazioni e test, Dockerfile,
@@ -53,6 +55,23 @@ sessione/CSRF e futura integrazione OIDC. I dettagli effettivi sono nella
 [guida API](docs/api.md).
 
 ## Avvio e configurazione
+
+Sono disponibili **due Compose alternativi e autonomi**:
+
+| File | Servizi | Configurazione |
+| --- | --- | --- |
+| `compose.yaml` | db MySQL interno, backend, frontend | `.env` da `.env.example` |
+| `compose.external-db.yaml` | backend e frontend, MySQL gia disponibile esternamente | `.env.external-db` da `.env.external-db.example` |
+
+Non combinare i due file con `-f`: sceglierne uno. Il secondo non crea container,
+volume, schema o utenti MySQL; Flyway continua ad applicare le migrazioni nello
+schema dedicato gia predisposto. Il cambio di Compose **non trasferisce dati**.
+Per passare da interno a esterno usare un backup/restore verificato, mai cancellare
+il volume originale. Fermare prima la variante in uso con il suo comando `down`
+senza `-v`, per non lasciare container orfani o conflitti sulla porta UI.
+Solo frontend pubblicato su localhost in entrambe le modalita.
+
+### MySQL interno (predefinito)
 
 Copiare `.env.example` in `.env`, compilare tutte le password vuote e APP_USERNAME,
 quindi, con Docker e Compose v2:
@@ -85,9 +104,104 @@ HTTPS opzionale su localhost, aggiornamento e rollback sono descritti nella
 >= 2.24.4, certificati attendibili privati fuori dal repository, elimina la
 porta HTTP e forza il cookie Secure.
 
+### MySQL esterno
+
+Preparare prima un database **dedicato a myRI**, MySQL 8.x >= 8.0.16
+(consigliato 8.4.13), InnoDB, charset `utf8mb4`, collation
+`utf8mb4_0900_ai_ci`. Non usare schemi condivisi con altre applicazioni.
+Il DBA deve creare due utenti distinti non root: runtime e migrazioni.
+Nomi lowercase ASCII come negli esempi, password distinte e private.
+Il callback attuale assegna i grant a `'DB_USERNAME'@'%'`: deve esistere
+esattamente quell'account runtime, senza grant globali, DDL o DELETE preesistenti.
+Limitare gli accessi con firewall/rete privata; un eventuale account con host
+piu specifico non viene configurato dal callback.
+
+Per l'utente migrazioni sono necessari, **solo sullo schema dedicato**,
+`CREATE, ALTER, INDEX, REFERENCES, TRIGGER, SELECT, INSERT, UPDATE WITH GRANT OPTION`.
+L'utente runtime inizialmente puo essere privo di grant: Flyway assegna i DML per
+tabella, SELECT/INSERT soltanto su salary/audit_event. Il server deve permettere
+la creazione di trigger senza SUPER (`log_bin_trust_function_creators=1` quando
+richiesto dal binary log). Verificare che il provider MySQL consenta questi
+privilegi e i DEFINER dei trigger prima dell'avvio; nessun fallback senza trigger.
+Non fornire credenziali root al backend. Resta il rischio migrator accettato.
+
+```sh
+cp .env.external-db.example .env.external-db
+chmod 600 .env.external-db
+# Compilare host, porta, schema e credenziali private.
+docker compose --env-file .env.external-db -f compose.external-db.yaml config --quiet
+docker compose --env-file .env.external-db -f compose.external-db.yaml up --build -d --wait
+docker compose --env-file .env.external-db -f compose.external-db.yaml ps
+docker compose --env-file .env.external-db -f compose.external-db.yaml down
+```
+
+`DB_HOST` e visto **dal container backend**: `localhost`/`127.0.0.1` indicano
+il container stesso, non il PC. Per un server sul PC usare
+`host.docker.internal` (mapping host-gateway incluso anche su Linux); MySQL deve
+ascoltare sull'interfaccia raggiungibile da Docker e consentire la subnet Docker
+nel firewall, non essere esposto pubblicamente. Per un altro host usare il suo DNS
+privato raggiungibile dal container. `DB_PORT` predefinita 3306.
+Non esiste `depends_on` sul DB esterno: deve essere pronto prima dell'avvio.
+Se connessione/migrazioni falliscono il backend non diventa healthy e il frontend
+non viene avviato. Root password e volume dati non appartengono a questo Compose.
+
+La connessione esterna forza **TLS `VERIFY_IDENTITY`** per runtime e Flyway:
+certificato valido per DB_HOST e CA attendibile dalla JVM. Non disabilitare
+TLS o verifica hostname per aggirare errori. Per una CA privata aggiungere un
+piccolo overlay locale (non versionare certificati/chiavi) al backend:
+
+```yaml
+services:
+  backend:
+    volumes:
+      - /percorso/privato/mysql-truststore.p12:/run/mysql-truststore.p12:ro
+      - /percorso/privato/mysql-java.options:/run/mysql-java.options:ro
+    environment:
+      JDK_JAVA_OPTIONS: "@/run/mysql-java.options"
+```
+
+Creare il truststore con `keytool -importcert` importando la CA verificata tramite
+canale fidato; renderlo leggibile all'UID 10001 del backend. Non contiene chiavi
+private. Il file privato `mysql-java.options`, anch'esso leggibile solo dal
+proprietario e dall'UID 10001, contiene le opzioni JVM:
+
+```text
+-Djavax.net.ssl.trustStore=/run/mysql-truststore.p12
+-Djavax.net.ssl.trustStoreType=PKCS12
+-Djavax.net.ssl.trustStorePassword=<password-del-truststore>
+```
+
+Non mettere quella password direttamente in JAVA_TOOL_OPTIONS/JDK_JAVA_OPTIONS:
+la JVM ne stampa il valore all'avvio. Il riferimento `@file` evita di stampare
+il contenuto. Non versionare il file opzioni; conservare directory e file con
+permessi privati. Il truststore deve contenere almeno una CA e la sua password
+deve essere corretta, altrimenti Connector/J puo riportare trustAnchors vuoto.
+Applicare l'overlay privato con un ulteriore `-f /percorso/privato/mysql-ca.yaml`
+a tutti i comandi, incluso reset password. La CA/hostname rimangono verificati:
+non usare trust-all e non rimuovere i controlli d'integrita del truststore.
+
+HTTPS UI opzionale funziona con entrambe le varianti:
+
+```sh
+# Dopo aver configurato TLS_CERT_FILE, TLS_KEY_FILE, TLS_UID/GID come in docs/operations.md:
+docker compose --env-file .env.external-db -f compose.external-db.yaml -f compose.https.yaml up --build -d --wait
+```
+
+Per health, reset password, aggiornamento e down usare sempre lo stesso
+`--env-file .env.external-db -f compose.external-db.yaml` (e gli overlay scelti).
+Il reset continua a usare `run --rm --no-deps -e APP_RESET_PASSWORD backend`
+con flag `--myri.reset-password=true`, password da ambiente come descritto sotto.
+`./scripts/backup.sh` e invece **solo per MySQL interno**: esegue mysqldump nel
+servizio db. Per quello esterno usare il backup gestito dal DBA/provider o
+mysqldump con `--single-transaction --no-tablespaces --set-gtid-purged=OFF
+--hex-blob --triggers`, credenziali in file privato, TLS `VERIFY_IDENTITY` e CA
+attendibile. Testare restore, retention e permessi sul server esterno; non
+eseguire lo script interno aspettandosi che selezioni il DB esterno.
+
 | Variabile | Uso |
 | --- | --- |
 | DB_NAME | Schema (default myri, nome lowercase ASCII) |
+| DB_HOST / DB_PORT | Solo Compose esterno: hostname obbligatorio e porta (default 3306); interno usa db:3306 |
 | DB_USERNAME / DB_PASSWORD | Runtime DML non root; username lowercase ASCII, massimo 32 caratteri |
 | DB_MIGRATION_USERNAME / DB_MIGRATION_PASSWORD | Utenza distinta per Flyway e grant per tabella |
 | DB_ROOT_PASSWORD | Solo inizializzazione/amministrazione MySQL, non fornita al backend |
@@ -153,6 +267,7 @@ Contratto dettagliato nella [guida API](docs/api.md).
 ```sh
 BACKUP_RETENTION=14 ./scripts/backup.sh
 bash scripts/test-backup.sh
+python3 scripts/test-compose.py
 ```
 
 Il primo comando usa `mysqldump --single-transaction` e conserva gli ultimi
