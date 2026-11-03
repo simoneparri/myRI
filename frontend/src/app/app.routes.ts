@@ -8,6 +8,14 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     children: [
       {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('./features/notifications').then((m) => m.Notifications),
+      },
+      {
         path: 'people/:id',
         loadComponent: () => import('./features/person-page').then((m) => m.PersonPage),
       },

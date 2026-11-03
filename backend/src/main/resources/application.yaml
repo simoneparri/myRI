@@ -47,6 +47,10 @@ logging:
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF
     org.springframework.web: WARN
 myri:
+  reminders:
+    enabled: ${REMINDERS_ENABLED:true}
+    career-months: ${CAREER_TALK_MONTHS:3}
+    interval-ms: ${REMINDERS_INTERVAL_MS:60000}
   zone: ${APP_TIMEZONE:Europe/Rome}
   bootstrap:
     username: ${APP_USERNAME:}

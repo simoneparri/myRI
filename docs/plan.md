@@ -5,8 +5,8 @@
 - Step 0 completato e approvato dall'utente, commit f8ba44d.
 - Step 1 completato e approvato dall'utente, commit 3f2a102.
 - Step 2 completato: backend con API e sicurezza.
-- Autorizzato dall'utente: Step 3, frontend e integrazione nginx.
-- Step 3 completato e committato; Step 4 non ancora autorizzato.
+- Step 3 completato e committato: frontend e integrazione nginx.
+- Step 4 autorizzato dall'utente e completato. Step 5 non ancora autorizzato.
 - Gli step seguenti si eseguono uno alla volta dopo assegnazione dell'utente.
 - Handoff manuali e deleghe non costituiscono autorizzazione a superare questi gate.
 
@@ -178,6 +178,11 @@ Commit logici: shell/login; feature UI; integrazione compose.
 
 ## Step 4 - reminder, dashboard, export e backup
 
+Decisioni confermate: reminder dall'inizio del giorno di scadenza, inclusi
+task arretrati; CSV unico con tipo record e unione delle colonne delle entita.
+JSON e CSV comprendono anche le voci archiviate. Limite export di 1000 record
+complessivi, con errore esplicito senza troncamenti e backup completo alternativo.
+
 Prerequisito: Step 2/3 e semantica calendario/ricorrenza approvata.
 Scheduler @Scheduled, notifiche in-app deduplicate, suggerimenti career talk,
 todolist oggi/scaduti/7 giorni/per persona, dashboard e andamento RAL.
@@ -186,6 +191,29 @@ documentato; backup mysqldump --single-transaction e retention configurabile.
 Test: Clock controllato, soglie N mesi e calendario, ricorrenza/idempotenza,
 aggregazioni, autorizzazione export, backup/retention e restore su dati fittizi.
 Commit logici: reminder; dashboard/todolist; export/backup.
+
+Realizzato: scheduler fixed-delay configurabile con deduplicazione e lock
+concorrente, soglie career talk, todolist calendariale, riepilogo dashboard,
+lista persone oltre soglia e andamento RAL paginati. UI integrata con menu,
+notifiche leggibili/archiviabili e dettaglio task. Export persona transazionale
+CSV/JSON, storico e archivio inclusi, limite concordato e formula injection
+neutralizzata in CSV. V4 aggiunge solo indici; V1/V2/V3 invariate.
+Backup manuale con migrator non root, file privati e atomici, lock e retention
+configurabile per numero di file. Procedura restore amministrativo su target
+nuovo documentata in docs/backup.md.
+
+Verifiche: **62 test backend passati**, MySQL reale con Flyway V1-V4, inclusi
+concorrenza scheduler, soglie/DST, autorizzazione e limite export (1000 accettati,
+1001 rifiutati). Test Step 4 passati anche con JVM Pacific/Honolulu, distinta
+dal fuso applicativo e UTC DB. **25 test frontend e 4 flussi Playwright passati**,
+inclusi scheduler reale, notifiche, viste calendario, trend, download JSON/CSV
+ed errore export esplicito. Build production: 467.10 kB iniziali, budget 500 kB.
+Harness backup: retention piu recente, input invalidi, permessi, symlink, lock,
+cleanup e mancata potatura su fallimento. Dump reale via migrator ripristinato
+in un nuovo stack/volume fittizio; checksum identici di tutte le nove tabelle
+e flyway_schema_history, trigger salary/audit rifiutano UPDATE e DELETE (1644).
+Avvio applicativo e quattro flussi browser ripetuti sul database ripristinato.
+Nessun dato reale usato; review e hardening finali restano allo Step 5.
 
 ## Step 5 - hardening e consegna
 

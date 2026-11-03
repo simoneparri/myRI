@@ -62,7 +62,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(2, flyway.migrate().migrationsExecuted);
+        assertEquals(3, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }

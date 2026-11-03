@@ -243,3 +243,103 @@ test('conflicts stay visible without replaying or discarding form values', async
   expect(requests).toBe(1);
   await dialog.getByRole('button', { name: 'Annulla', exact: true }).click();
 });
+
+test('dashboard, calendar todo, scheduled notification, salary trend and persona exports', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await login(page);
+  const suffix = Date.now().toString();
+  const firstName = 'ExportE2E' + suffix;
+  await page.getByRole('button', { name: 'Nuova persona', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
+  await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
+  await dialog.getByLabel('Data assunzione').fill('2020-01-02');
+  await save(page);
+  await page.getByLabel('Cerca', { exact: true }).fill(firstName);
+  await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
+  await page
+    .getByRole('row')
+    .filter({ hasText: firstName })
+    .getByRole('link', { name: 'Scheda', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
+  ).toBeVisible();
+  const personPath = new URL(page.url()).pathname;
+  await page.getByRole('tab', { name: 'RAL', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuova voce RAL', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.12');
+  await dialog.getByLabel('Decorrenza', { exact: true }).fill('2099-01-01');
+  await dialog.getByLabel('Motivo della variazione').fill('Andamento fittizio');
+  await save(page);
+  await page.getByRole('tab', { name: 'Andamento RAL', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: 'Andamento fittizio' })).toContainText(
+    '45.000,12',
+  );
+  await expect(page.getByRole('row').filter({ hasText: 'Andamento fittizio' })).toContainText(
+    'Futura',
+  );
+  for (const format of ['JSON', 'CSV']) {
+    const pending = page.waitForEvent('download');
+    await page.getByRole('button', { name: `Esporta ${format}`, exact: true }).click();
+    const download = await pending;
+    expect(download.suggestedFilename()).toBe(`person-export.${format.toLowerCase()}`);
+    expect(await download.failure()).toBeNull();
+    const stream = await download.createReadStream();
+    const parts: Buffer[] = [];
+    for await (const part of stream!) parts.push(Buffer.from(part));
+    const text = Buffer.concat(parts).toString('utf8');
+    expect(text).toContain(firstName);
+    if (format === 'JSON') {
+      const snapshot = JSON.parse(text);
+      expect(snapshot.schemaVersion).toBe(1);
+      expect(snapshot.salaries[0].amount).toBe('45000.12');
+    } else expect(text).toContain('recordType,schemaVersion,exportedAt');
+    await download.delete();
+  }
+  await page.route('**/export?format=json', (route) =>
+    route.fulfill({
+      status: 422,
+      contentType: 'application/problem+json',
+      body: '{"detail":"Export oltre 1000 record, nessun dato troncato."}',
+    }),
+  );
+  await page.getByRole('button', { name: 'Esporta JSON', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('nessun dato troncato');
+  await page.unrouteAll();
+  await page.getByRole('tab', { name: 'Task', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo task', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  const title = 'ReminderE2E' + suffix;
+  await dialog.getByLabel('Titolo', { exact: true }).fill(title);
+  const nowUtc = new Date(Date.now() - 60000).toISOString().slice(0, 16);
+  await dialog.getByLabel('Scadenza (UTC)').fill(nowUtc);
+  await save(page);
+  await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Vedi scaduti', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: title })).toBeVisible();
+  await expect(page.getByLabel('Cerca', { exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Notifiche', exact: true }).click();
+  const notification = page
+    .locator('li')
+    .filter({ has: page.locator(`a[href="${personPath}"]`) })
+    .filter({ hasText: 'Career talk da pianificare' });
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
+    await expect(notification).toBeVisible();
+  }).toPass({ timeout: 20000, intervals: [1000] });
+  await notification.getByRole('button', { name: 'Segna letta', exact: true }).click();
+  await expect(notification).toContainText('Letta');
+  await notification.getByRole('button', { name: 'Archivia notifica', exact: true }).click();
+  await expect(notification).toHaveCount(0);
+  await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
+  await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
+  await expect(notification).toContainText('Archiviata');
+  const taskNotification = page.locator('li').filter({ hasText: 'Task in scadenza #' }).first();
+  await taskNotification.getByRole('button', { name: 'Apri task', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+});

@@ -10,6 +10,7 @@ import { Api, Page, Row, errorMessage } from '../core/api';
 import { DisplayPipe, TIMEZONE, personLabel } from '../shared/format';
 import { ResourcePage } from './resource-page';
 import { italianPaginator } from '../shared/paginator';
+import { SalaryTrend } from './salary-trend';
 
 @Component({
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
@@ -23,6 +24,7 @@ import { italianPaginator } from '../shared/paginator';
     MatCheckboxModule,
     ResourcePage,
     DisplayPipe,
+    SalaryTrend,
   ],
   template: `
     <a mat-button routerLink="/people">Torna alle persone</a>
@@ -34,6 +36,22 @@ import { italianPaginator } from '../shared/paginator';
       <h1>{{ name(person) }}</h1>
       <p>{{ person['role'] }} · {{ person['email'] }} · {{ person['status'] | display }}</p>
       <p>Assunzione: {{ person['hiredOn'] | display: 'date' }}. Orari in {{ timezone }}.</p>
+      <p>
+        Export completo della persona, incluse voci archiviate (massimo 1000 record). Il file
+        contiene dati personali: conservalo in modo protetto.
+      </p>
+      <button mat-stroked-button (click)="download('json')" [disabled]="exporting()">
+        Esporta JSON
+      </button>
+      <button mat-stroked-button (click)="download('csv')" [disabled]="exporting()">
+        Esporta CSV
+      </button>
+      @if (exportError()) {
+        <p role="alert" class="error">{{ exportError() }}</p>
+      }
+      @if (exporting()) {
+        <p role="status">Preparazione export...</p>
+      }
       <mat-tab-group (selectedIndexChange)="$event === 0 && loadTimeline()">
         <mat-tab label="Timeline"
           ><ng-template matTabContent>
@@ -100,6 +118,10 @@ import { italianPaginator } from '../shared/paginator';
               <app-resource-page [resource]="tab.resource" [personId]="id()" /> </ng-template
           ></mat-tab>
         }
+        <mat-tab label="Andamento RAL"
+          ><ng-template matTabContent>
+            <app-salary-trend [personId]="id()" /> </ng-template
+        ></mat-tab>
       </mat-tab-group>
     } @else if (!error()) {
       <p role="status">Caricamento persona...</p>
@@ -115,6 +137,8 @@ export class PersonPage {
   readonly error = signal('');
   readonly timelineError = signal('');
   readonly loading = signal(false);
+  readonly exporting = signal(false);
+  readonly exportError = signal('');
   readonly timeline = signal<Page<Row>>({
     items: [],
     page: 0,
@@ -146,6 +170,23 @@ export class PersonPage {
         void this.load();
       });
     });
+  }
+  async download(format: 'json' | 'csv'): Promise<void> {
+    this.exporting.set(true);
+    this.exportError.set('');
+    try {
+      const blob = await this.api.download(`people/${this.id()}/export?format=${format}`);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `person-export.${format}`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      this.exportError.set(errorMessage(error));
+    } finally {
+      this.exporting.set(false);
+    }
   }
   async load(): Promise<void> {
     const generation = ++this.personGeneration;

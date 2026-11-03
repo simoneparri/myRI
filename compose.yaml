@@ -64,6 +64,9 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Rome}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      REMINDERS_ENABLED: ${REMINDERS_ENABLED:-true}
+      CAREER_TALK_MONTHS: ${CAREER_TALK_MONTHS:-3}
+      REMINDERS_INTERVAL_MS: ${REMINDERS_INTERVAL_MS:-60000}
     depends_on:
       db:
         condition: service_healthy

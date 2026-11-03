@@ -49,4 +49,28 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('uses calendar presets without sending hidden full-list filters', async () => {
+    const fixture = await create();
+    fixture.componentRef.setInput('view', 'today');
+    await fixture.whenStable();
+    expect(get).toHaveBeenLastCalledWith('todos', { view: 'today', page: 0, size: 20 });
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Includi archiviati');
+    fixture.componentInstance.q = 'not sent';
+    fixture.componentInstance.status = 'done';
+    fixture.componentInstance.personFilter = '9007199254740993';
+    fixture.componentInstance.todoView = 'next7';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenLastCalledWith('todos', {
+      view: 'next7',
+      page: 0,
+      size: 20,
+      personId: '9007199254740993',
+    });
+    fixture.componentInstance.todoView = '';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenLastCalledWith(
+      'tasks',
+      expect.objectContaining({ q: 'not sent', status: 'done' }),
+    );
+  });
 });

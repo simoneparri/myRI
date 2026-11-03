@@ -116,6 +116,11 @@ Notifiche senza copie dei dati sensibili. Chiave UNIQUE di deduplicazione:
 task:id:due_at per scadenze; career:person_id:last_talk_id (o hired_on se assente)
 per assenza talk. Archiviare una notifica non rimuove la chiave e non la rigenera.
 Una nuova data di scadenza o un nuovo incontro definisce un nuovo ciclo.
+Conferma Step 4: il reminder task parte dall'inizio del giorno di scadenza
+nel fuso applicativo e include task arretrati. Notifiche storiche conservate
+anche se il task viene completato o si tiene un incontro; nessuna notifica
+nuova per lo stesso ciclo letto/archiviato. Incontri archiviati esclusi dal
+riferimento career talk.
 
 Viste nel fuso applicativo: oggi [inizio oggi, inizio domani), scaduti prima
 dell'istante corrente, prossimi 7 giorni [inizio domani, inizio oggi+8 giorni).

@@ -3,10 +3,12 @@
   <a routerLink="/people" class="brand">myRI</a>
   @if (auth.user()) {
     <nav aria-label="Navigazione principale">
+      <a mat-button routerLink="/dashboard" routerLinkActive="selected">Dashboard</a>
       <a mat-button routerLink="/people" routerLinkActive="selected">Persone</a>
       <a mat-button routerLink="/raise-requests" routerLinkActive="selected">Aumenti</a>
       <a mat-button routerLink="/career-talks" routerLinkActive="selected">Career talk</a>
       <a mat-button routerLink="/tasks" routerLinkActive="selected">Task</a>
+      <a mat-button routerLink="/notifications" routerLinkActive="selected">Notifiche</a>
     </nav>
     <span class="user">{{ auth.user()?.username }}</span>
     <button mat-button (click)="logout()" [disabled]="busy()">Esci</button>

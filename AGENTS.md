@@ -6,8 +6,8 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 ## Processo
 
 - Leggere `docs/plan.md`: implementare solo lo step esplicitamente autorizzato.
-- Step 0/1/2 completati. Step 3 autorizzato dall'utente; non anticipare
-  scheduler/dashboard/export Step 4 nell'incarico frontend.
+- Step 0/1/2/3 completati. Step 4 autorizzato dall'utente:
+  reminder, dashboard, todolist, export e backup. Non anticipare lo Step 5.
 - Chiarire le decisioni comportamentali importanti prima di implementarle.
 - Ogni step implementativo include test pertinenti, documentazione e commit logico.
 - Non dichiarare eseguiti comandi non eseguiti; segnalare blocchi e verifiche mancanti.
@@ -59,7 +59,8 @@ Testcontainers MySQL e richiede JDK 21 completo e Docker.
 Compose completo operativo dopo compilazione privata di .env; soltanto nginx
 pubblica 127.0.0.1:8080. Angular 21 LTS/Material 21 con Node 24, Vitest e Playwright.
 Browser test soltanto su DB fittizio dedicato, con credenziali E2E da ambiente.
-Backup resta per lo Step 4.
+Backup disponibile; retention come numero di file via ambiente del comando,
+non tramite .env.
 
 ```sh
 cd backend && ./mvnw verify

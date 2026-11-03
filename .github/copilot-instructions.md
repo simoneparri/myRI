@@ -9,8 +9,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 
 ## Processo e struttura
 
-- Eseguire solo lo step autorizzato: Step 0/1/2 completati, Step 3 autorizzato.
-  Non anticipare scheduler/dashboard/export Step 4.
+- Eseguire solo lo step autorizzato: Step 0/1/2/3 completati, Step 4 autorizzato
+  per reminder, dashboard, todolist, export e backup. Non anticipare lo Step 5.
 - Monorepo previsto `backend/`, `frontend/`, `docs/`, `scripts/`, `compose.yaml`.
 - Test mirati, documentazione e commit logico per ogni step implementativo.
   Un solo integratore committa; subagent senza commit/push.
@@ -55,7 +55,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 `cd backend && ./mvnw verify` verifica schema, service e API con JDK 21 completo
 e Docker. Compose completo dopo configurazione privata di .env; solo nginx su
 127.0.0.1:8080. Frontend Angular 21 LTS/Material 21, Node 24, Vitest/Playwright.
-E2E solo su DB fittizio dedicato, credenziali da ambiente. Backup resta Step 4.
+E2E solo su DB fittizio dedicato, credenziali da ambiente. Backup disponibile;
+retention come numero di file via ambiente del comando, non tramite .env.
 
 ```sh
 cd backend && ./mvnw verify

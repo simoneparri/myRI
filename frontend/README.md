@@ -33,6 +33,15 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   Nessun token o dato personale in localStorage/sessionStorage, log o telemetria.
 - Persone e scheda con timeline, contatti, RAL append-only, richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
+- Dashboard con conteggi e persone senza career talk recente; notifiche storiche
+  leggibili/archiviabili e dettaglio del task collegato.
+- Viste Task oggi/scaduti/prossimi 7 giorni/tutti aperti, anche per persona.
+  I preset non applicano i filtri della gestione completa nascosti.
+- Andamento RAL cronologico nella scheda persona, importi precisi e valute
+  invariate, badge futuro secondo APP_TIMEZONE.
+- Download JSON/CSV esplicito dalla scheda, incluse voci archiviate; massimo
+  1000 record complessivi, con errore visibile senza troncamenti. Il file
+  scaricato contiene dati personali e va protetto.
 - Ricerca, filtri, archiviati, paginazione server-side, dettaglio e form validati.
   Archiviazione e comandi di chiusura richiedono conferma.
 - Errori, caricamento e assenza risultati espliciti. Un conflitto mantiene
@@ -62,6 +71,10 @@ Gli e2e creano e modificano persone, RAL, richieste, career talk e task.
 Non eseguirli contro dati personali o un'installazione in uso.
 Con lo stack dedicato gia healthy:
 
+Per il flusso scheduler Step 4 configurare `REMINDERS_INTERVAL_MS=1000` nel solo
+stack fittizio (il default operativo e 60000). I test verificano anche i download
+e cancellano i file scaricati dopo il controllo, senza registrarne il contenuto.
+
 ```sh
 npx playwright install --with-deps chromium
 E2E_BASE_URL=http://127.0.0.1:8080 \
@@ -74,9 +87,8 @@ questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
 
-## Limiti dello Step 3
+## Limiti
 
-Nessuna dashboard, vista oggi/scaduti/7 giorni, generazione reminder, export o
-backup: sono Step 4. La timeline e paginata e filtrabile per tipo; per leggere
+Nessun hardening/review finale dello Step 5 anticipato. La timeline e paginata e filtrabile per tipo; per leggere
 il dettaglio completo o modificarlo usare la scheda nella relativa tab.
 La UI non offre cancellazione fisica o modifica di RAL storiche.

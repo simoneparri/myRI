@@ -38,20 +38,34 @@ import { italianPaginator } from '../shared/paginator';
         </button>
       </div>
       <form class="filters" (ngSubmit)="search()">
-        <mat-form-field appearance="outline"
-          ><mat-label>Cerca</mat-label>
-          <input matInput name="q" [(ngModel)]="q" maxlength="200" />
-        </mat-form-field>
-        @if (definition().statuses) {
+        @if (resource() === 'tasks') {
           <mat-form-field appearance="outline"
-            ><mat-label>Stato</mat-label>
-            <mat-select name="status" [(ngModel)]="status">
-              <mat-option value="">Tutti</mat-option>
-              @for (value of definition().statuses; track value) {
-                <mat-option [value]="value">{{ value | display }}</mat-option>
-              }
+            ><mat-label>Vista task</mat-label>
+            <mat-select name="view" [(ngModel)]="todoView" (selectionChange)="search()">
+              <mat-option value="">Gestione completa</mat-option>
+              <mat-option value="all">Tutti aperti</mat-option>
+              <mat-option value="today">Oggi</mat-option>
+              <mat-option value="overdue">Scaduti</mat-option>
+              <mat-option value="next7">Prossimi 7 giorni</mat-option>
             </mat-select>
           </mat-form-field>
+        }
+        @if (!todoView) {
+          <mat-form-field appearance="outline"
+            ><mat-label>Cerca</mat-label>
+            <input matInput name="q" [(ngModel)]="q" maxlength="200" />
+          </mat-form-field>
+          @if (definition().statuses) {
+            <mat-form-field appearance="outline"
+              ><mat-label>Stato</mat-label>
+              <mat-select name="status" [(ngModel)]="status">
+                <mat-option value="">Tutti</mat-option>
+                @for (value of definition().statuses; track value) {
+                  <mat-option [value]="value">{{ value | display }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
         }
         @if (!personId() && resource() !== 'people') {
           <mat-form-field appearance="outline"
@@ -64,7 +78,7 @@ import { italianPaginator } from '../shared/paginator';
             </mat-select>
           </mat-form-field>
         }
-        @if (resource() === 'tasks') {
+        @if (resource() === 'tasks' && !todoView) {
           <mat-form-field appearance="outline"
             ><mat-label>Priorita</mat-label>
             <mat-select name="priority" [(ngModel)]="priority"
@@ -97,7 +111,11 @@ import { italianPaginator } from '../shared/paginator';
             />
           </mat-form-field>
         }
-        @if (resource() === 'tasks' || resource() === 'career-talks' || resource() === 'salaries') {
+        @if (
+          (resource() === 'tasks' && !todoView) ||
+          resource() === 'career-talks' ||
+          resource() === 'salaries'
+        ) {
           <mat-form-field appearance="outline"
             ><mat-label>Dal {{ resource() === 'salaries' ? '' : '(UTC)' }}</mat-label>
             <input
@@ -117,7 +135,7 @@ import { italianPaginator } from '../shared/paginator';
             />
           </mat-form-field>
         }
-        @if (resource() !== 'salaries') {
+        @if (resource() !== 'salaries' && !todoView) {
           <mat-checkbox name="archived" [(ngModel)]="includeArchived"
             >Includi archiviati</mat-checkbox
           >
@@ -126,6 +144,12 @@ import { italianPaginator } from '../shared/paginator';
         <button mat-button type="button" (click)="reload()" [disabled]="loading()">Ricarica</button>
       </form>
       <p class="muted">Orari visualizzati in {{ timezone }}. Inserimento e filtri orari in UTC.</p>
+      @if (todoView) {
+        <p>
+          Solo task aperti non archiviati. Oggi e scaduti possono sovrapporsi; i prossimi 7 giorni
+          iniziano domani. Task senza scadenza solo in Tutti aperti.
+        </p>
+      }
       @if (error()) {
         <p role="alert" class="error">{{ error() }}</p>
       }
@@ -267,6 +291,7 @@ import { italianPaginator } from '../shared/paginator';
 export class ResourcePage {
   readonly resource = input.required<Resource>();
   readonly personId = input<string>();
+  readonly view = input<string>();
   private readonly api = inject(Api);
   private readonly dialogs = inject(MatDialog);
   readonly timezone = inject(TIMEZONE);
@@ -287,6 +312,8 @@ export class ResourcePage {
   readonly newLabel = newLabel;
   readonly name = personLabel;
   q = '';
+  todoView = '';
+  private appliedView = '';
   status = '';
   personFilter = '';
   priority = '';
@@ -304,7 +331,14 @@ export class ResourcePage {
     effect(() => {
       const resource = this.resource();
       this.personId();
+      const view = this.view();
       untracked(() => {
+        this.todoView = this.appliedView =
+          resource === 'tasks' &&
+          view !== undefined &&
+          ['today', 'overdue', 'next7', 'all'].includes(view)
+            ? view
+            : '';
         this.definition.set(definitions[resource]);
         this.pageIndex = 0;
         this.q =
@@ -333,6 +367,12 @@ export class ResourcePage {
   }
   async search(): Promise<void> {
     this.pageIndex = 0;
+    this.appliedView = this.todoView;
+    if (this.appliedView) {
+      this.applied = this.personFilter ? { personId: this.personFilter } : {};
+      await this.reload();
+      return;
+    }
     this.applied = { includeArchived: this.includeArchived };
     if (this.q.trim()) this.applied['q'] = this.q.trim();
     if (this.status) this.applied['status'] = this.status;
@@ -360,11 +400,12 @@ export class ResourcePage {
     this.error.set('');
     try {
       const query = { ...this.applied, page: this.pageIndex, size: this.size };
+      if (this.appliedView) Object.assign(query, { view: this.appliedView });
       if (this.personId() && !['contacts', 'salaries'].includes(this.resource())) {
         Object.assign(query, { personId: this.personId() });
       }
       const [page, people] = await Promise.all([
-        this.api.get<Page<Row>>(this.path(), query),
+        this.api.get<Page<Row>>(this.appliedView ? 'todos' : this.path(), query),
         this.api.choices('people'),
       ]);
       if (generation !== this.generation) return;

@@ -34,6 +34,7 @@ public abstract class IntegrationTest {
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry properties) {
+        properties.add("myri.reminders.enabled", () -> "false");
         properties.add("spring.datasource.url", MYSQL::getJdbcUrl);
         properties.add("spring.datasource.username", () -> "runtime_test");
         properties.add("spring.datasource.password", () -> "ephemeral-runtime-password");

@@ -28,6 +28,29 @@ export class Api {
   post<T>(path: string, body: Payload = {}): Promise<T> {
     return firstValueFrom(this.http.post<T>('/api/v1/' + path, body));
   }
+  async download(path: string): Promise<Blob> {
+    try {
+      return await firstValueFrom(this.http.get('/api/v1/' + path, { responseType: 'blob' }));
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.error instanceof Blob) {
+        const text = await error.error.text();
+        let body: unknown;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          throw error;
+        }
+        throw new HttpErrorResponse({
+          error: body,
+          status: error.status,
+          statusText: error.statusText,
+          headers: error.headers,
+          url: error.url ?? undefined,
+        });
+      }
+      throw error;
+    }
+  }
   put<T>(path: string, body: Payload): Promise<T> {
     return firstValueFrom(this.http.put<T>('/api/v1/' + path, body));
   }

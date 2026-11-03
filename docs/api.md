@@ -1,4 +1,4 @@
-# Backend REST - Step 2
+# Backend REST - Step 2 e Step 4
 
 Implementato sotto `/api/v1` con sessione Spring Security. Backend e DB non
 pubblicano porte host: la UI/nginx dello Step 3 inoltra le API same-origin.
@@ -75,6 +75,11 @@ Keycloak/OIDC rimane un'opzione futura, non un provider fittizio gia attivo.
 | notifications | GET | kind, unreadOnly, includeArchived, page/size |
 | notifications/{id}/read, archive | POST | version |
 | audit | GET | personId, salaryId, requestId, from/to, page/size |
+| todos | GET | view=today/overdue/next7/all, personId, page/size |
+| dashboard | GET | riepilogo al medesimo istante asOf |
+| dashboard/career-due | GET | page/size, persone attive oltre soglia |
+| people/{id}/salary-trend | GET | page/size, decorrenza ascendente, poi ID |
+| people/{id}/export | GET | format=json/csv (default json), attachment no-store |
 
 DTO completi, vincoli e codici risposta in OpenAPI. Input di creazione non accetta
 ID, timestamp tecnici, archivedAt o stato esito imposto dal client.
@@ -148,5 +153,61 @@ Gli eventi date-only espongono eventDate; sortAt e normalizzato alla mezzanotte
 UTC **solo per ordinamento**, non rappresenta un'ora reale dell'evento.
 Le API di dettaglio conservano la data civile. Voci future non sono escluse.
 
-Le API notifiche permettono lettura e archiviazione; la generazione scheduler
-e i suggerimenti automatici sono riservati allo Step 4, come dashboard ed export.
+## Reminder e viste calendario - Step 4
+
+Scheduler fixed-delay, prima esecuzione dopo lo stesso intervallo. Configurazione
+validata: REMINDERS_ENABLED=true, CAREER_TALK_MONTHS=3 (1-120),
+REMINDERS_INTERVAL_MS=60000 (1000-86400000). Nessun scheduler nel reset password.
+Un lock dell'account unico serializza le esecuzioni concorrenti; chiavi UNIQUE
+e INSERT condizionali impediscono duplicazioni, anche dopo lettura/archivio.
+Non viene copiato titolo, nota o importo nella notifica.
+
+Task: aperto e non archiviato, scadenza prima dell'inizio di domani nel fuso
+applicativo; include arretrati e scadenze piu tardi oggi. Chiave task+scadenza.
+Career talk: persona attiva non archiviata, oggi strettamente dopo la data locale
+dell'ultimo incontro svolto + N mesi, oppure assunzione + N mesi. Incontri futuri
+o archiviati non azzerano la soglia. Chiave persona+ultimo incontro o assunzione.
+Cambiare scadenza o registrare un nuovo incontro puo iniziare un nuovo ciclo;
+non annulla le notifiche storiche precedenti.
+
+`todos`: solo todo/in_progress non archiviati, ordine dueAt asc poi ID.
+Finestre in APP_TIMEZONE:
+today [inizio oggi, inizio domani), overdue prima dell'istante corrente,
+next7 [inizio domani, inizio oggi+8 giorni), all anche senza scadenza.
+Oggi e scaduti possono sovrapporsi. `personId` opzionale.
+I filtri della lista generica tasks non fanno parte del contratto todos.
+
+`dashboard` restituisce asOf, timezone, careerMonths, todayTasks, overdueTasks,
+nextSevenTasks, peopleWithoutRecentTalk, openRaiseRequests e unreadNotifications.
+Aumenti aperti: draft/submitted/postponed non archiviati. Notifiche non lette:
+readAt e archivedAt null. I conteggi sono numeri, non importi.
+`dashboard/career-due` espone personId, firstName, lastName, referenceOn,
+dueAfter, lastTalkId; ordine ID asc, scansione keyset a memoria limitata.
+`salary-trend` include tutto lo storico della persona, incluse decorrenze future;
+nessuna conversione di valuta o importo in floating point.
+
+## Export persona - Step 4
+
+Accesso OWNER obbligatorio come per le altre API. Snapshot transazionale
+REPEATABLE_READ comprendente persona, contatti, storico RAL, aumenti,
+career talk e task collegati, **anche archiviati**. Non include notifiche,
+audit finanziario, utenti o password; questi appartengono al backup completo.
+Nessuna importazione e prevista dal formato export.
+
+JSON: `{schemaVersion:1,exportedAt,person,contacts,salaries,raiseRequests,careerTalks,tasks}`.
+ID/versioni/denaro come stringhe, date civili e istanti come nelle API.
+Record ordinati per ID all'interno di ogni gruppo. `sourceRaiseRequestId` e
+l'eventuale salaryId nella richiesta preservano i collegamenti.
+CSV UTF-8 unico con intestazione `recordType,schemaVersion,exportedAt` e unione
+dei nomi campo dei DTO presenti. recordType e person/contact/salary/raise_request/
+career_talk/task; campi assenti o null vuoti. Separatore virgola, record CRLF,
+doppi apici raddoppiati, celle tra doppi apici (tranne metadati fissi).
+Campi testuali potenzialmente interpretati come formule (`=+-@`, anche dopo
+whitespace iniziale, oppure tab/CR/LF iniziali) ricevono un apostrofo iniziale.
+Questa trasformazione riguarda solo CSV; JSON conserva i testi originali.
+
+Content-Disposition attachment con filename generico `person-export.json/csv`;
+Cache-Control no-store. Limite concordato **1000 record totali**, persona inclusa.
+Oltre soglia risposta ProblemDetail 422 senza troncamento o download parziale;
+usare backup DB per l'archivio completo. Formato diverso da json/csv: 400.
+Non registrare o versionare i file scaricati, che contengono dati personali.

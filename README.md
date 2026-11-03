@@ -1,10 +1,10 @@
 # myRI
 
 People management self-hosted per un team lead, monoutente con autenticazione
-obbligatoria. **Stato: Step 3, frontend Angular LTS/Material e backend REST
-con sicurezza, MySQL e stack Docker completo.**
+obbligatoria. **Stato: Step 4, reminder in-app, dashboard, todolist,
+andamento RAL, export persona e backup, oltre allo stack Angular/REST/MySQL.**
 
-Funzioni previste: anagrafica/contatti, RAL con storico immutabile, richieste
+Funzioni disponibili: anagrafica/contatti, RAL con storico immutabile, richieste
 di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
 
 ## Workspace disponibile
@@ -31,13 +31,14 @@ docs/
 backend/                 Java 21, Boot 3, Maven Wrapper, API e test
 frontend/                Angular 21 LTS, Material, standalone e browser test
 scripts/mysql/           inizializzazione utenti DB a privilegi separati
+scripts/backup.sh        dump consistente, privato e con retention
 compose.yaml             db, backend e frontend nginx
 .env.example             configurazione senza segreti
 ```
 
 Disponibili workspace, backend Maven con API, migrazioni e test, Dockerfile,
 compose completo e frontend per login, persone, contatti, RAL, aumenti,
-career talk, task e timeline.
+career talk, task e timeline; dashboard, notifiche, viste calendario ed export.
 
 Il [modello dati con ER Mermaid](docs/adr/0001-domain-and-schema.md) descrive nove
 tabelle, PK BIGINT, RAL/audit append-only, archiviazione senza cancellazioni fisiche
@@ -85,6 +86,9 @@ Non usare down -v: cancellerebbe i dati.
 | COOKIE_SECURE | false per HTTP locale; true quando si abilita HTTPS |
 | FRONTEND_PORT | Porta nginx su 127.0.0.1 (default 8080) |
 | SPRING_PROFILES_ACTIVE | default; dev inserisce fixture solo su DB privo di persone |
+| REMINDERS_ENABLED | true predefinito; false disabilita la generazione periodica |
+| CAREER_TALK_MONTHS | Soglia career talk, default 3, intervallo 1-120 mesi |
+| REMINDERS_INTERVAL_MS | Ritardo fra esecuzioni e prima esecuzione, default 60000, intervallo 1000-86400000 |
 
 Password applicativa: almeno 12 caratteri, massimo 72 byte UTF-8 per evitare
 troncamenti BCrypt. Credenziali DB distinte, nessuna password predefinita.
@@ -97,7 +101,7 @@ log_bin_trust_function_creators=1 consente i trigger senza assegnare SUPER a Fly
 Gli script MySQL iniziali girano soltanto su volume vuoto: cambiare password
 nel .env non ruota automaticamente quelle di un DB esistente. Su dati esistenti
 occorre una procedura amministrativa esplicita, senza eliminare il volume.
-Flyway V1/V2 non sono state modificate; V3 aggiunge la chiave idempotenza RAL.
+Flyway V1/V2/V3 non sono state modificate; V4 aggiunge indici per le viste Step 4.
 
 Bootstrap applicativo non cambia la password a un account gia esistente.
 Per reset amministrativo locale, senza scrivere la password nella cronologia:
@@ -114,12 +118,40 @@ le vecchie sessioni sono invalidate alla richiesta successiva. Le sessioni non
 persistono tra riavvii del backend. Non inviare password come argomenti CLI.
 L'eventuale .env rimane privato e non deve contenere dati da copiare nei prompt.
 
-## Backup previsto allo Step 4
+## Reminder, dashboard ed export
 
-Backup previsto: `./scripts/backup.sh`, basato su
-`mysqldump --single-transaction`, retention configurabile e permessi privati.
-Script e istruzioni di restore verranno realizzati e verificati su dati fittizi
-allo Step 4/5. Non usare ancora il comando di backup: lo script non esiste.
+Dashboard e Notifiche sono nel menu. I reminder includono task aperti dall'inizio
+del giorno di scadenza, anche arretrati, e persone attive senza career talk svolto
+da oltre N mesi (assunzione come riferimento iniziale). Lo scheduler lavora anche
+senza browser aperto; aggiornare la vista per vedere nuove notifiche.
+Lettura e archiviazione non rigenerano lo stesso reminder; le notifiche sono
+storiche, non una lista di scadenze ancora aperte.
+
+La vista Task offre gestione completa oppure solo aperti: oggi, scaduti,
+prossimi 7 giorni e tutti/per persona. Il calendario usa APP_TIMEZONE; oggi puo
+sovrapporsi a scaduti, i prossimi 7 giorni iniziano domani.
+La scheda persona contiene l'andamento RAL cronologico, incluse decorrenze future,
+senza conversione fra valute, e i pulsanti export JSON/CSV.
+Gli export comprendono sei entita di business, incluse voci archiviate, non
+credenziali, audit o notifiche. Limite concordato: **1000 record totali inclusa
+la persona**, oltre il quale si riceve errore 422, senza file parziale.
+Il CSV unico usa tipo record e colonne comuni; le formule sono neutralizzate.
+Contratto dettagliato nella [guida API](docs/api.md).
+
+## Backup e ripristino
+
+```sh
+BACKUP_RETENTION=14 ./scripts/backup.sh
+bash scripts/test-backup.sh
+```
+
+Il primo comando usa `mysqldump --single-transaction` e conserva gli ultimi
+14 **file**, non giorni. Directory predefinita `backups/` privata, file gzip
+modo 600; retention solo dopo successo e verifica gzip. Il secondo esegue un
+harness fittizio, non accede al database. Il backup e manuale: pianificarlo
+esternamente se necessario. Non e cifrato: proteggere disco e copie esterne.
+Vedere [backup e restore su destinazione nuova](docs/backup.md) per configurazione,
+limiti di consistenza e procedura amministrativa verificata.
 Non versionare `.env`, dump, export personali o credenziali.
 
 ## Build e verifiche backend
@@ -134,7 +166,7 @@ cd backend
 ```
 
 I test avviano MySQL effimero `mysql:8`. Lo schema viene creato da V1 e aggiornato
-a V2/V3, verificando conservazione e protezione dello storico.
+a V2/V3/V4, verificando conservazione e protezione dello storico.
 Usa le stesse migrazioni di produzione, valida Flyway e verifica il no-op
 di una successiva migrate. Controlla tipi,
 charset/collation, FK/indici, immutabilita RAL/audit, soft archive, account unico,
@@ -162,8 +194,7 @@ Angular 21 e l'ultima LTS verificata nella documentazione ufficiale; la 22 e
 Active. Node 24/npm e dipendenze sono dichiarati nel frontend e nel lockfile.
 Gli orari sono mostrati in APP_TIMEZONE; input e filtri data/ora sono UTC espliciti.
 
-Step 4: scheduler/notifiche,
-dashboard, viste todolist e export/backup. Step 5: hardening, review e consegna.
+Resta lo Step 5: hardening, review e consegna, da autorizzare separatamente.
 La ricorrenza transazionale al completamento task e gia presente nello Step 2.
 
 Le regole cross-row (cicli manager, percentuale vs RAL base, transizioni di stato)
