@@ -9,7 +9,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../core/api';
-import { DisplayPipe, TIMEZONE, personLabel } from '../shared/format';
+import { DisplayPipe, personLabel } from '../shared/format';
 import { ResourcePage } from './resource-page';
 import { italianPaginator } from '../shared/paginator';
 import { SalaryTrend } from './salary-trend';
@@ -72,23 +72,6 @@ import { canEdit, definitions } from '../shared/schema';
           </div>
         }
       </dl>
-      <p>Orari visualizzati in {{ timezone }}.</p>
-      <p>
-        Export completo della persona, incluse voci archiviate (massimo 1000 record). Il file
-        contiene dati personali: conservalo in modo protetto.
-      </p>
-      <button mat-stroked-button (click)="download('json')" [disabled]="exporting()">
-        <svg appButtonIcon="download"></svg>Esporta JSON
-      </button>
-      <button mat-stroked-button (click)="download('csv')" [disabled]="exporting()">
-        <svg appButtonIcon="download"></svg>Esporta CSV
-      </button>
-      @if (exportError()) {
-        <p role="alert" class="error">{{ exportError() }}</p>
-      }
-      @if (exporting()) {
-        <p role="status">Preparazione export...</p>
-      }
       <mat-tab-group (selectedIndexChange)="$event === 0 && loadTimeline()">
         <mat-tab label="Timeline"
           ><ng-template matTabContent>
@@ -127,9 +110,7 @@ import { canEdit, definitions } from '../shared/schema';
                     }}</span
                   >
                   @if (event['amount']) {
-                    <span>
-                      · {{ event['amount'] | display: 'decimal' }} {{ event['currency'] }}</span
-                    >
+                    <span> · {{ event['amount'] | display: 'money' }} {{ event['currency'] }}</span>
                   }
                   @if (event['status']) {
                     <span> · {{ event['status'] | display }}</span>
@@ -159,11 +140,31 @@ import { canEdit, definitions } from '../shared/schema';
           ><ng-template matTabContent> <app-salary-trend [personId]="id()" /> </ng-template
         ></mat-tab>
       </mat-tab-group>
+      <div class="export-actions">
+        <button mat-stroked-button (click)="download('json')" [disabled]="exporting()">
+          <svg appButtonIcon="download"></svg>Esporta JSON
+        </button>
+        <button mat-stroked-button (click)="download('csv')" [disabled]="exporting()">
+          <svg appButtonIcon="download"></svg>Esporta CSV
+        </button>
+      </div>
+      @if (exportError()) {
+        <p role="alert" class="error">{{ exportError() }}</p>
+      }
+      @if (exporting()) {
+        <p role="status">Preparazione export...</p>
+      }
     } @else if (!error()) {
       <p role="status">Caricamento persona...</p>
     }
   `,
   styles: `
+    .export-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
     .person-details {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
@@ -190,7 +191,6 @@ export class PersonPage {
   readonly editable = canEdit;
   readonly editing = signal(false);
   readonly message = signal('');
-  readonly timezone = inject(TIMEZONE);
   readonly person = signal<Row | null>(null);
   readonly name = personLabel;
   readonly error = signal('');

@@ -13,9 +13,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Api, Payload, Row, errorMessage } from '../core/api';
-import { DisplayPipe, TIMEZONE, calendarDate, decimalDisplay, personLabel } from './format';
+import { DisplayPipe, TIMEZONE, calendarDate, moneyDisplay, personLabel } from './format';
 import { Field, Option, Resource, definitions, newLabel } from './schema';
 import { ButtonIcon } from './button-icon';
+import { DateInput, dateInputDisplay, parseDateInput } from './date-input';
 
 export interface EditorData {
   resource: Resource;
@@ -63,6 +64,13 @@ export function validatorsFor(field: Field): ValidatorFn[] {
   }
   if (field.key === 'currency') rules.push(Validators.pattern(/^[A-Z]{3}$/));
   if (field.type === 'date') rules.push(Validators.pattern(/^[1-9]\d{3}-\d{2}-\d{2}$/));
+  if (field.type === 'date' || field.type === 'instant')
+    rules.push((control) =>
+      control.value &&
+      !parseDateInput(dateInputDisplay(String(control.value)), field.type === 'instant')
+        ? { dateInput: true }
+        : null,
+    );
   return rules;
 }
 
@@ -93,6 +101,7 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
     MatSelectModule,
     DisplayPipe,
     ButtonIcon,
+    DateInput,
   ],
   template: `
     <h2 mat-dialog-title>{{ title }}</h2>
@@ -111,54 +120,55 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
       }
       <form id="entity-form" [formGroup]="form" (ngSubmit)="save()" class="editor-form">
         @for (field of fields; track field.key) {
-          <mat-form-field appearance="outline">
-            <mat-label>{{ field.label }}</mat-label>
-            @if (field.reference || field.type === 'select') {
-              <mat-select [formControlName]="field.key" [required]="!!field.required">
-                @if (!field.required) {
-                  <mat-option value="">Nessuno</mat-option>
-                }
-                @for (option of options()[field.key] || field.options || []; track option.value) {
-                  <mat-option [value]="option.value">{{ option.label | display }}</mat-option>
-                }
-              </mat-select>
-            } @else if (field.type === 'textarea') {
-              <textarea
-                matInput
-                [formControlName]="field.key"
-                rows="3"
-                [required]="!!field.required"
-                [attr.maxlength]="field.max ?? null"
-              ></textarea>
-            } @else {
-              <input
-                matInput
-                [formControlName]="field.key"
-                [required]="!!field.required"
-                step="any"
-                [type]="
-                  field.type === 'instant'
-                    ? 'datetime-local'
-                    : field.type === 'date'
-                      ? 'date'
-                      : field.type === 'email'
-                        ? 'email'
-                        : 'text'
-                "
-                [attr.maxlength]="field.max ?? null"
-                [attr.inputmode]="
-                  field.type === 'decimal' || field.type === 'integer' ? 'decimal' : null
-                "
-              />
-            }
-            @if (form.controls[field.key].invalid) {
-              <mat-error
-                >Valore richiesto o formato non valido{{
-                  field.type === 'decimal' ? ' (usa il punto decimale)' : ''
-                }}.</mat-error
-              >
-            }
-          </mat-form-field>
+          @if (field.type === 'date' || field.type === 'instant') {
+            <app-date-input
+              [formControlName]="field.key"
+              [label]="field.label"
+              [required]="!!field.required"
+              [instant]="field.type === 'instant'"
+            />
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ field.label }}</mat-label>
+              @if (field.reference || field.type === 'select') {
+                <mat-select [formControlName]="field.key" [required]="!!field.required">
+                  @if (!field.required) {
+                    <mat-option value="">Nessuno</mat-option>
+                  }
+                  @for (option of options()[field.key] || field.options || []; track option.value) {
+                    <mat-option [value]="option.value">{{ option.label | display }}</mat-option>
+                  }
+                </mat-select>
+              } @else if (field.type === 'textarea') {
+                <textarea
+                  matInput
+                  [formControlName]="field.key"
+                  rows="3"
+                  [required]="!!field.required"
+                  [attr.maxlength]="field.max ?? null"
+                ></textarea>
+              } @else {
+                <input
+                  matInput
+                  [formControlName]="field.key"
+                  [required]="!!field.required"
+                  step="any"
+                  [type]="field.type === 'email' ? 'email' : 'text'"
+                  [attr.maxlength]="field.max ?? null"
+                  [attr.inputmode]="
+                    field.type === 'decimal' || field.type === 'integer' ? 'decimal' : null
+                  "
+                />
+              }
+              @if (form.controls[field.key].invalid) {
+                <mat-error
+                  >Valore richiesto o formato non valido{{
+                    field.type === 'decimal' ? ' (usa il punto decimale)' : ''
+                  }}.</mat-error
+                >
+              }
+            </mat-form-field>
+          }
         }
       </form>
     </mat-dialog-content>
@@ -184,6 +194,7 @@ export class Editor {
   private readonly api = inject(Api);
   private readonly destroy = inject(DestroyRef);
   private readonly timezone = inject(TIMEZONE);
+  private readonly display = new DisplayPipe();
   readonly fields: Field[];
   readonly title: string;
   readonly form = new FormRecord<FormControl<string>>({});
@@ -305,8 +316,8 @@ export class Editor {
                   field.reference === 'people'
                     ? personLabel(row)
                     : field.reference === 'salaries'
-                      ? `${decimalDisplay(String(row['amount']))} ${row['currency']} - ${row['effectiveOn']} (#${row.id})`
-                      : `${row['title'] ?? row['heldAt'] ?? row['requestedOn']} (#${row.id}, persona #${row['personId']})`,
+                      ? `${moneyDisplay(String(row['amount']))} ${row['currency']} - ${this.display.transform(row['effectiveOn'], 'date')} (#${row.id})`
+                      : `${row['title'] ?? this.display.transform(row['heldAt'] ?? row['requestedOn'], row['heldAt'] ? 'instant' : 'date')} (#${row.id}, persona #${row['personId']})`,
               }));
           }),
       );

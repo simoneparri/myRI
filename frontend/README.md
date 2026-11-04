@@ -47,7 +47,8 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   invariate, badge futuro secondo APP_TIMEZONE.
 - Download JSON/CSV esplicito dalla scheda, incluse voci archiviate; massimo
   1000 record complessivi, con errore visibile senza troncamenti. Il file
-  scaricato contiene dati personali e va protetto.
+  scaricato contiene dati personali e va protetto. I pulsanti sono sotto le tab
+  e la paginazione, a fine contenuto della scheda.
 - Ricerca, filtri, archiviati, paginazione server-side, dettaglio e form validati.
   Archiviazione e comandi di chiusura richiedono conferma.
 - Errori, caricamento e assenza risultati espliciti. Un conflitto mantiene
@@ -59,6 +60,13 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
 - Le date civili non cambiano fuso. Gli orari sono visualizzati nel fuso
   configurato; i campi data/ora e filtri sono esplicitamente **UTC**.
   Non viene usato implicitamente il fuso del browser.
+  Date visualizzate e digitate in `gg/mm/aaaa`, anche per gli istanti con anno
+  a quattro cifre; per gli input data/ora aggiungere `HH:mm` (UTC).
+  Editor e filtri offrono un calendario oltre alla digitazione manuale e
+  rifiutano date impossibili. I valori API restano ISO e le date civili non
+  vengono convertite in UTC tramite il fuso locale.
+  Gli importi sono visualizzati come `45.000,00`, sempre con due decimali e
+  senza conversioni floating point; percentuali e ore mantengono la precisione.
 - I selettori riferimenti caricano tutte le pagine, senza troncare le persone
   alla prima pagina. I dati archiviati restano consultabili.
 - La scadenza della sessione rimanda al login e chiude i dialog con dati
@@ -93,7 +101,8 @@ questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
 `e2e/people-sheet.spec.ts` usa soltanto API simulate con dati fittizi e verifica
-lista, scheda, modifica e icone su desktop/mobile: si puo eseguire senza database
+lista, scheda, modifica, icone e calendario su desktop/mobile, oltre ai filtri
+data/ora e ai payload UTC: si puo eseguire senza database
 o credenziali con `E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts`
 contro il dev server.
 

@@ -12,10 +12,11 @@ import { Api, Page, Row, errorMessage } from '../core/api';
 import { Confirm } from '../shared/confirm';
 import { Detail } from '../shared/detail';
 import { Editor, EditorData } from '../shared/editor';
-import { DisplayPipe, TIMEZONE, personLabel } from '../shared/format';
+import { DisplayPipe, personLabel } from '../shared/format';
 import { Resource, canEdit, definitions, newLabel } from '../shared/schema';
 import { italianPaginator } from '../shared/paginator';
 import { ButtonIcon } from '../shared/button-icon';
+import { DateInput, dateInputDisplay, parseDateInput } from '../shared/date-input';
 
 @Component({
   selector: 'app-resource-page',
@@ -30,6 +31,7 @@ import { ButtonIcon } from '../shared/button-icon';
     MatSelectModule,
     DisplayPipe,
     ButtonIcon,
+    DateInput,
   ],
   template: `
     <section>
@@ -119,24 +121,18 @@ import { ButtonIcon } from '../shared/button-icon';
           resource() === 'career-talks' ||
           resource() === 'salaries'
         ) {
-          <mat-form-field appearance="outline"
-            ><mat-label>Dal {{ resource() === 'salaries' ? '' : '(UTC)' }}</mat-label>
-            <input
-              matInput
-              name="from"
-              [(ngModel)]="from"
-              [type]="resource() === 'salaries' ? 'date' : 'datetime-local'"
-            />
-          </mat-form-field>
-          <mat-form-field appearance="outline"
-            ><mat-label>Al (escluso) {{ resource() === 'salaries' ? '' : '(UTC)' }}</mat-label>
-            <input
-              matInput
-              name="to"
-              [(ngModel)]="to"
-              [type]="resource() === 'salaries' ? 'date' : 'datetime-local'"
-            />
-          </mat-form-field>
+          <app-date-input
+            name="from"
+            [(ngModel)]="from"
+            [label]="resource() === 'salaries' ? 'Dal' : 'Dal (UTC)'"
+            [instant]="resource() !== 'salaries'"
+          />
+          <app-date-input
+            name="to"
+            [(ngModel)]="to"
+            [label]="resource() === 'salaries' ? 'Al (escluso)' : 'Al (escluso) (UTC)'"
+            [instant]="resource() !== 'salaries'"
+          />
         }
         @if (resource() !== 'salaries' && !todoView) {
           <mat-checkbox name="archived" [(ngModel)]="includeArchived"
@@ -150,7 +146,6 @@ import { ButtonIcon } from '../shared/button-icon';
           <svg appButtonIcon="refresh"></svg>Ricarica
         </button>
       </form>
-      <p class="muted">Orari visualizzati in {{ timezone }}. Inserimento e filtri orari in UTC.</p>
       @if (todoView) {
         <p>
           Solo task aperti non archiviati. Oggi e scaduti possono sovrapporsi; i prossimi 7 giorni
@@ -306,7 +301,6 @@ export class ResourcePage {
   readonly view = input<string>();
   private readonly api = inject(Api);
   private readonly dialogs = inject(MatDialog);
-  readonly timezone = inject(TIMEZONE);
   readonly definition = signal(definitions.people);
   readonly page = signal<Page<Row>>({
     items: [],
@@ -394,6 +388,12 @@ export class ResourcePage {
       this.applied[this.resource() === 'contacts' ? 'type' : 'currency'] = this.category.trim();
     if (this.personFilter) this.applied['personId'] = this.personFilter;
     try {
+      for (const value of [this.from, this.to]) {
+        if (value) {
+          if (!parseDateInput(dateInputDisplay(value), this.resource() !== 'salaries'))
+            throw new Error('Invalid date filter');
+        }
+      }
       if (this.from)
         this.applied['from'] =
           this.resource() === 'salaries' ? this.from : new Date(this.from + 'Z').toISOString();

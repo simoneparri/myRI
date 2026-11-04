@@ -49,6 +49,20 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('rejects invalid date filters instead of sending a normalized or malformed date', async () => {
+    const fixture = await create();
+    get.mockClear();
+    fixture.componentInstance.from = '31/02/2026 10:00';
+    await fixture.componentInstance.search();
+    expect(get).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toBe('Intervallo date non valido.');
+    fixture.componentInstance.from = '2026-11-04T10:30';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenCalledWith(
+      'tasks',
+      expect.objectContaining({ from: '2026-11-04T10:30:00.000Z' }),
+    );
+  });
   it('keeps only the sheet and archive actions in the people list with decorative icons', async () => {
     const fixture = await create();
     fixture.componentRef.setInput('resource', 'people');

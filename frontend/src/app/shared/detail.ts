@@ -14,7 +14,15 @@ import { ButtonIcon } from './button-icon';
       <dl>
         @for (field of data.definition.fields; track field.key) {
           <dt>{{ field.label }}</dt>
-          <dd>{{ data.row[field.key] | display: field.type }}</dd>
+          <dd>
+            {{
+              data.row[field.key]
+                | display
+                  : (field.key === 'amount' || field.key === 'requestedSalary'
+                      ? 'money'
+                      : field.type)
+            }}
+          </dd>
         }
         <dt>ID</dt>
         <dd>{{ data.row.id }}</dd>

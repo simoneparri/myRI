@@ -120,7 +120,7 @@ export const definitions: Record<Resource, Definition> = {
       text('reason', 'Motivo della variazione', true),
     ],
     columns: [
-      { key: 'amount', label: 'RAL annua', type: 'decimal' },
+      { key: 'amount', label: 'RAL annua', type: 'money' },
       { key: 'currency', label: 'Valuta' },
       { key: 'effectiveOn', label: 'Decorrenza', type: 'date' },
       { key: 'contractType', label: 'Tipo contratto' },
@@ -156,7 +156,7 @@ export const definitions: Record<Resource, Definition> = {
     columns: [
       { key: 'personId', label: 'Persona' },
       { key: 'requestedOn', label: 'Richiesta', type: 'date' },
-      { key: 'requestedSalary', label: 'RAL target', type: 'decimal' },
+      { key: 'requestedSalary', label: 'RAL target', type: 'money' },
       { key: 'requestedPercentage', label: '%', type: 'decimal' },
       { key: 'currency', label: 'Valuta' },
       { key: 'status', label: 'Stato' },

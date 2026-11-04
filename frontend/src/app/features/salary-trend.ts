@@ -49,7 +49,7 @@ import { ButtonIcon } from '../shared/button-icon';
                   <span class="badge">Futura</span>
                 }
               </td>
-              <td>{{ item['amount'] | display: 'decimal' }}</td>
+              <td>{{ item['amount'] | display: 'money' }}</td>
               <td>{{ item['currency'] }}</td>
               <td>{{ item['reason'] }}</td>
             </tr>

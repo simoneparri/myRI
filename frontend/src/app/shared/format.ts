@@ -46,6 +46,11 @@ export function decimalDisplay(value: string): string {
   return whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (fraction ? ',' + fraction : '');
 }
 
+export function moneyDisplay(value: string): string {
+  const [whole, fraction = ''] = value.split('.');
+  return decimalDisplay(`${whole}.${fraction.padEnd(2, '0')}`);
+}
+
 @Pipe({ name: 'display', standalone: true })
 export class DisplayPipe implements PipeTransform {
   private readonly zone = inject(TIMEZONE);
@@ -53,11 +58,15 @@ export class DisplayPipe implements PipeTransform {
     if (value === null || value === undefined || value === '') return '-';
     const text = String(value);
     if (type === 'decimal') return decimalDisplay(text);
+    if (type === 'money') return moneyDisplay(text);
     if (type === 'date') return text.split('-').reverse().join('/');
     if (type === 'instant')
       return new Intl.DateTimeFormat('it-IT', {
-        dateStyle: 'short',
-        timeStyle: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
         timeZone: this.zone,
       }).format(new Date(text));
     return labels[text] ?? text;

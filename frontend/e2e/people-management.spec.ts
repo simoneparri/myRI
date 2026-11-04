@@ -43,7 +43,7 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
   await dialog.getByLabel('Email', { exact: true }).fill(`e2e-${suffix}@example.test`);
-  await dialog.getByLabel('Data inizio lavoro').fill('2026-01-02');
+  await dialog.getByLabel('Data inizio lavoro').fill('02/01/2026');
   await dialog.getByLabel('Sede di assunzione').fill('Sede fittizia');
   await dialog.getByLabel('Residenza').fill('Residenza fittizia');
   await save(page);
@@ -95,7 +95,7 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await page.getByRole('button', { name: 'Nuova voce RAL', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.00');
-  await dialog.getByLabel('Decorrenza', { exact: true }).fill('2026-01-02');
+  await dialog.getByLabel('Decorrenza', { exact: true }).fill('02/01/2026');
   await dialog.getByLabel('Tipo contratto', { exact: true }).fill('Tempo indeterminato');
   await dialog.getByLabel('Ore settimanali', { exact: true }).fill('40.00');
   await dialog.getByLabel('Livello di inquadramento', { exact: true }).fill('Livello fittizio');
@@ -113,7 +113,7 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await page.getByRole('button', { name: 'Nuova richiesta', exact: true }).click();
   dialog = page.getByRole('dialog');
   await choose(dialog, 'RAL base', /45.000,00 EUR/);
-  await dialog.getByLabel('Data richiesta', { exact: true }).fill('2026-10-01');
+  await dialog.getByLabel('Data richiesta', { exact: true }).fill('01/10/2026');
   await dialog.getByLabel('RAL annua target (non incremento)', { exact: true }).fill('48000.00');
   await dialog.getByLabel('Motivazione', { exact: true }).fill('Percorso fittizio');
   await save(page);
@@ -130,9 +130,9 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await expect(row).toContainText('Inviata');
   await row.getByRole('button', { name: 'Approva', exact: true }).click();
   dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Data esito', { exact: true }).fill('2026-11-02');
+  await dialog.getByLabel('Data esito', { exact: true }).fill('02/11/2026');
   await choose(dialog, 'Generare nuova RAL?', 'Si');
-  await dialog.getByLabel('Decorrenza RAL (solo se generata)').fill('2026-12-01');
+  await dialog.getByLabel('Decorrenza RAL (solo se generata)').fill('01/12/2026');
   await save(page);
   await expect(row).toContainText('Approvata');
   await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
@@ -146,23 +146,23 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await page.getByRole('tab', { name: 'Career talk', exact: true }).click();
   await page.getByRole('button', { name: 'Nuovo career talk', exact: true }).click();
   dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Data e ora incontro (UTC)').fill('2026-10-15T10:00');
+  await dialog.getByLabel('Data e ora incontro (UTC)').fill('15/10/2026 10:00');
   await dialog.getByLabel('Argomenti', { exact: true }).fill('Crescita fittizia');
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'Crescita fittizia' });
   await row.getByRole('button', { name: 'Modifica', exact: true }).click();
   await page.getByRole('dialog').getByLabel('Prossimi passi').fill('Prossimi passi fittizi');
   await save(page);
-  await expect(row).toContainText('15/10/26');
+  await expect(row).toContainText('15/10/2026');
 
   await page.getByRole('tab', { name: 'Task', exact: true }).click();
   await page.getByRole('button', { name: 'Nuovo task', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Titolo', { exact: true }).fill('Follow-up ' + suffix);
-  await dialog.getByLabel('Scadenza (UTC)').fill('2026-12-15T10:00');
+  await dialog.getByLabel('Scadenza (UTC)').fill('15/12/2026 10:00');
   await choose(dialog, 'Ricorrenza', 'Mensile');
   await dialog.getByLabel('Intervallo ricorrenza').fill('1');
-  await choose(dialog, 'Career talk collegato', /2026-10-15/);
+  await choose(dialog, 'Career talk collegato', /15\/10\/2026/);
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'Follow-up ' + suffix });
   await row.getByRole('button', { name: 'Modifica', exact: true }).click();
@@ -275,7 +275,7 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   let dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
-  await dialog.getByLabel('Data inizio lavoro').fill('2020-01-02');
+  await dialog.getByLabel('Data inizio lavoro').fill('02/01/2020');
   await save(page);
   await page.getByLabel('Cerca', { exact: true }).fill(firstName);
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
@@ -292,7 +292,7 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await page.getByRole('button', { name: 'Nuova voce RAL', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.12');
-  await dialog.getByLabel('Decorrenza', { exact: true }).fill('2099-01-01');
+  await dialog.getByLabel('Decorrenza', { exact: true }).fill('01/01/2099');
   await dialog.getByLabel('Tipo contratto', { exact: true }).fill('Tempo determinato');
   await dialog.getByLabel('Ore settimanali', { exact: true }).fill('32.00');
   await dialog.getByLabel('Livello di inquadramento', { exact: true }).fill('Livello fittizio');
@@ -339,7 +339,8 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   const title = 'ReminderE2E' + suffix;
   await dialog.getByLabel('Titolo', { exact: true }).fill(title);
   const nowUtc = new Date(Date.now() - 60000).toISOString().slice(0, 16);
-  await dialog.getByLabel('Scadenza (UTC)').fill(nowUtc);
+  const [date, time] = nowUtc.split('T');
+  await dialog.getByLabel('Scadenza (UTC)').fill(`${date.split('-').reverse().join('/')} ${time}`);
   await save(page);
   await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
