@@ -56,9 +56,9 @@ public class AccountService implements UserDetailsService {
     }
 
     static void validatePassword(String password) {
-        if (password == null || password.length() < 12
+        if (password == null || password.length() <= 10
                 || password.getBytes(StandardCharsets.UTF_8).length > 72) {
-            throw new IllegalStateException("Password obbligatoria: almeno 12 caratteri, massimo 72 byte UTF-8.");
+            throw new IllegalStateException("Password obbligatoria: almeno 10 caratteri, massimo 72 byte UTF-8.");
         }
     }
 }
