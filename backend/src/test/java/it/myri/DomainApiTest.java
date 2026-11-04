@@ -36,16 +36,21 @@ class DomainApiTest extends IntegrationTest {
     @Test
     void peopleCrudValidationPagingAndOptimisticVersion() throws Exception {
         var body = personInput();
+        body.put("frameworks", List.of("Java", "Spring Boot"));
         var person = send(post("/api/v1/people"), body, 201);
         String id = person.get("id").asText();
         assertTrue(person.get("id").isTextual());
         assertEquals("Sede fittizia", person.get("hiringLocation").asText());
         assertEquals("Residenza fittizia", person.get("residence").asText());
+        assertEquals(List.of("Java", "Spring Boot"),
+                json.convertValue(person.get("frameworks"), json.getTypeFactory().constructCollectionType(List.class, String.class)));
         assertTrue(person.get("seniority").asText().matches("\\d+ anni e \\d+ mesi"));
         body.put("version", person.get("version").asText());
         body.put("role", "Lead");
         var changed = send(put("/api/v1/people/" + id), body, 200);
         assertEquals("Lead", changed.get("role").asText());
+        assertEquals(List.of("Java", "Spring Boot"), json.convertValue(changed.get("frameworks"),
+                json.getTypeFactory().constructCollectionType(List.class, String.class)));
         send(put("/api/v1/people/" + id), body, 409);
         mvc.perform(get("/api/v1/people").session(session).param("q", body.get("lastName").toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
@@ -65,6 +70,15 @@ class DomainApiTest extends IntegrationTest {
         var invalid = personInput();
         invalid.put("email", "not-an-email");
         send(post("/api/v1/people"), invalid, 400);
+        invalid = personInput();
+        invalid.put("frameworks", List.of("Java", " java "));
+        send(post("/api/v1/people"), invalid, 400);
+        invalid = personInput();
+        invalid.put("frameworks", Collections.nCopies(51, "Framework"));
+        send(post("/api/v1/people"), invalid, 400);
+        invalid = personInput();
+        invalid.put("frameworks", List.of("F".repeat(101)));
+        send(post("/api/v1/people"), invalid, 400);
         var unknown = personInput();
         unknown.put("passwordHash", "should-not-bind");
         send(post("/api/v1/people"), unknown, 400);
@@ -76,11 +90,14 @@ class DomainApiTest extends IntegrationTest {
     @Test
     void personCareerMypadValidationAndExportsPreserveDistinctFields() throws Exception {
         var input = personInput();
+        input.put("frameworks", List.of("Java", "Spring Boot"));
         var person = send(post("/api/v1/people"), input, 201);
         String path = "/api/v1/people/" + person.get("id").asText();
         assertEquals("2018-01-01", person.get("careerStartedOn").asText());
         assertEquals("medior", person.get("seniorityLevel").asText());
         assertEquals(input.get("mypadId"), person.get("mypadId").asText());
+        assertEquals(List.of("Java", "Spring Boot"), json.convertValue(person.get("frameworks"),
+                json.getTypeFactory().constructCollectionType(List.class, String.class)));
         assertNotEquals(person.get("id").asText(), person.get("mypadId").asText());
         assertTrue(person.get("careerDuration").asText().matches("\\d+ anni e \\d+ mesi"));
         input.put("version", person.get("version").asText());
@@ -117,8 +134,27 @@ class DomainApiTest extends IntegrationTest {
         assertTrue(csv.contains("\"careerStartedOn\""));
         assertTrue(csv.contains("\"seniorityLevel\""));
         assertTrue(csv.contains("\"mypadId\""));
+        assertTrue(csv.contains("\"Java, Spring Boot\""));
 
-        send(post(path + "/archive"), Map.of("version", updated.get("version").asText()), 200);
+        var withoutFrameworks = new HashMap<>(input);
+        withoutFrameworks.remove("frameworks");
+        withoutFrameworks.put("version", updated.get("version").asText());
+        var unchangedFrameworks = send(put(path), withoutFrameworks, 200);
+        assertEquals(List.of("Java", "Spring Boot"),
+                json.convertValue(unchangedFrameworks.get("frameworks"),
+                        json.getTypeFactory().constructCollectionType(List.class, String.class)));
+
+        var frameworkUpdate = personInput();
+        frameworkUpdate.put("version", unchangedFrameworks.get("version").asText());
+        frameworkUpdate.put("mypadId", input.get("mypadId"));
+        frameworkUpdate.put("frameworks", List.of("Kotlin"));
+        var frameworksChanged = send(put(path), frameworkUpdate, 200);
+        assertEquals("Kotlin", frameworksChanged.get("frameworks").get(0).asText());
+        String frameworkCsv = mvc.perform(get(path + "/export").session(session).param("format", "csv"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(frameworkCsv.contains("\"Kotlin\""));
+
+        send(post(path + "/archive"), Map.of("version", frameworksChanged.get("version").asText()), 200);
         send(post("/api/v1/people"), duplicate, 409);
     }
 
@@ -471,6 +507,7 @@ class DomainApiTest extends IntegrationTest {
         input.put("mypadId", UUID.randomUUID().toString());
         input.put("hiringLocation", "Sede fittizia");
         input.put("residence", "Residenza fittizia");
+        input.put("frameworks", List.of());
         input.put("status", "active");
         return input;
     }

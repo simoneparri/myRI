@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.flywaydb.core.Flyway;
@@ -62,7 +63,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(5, flyway.migrate().migrationsExecuted);
+        assertEquals(6, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -90,6 +91,7 @@ class SchemaMigrationTest {
         assertEquals(1, scalar("""
                 SELECT COUNT(*) FROM person WHERE id = 700000 AND hired_on = '2026-01-01'
                   AND career_started_on IS NULL AND seniority_level IS NULL AND mypad_id IS NULL
+                  AND JSON_TYPE(frameworks) = 'ARRAY' AND JSON_LENGTH(frameworks) = 0
                 """));
         assertEquals(1, scalar("""
                 SELECT COUNT(*) FROM salary
@@ -122,6 +124,19 @@ class SchemaMigrationTest {
         rejected("UPDATE person SET mypad_id = 'fictitious-123' WHERE id = ?", second);
         rejected("UPDATE person SET mypad_id = '../invalid' WHERE id = ?", second);
         assertEquals(1, scalar("SELECT COUNT(*) FROM person WHERE id = ? AND mypad_id = 'fictitious-123'", first));
+    }
+
+    @Test
+    void frameworksAreStoredAsJsonArraysWithAValidatedMaximumCount() throws SQLException {
+        long id = person();
+        execute("UPDATE person SET frameworks = ? WHERE id = ?", "[\"Java\",\"Spring Boot\"]", id);
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM person WHERE id = ? AND JSON_TYPE(frameworks) = 'ARRAY'
+                  AND JSON_LENGTH(frameworks) = 2
+                """, id));
+        rejected("UPDATE person SET frameworks = '\"Java\"' WHERE id = ?", id);
+        String tooMany = "[" + String.join(",", Collections.nCopies(51, "\"Framework\"")) + "]";
+        rejected("UPDATE person SET frameworks = ? WHERE id = ?", tooMany, id);
     }
 
     @Test

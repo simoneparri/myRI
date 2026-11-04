@@ -18,6 +18,7 @@ describe('PersonPage', () => {
     email: 'persona@example.test',
     phone: 'Recapito fittizio',
     role: 'Ruolo fittizio',
+    frameworks: ['Java', 'Spring Boot'],
     hiredOn: '2020-01-02',
     hiringLocation: 'Sede fittizia',
     residence: 'Residenza fittizia',
@@ -67,6 +68,7 @@ describe('PersonPage', () => {
     for (const value of [
       'persona@example.test',
       'Recapito fittizio',
+      'Java, Spring Boot',
       '02/01/2020',
       'Sede fittizia',
       'Residenza fittizia',

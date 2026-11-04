@@ -59,6 +59,7 @@ export class DisplayPipe implements PipeTransform {
   private readonly zone = inject(TIMEZONE);
   transform(value: Value | undefined, type = 'text'): string {
     if (value === null || value === undefined || value === '') return '-';
+    if (Array.isArray(value)) return value.length ? value.join(', ') : '-';
     const text = String(value);
     if (type === 'decimal') return decimalDisplay(text);
     if (type === 'money') return moneyDisplay(text);

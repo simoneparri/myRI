@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export type Value = string | number | boolean | null;
+export type Value = string | number | boolean | string[] | null;
 export interface Row {
   id: string;
   version?: string;

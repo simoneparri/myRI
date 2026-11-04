@@ -3,7 +3,11 @@ package it.myri.person;
 import it.myri.common.MutableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import java.util.ArrayList;
+import java.util.List;
 import java.time.LocalDate;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 public class Person extends MutableEntity {
@@ -12,6 +16,9 @@ public class Person extends MutableEntity {
     public String email;
     public String phone;
     public String role;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json", nullable = false)
+    public List<String> frameworks = new ArrayList<>();
     public LocalDate hiredOn;
     public LocalDate careerStartedOn;
     @Column(length = 10)

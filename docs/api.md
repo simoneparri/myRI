@@ -89,7 +89,13 @@ domini; le entity non sono restituite dalle API e non hanno relazioni lazy seria
 PersonInput richiede `hiredOn` (data di assunzione in azienda) e accetta
 `careerStartedOn` (inizio della carriera lavorativa, non successivo all'assunzione),
 `seniorityLevel` (`junior|medior|senior`, selezione manuale), `hiringLocation`
-(sede di assunzione, massimo 200 caratteri) e `residence` (residenza, massimo 500).
+(sede di assunzione, massimo 200 caratteri), `residence` (residenza, massimo 500)
+e `frameworks`, elenco facoltativo di massimo 50 nomi (1-100 caratteri ciascuno).
+I nomi vengono salvati senza spazi esterni e non possono ripetersi senza distinzione
+tra maiuscole e minuscole. In PUT, `frameworks` omesso conserva l'elenco esistente;
+un elenco vuoto lo cancella. PersonView restituisce sempre un array, anche vuoto.
+La UI usa una riga per framework; JSON mantiene l'array e il CSV lo serializza
+come testo separato da virgole in una singola cella.
 `mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
 1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
 archiviate (confronto secondo la collation case-insensitive del DB).

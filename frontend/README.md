@@ -37,6 +37,8 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
   contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
+  I framework conosciuti sono un elenco libero, inserito uno per riga e mostrato
+  accanto al ruolo nella lista persone e nella scheda.
   La lista persone apre la Scheda: tutte le informazioni del precedente dettaglio
   sono visibili nella pagina, da cui si puo modificare la persona non archiviata.
   Le azioni di lista, scheda e dialog hanno icone SVG locali decorative e label

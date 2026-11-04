@@ -6,6 +6,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -86,6 +88,7 @@ public class PersonService {
     }
 
     private void validateManager(Long id, PersonDtos.Input input) {
+        validateFrameworks(input.frameworks());
         Dates.check(input.hiredOn());
         Dates.check(input.careerStartedOn());
         if (input.careerStartedOn() != null && input.careerStartedOn().isAfter(input.hiredOn())) {
@@ -114,6 +117,23 @@ public class PersonService {
                 throw ApiException.conflict("Il rapporto gerarchico introdurrebbe un ciclo.");
             }
             cursor = get(cursor).managerId;
+        }
+    }
+
+    private static void validateFrameworks(List<String> frameworks) {
+        if (frameworks == null) return;
+        Set<String> normalized = new HashSet<>();
+        for (String framework : frameworks) {
+            if (framework == null || framework.isBlank() || framework.length() > 100
+                    || framework.indexOf('\n') >= 0 || framework.indexOf('\r') >= 0) {
+                throw ApiException.invalid("Ogni framework deve contenere da 1 a 100 caratteri su una sola riga.");
+            }
+            if (!normalized.add(framework.strip().toLowerCase(Locale.ROOT))) {
+                throw ApiException.invalid("I framework conosciuti non possono contenere duplicati.");
+            }
+        }
+        if (frameworks.size() > 50) {
+            throw ApiException.invalid("Puoi indicare al massimo 50 framework.");
         }
     }
 }

@@ -80,6 +80,12 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'email', label: 'Email', type: 'email', max: 254 },
       { key: 'phone', label: 'Telefono', max: 50 },
       { key: 'role', label: 'Ruolo', max: 150 },
+      {
+        key: 'frameworks',
+        label: 'Framework conosciuti (uno per riga)',
+        type: 'textarea',
+        max: 5049,
+      },
       { key: 'hiredOn', label: 'Data di assunzione', type: 'date', required: true },
       { key: 'careerStartedOn', label: 'Data di inizio lavoro', type: 'date' },
       {
@@ -103,6 +109,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'firstName', label: 'Nome' },
       { key: 'lastName', label: 'Cognome' },
       { key: 'role', label: 'Ruolo' },
+      { key: 'frameworks', label: 'Framework conosciuti' },
       { key: 'email', label: 'Email' },
       { key: 'status', label: 'Stato' },
     ],

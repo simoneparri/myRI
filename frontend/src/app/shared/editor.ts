@@ -72,6 +72,19 @@ export function validatorsFor(field: Field): ValidatorFn[] {
         ? { dateInput: true }
         : null,
     );
+  if (field.key === 'frameworks')
+    rules.push((control) => {
+      const entries = String(control.value)
+        .split(/\r?\n/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      const normalized = entries.map((entry) => entry.toLowerCase());
+      return entries.length > 50 ||
+        entries.some((entry) => entry.length > 100) ||
+        new Set(normalized).size !== normalized.length
+        ? { frameworks: true }
+        : null;
+    });
   return rules;
 }
 
@@ -80,7 +93,12 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
   for (const field of fields) {
     const value = values[field.key]?.trim() ?? '';
     payload[field.key] =
-      value === ''
+      field.key === 'frameworks'
+        ? value
+            .split(/\r?\n/)
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : value === ''
         ? null
         : field.type === 'integer'
           ? Number(value)
@@ -226,7 +244,12 @@ export class Editor {
         : newLabel(this.data.resource);
     for (const field of this.fields) {
       const current = this.data.row?.[field.key];
-      let value = current == null ? (field.initial ?? '') : String(current);
+      let value =
+        field.key === 'frameworks' && Array.isArray(current)
+          ? current.join('\n')
+          : current == null
+            ? (field.initial ?? '')
+            : String(current);
       if (field.type === 'instant' && value) value = value.replace(/Z$/, '');
       if (field.key === 'personId' && this.data.personId) value = this.data.personId;
       const fixed =

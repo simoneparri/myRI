@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import it.myri.auth.*;
 import it.myri.common.ApiException;
 import java.time.*;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -46,10 +47,30 @@ class PersonServiceTest {
         person.careerStartedOn = LocalDate.of(2017, 11, 5);
         person.seniorityLevel = "medior";
         person.mypadId = "fictitious-123";
+        person.frameworks = List.of("Java", "Spring Boot");
         assertEquals("6 anni e 0 mesi", personService.view(person).seniority());
         assertEquals("9 anni e 0 mesi", personService.view(person).careerDuration());
         assertEquals("medior", personService.view(person).seniorityLevel());
         assertEquals("fictitious-123", personService.view(person).mypadId());
+        assertEquals(List.of("Java", "Spring Boot"), personService.view(person).frameworks());
+    }
+
+    @Test
+    void frameworksAreTrimmedAndDuplicatesAreRejected() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.existsByMypadId("test-fictitious")).thenReturn(false);
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var input = new PersonDtos.Input("Fictitious", "Example", null, null, null,
+                LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                null, null, "test-fictitious", List.of(" Java ", "Spring Boot"));
+        var saved = service.create(input);
+        assertEquals(List.of("Java", "Spring Boot"), saved.frameworks());
+
+        var duplicate = new PersonDtos.Input("Fictitious", "Example", null, null, null,
+                LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                null, null, "test-fictitious", List.of("Java", " java "));
+        assertThrows(ApiException.class, () -> service.create(duplicate));
+        verify(repository, times(1)).saveAndFlush(any());
     }
 
     @Test
@@ -70,7 +91,7 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var valid = input(null, null);
         var missing = new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
-                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null);
+                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null);
         assertThrows(ApiException.class, () -> service.create(missing));
         when(repository.existsByMypadId(valid.mypadId())).thenReturn(true);
         var duplicate = assertThrows(ApiException.class, () -> service.create(valid));
@@ -83,7 +104,7 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var invalid = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                LocalDate.of(2021, 1, 1), "junior", "fictitious-id");
+                LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null);
         assertThrows(ApiException.class, () -> service.create(invalid));
         verify(repository, never()).saveAndFlush(any());
         Person person = person(1L);
@@ -104,6 +125,6 @@ class PersonServiceTest {
     private static PersonDtos.Input input(Long manager, Long version) {
         return new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, manager, null, null, "active", version,
-                LocalDate.of(2018, 1, 1), "medior", "test-fictitious");
+                LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null);
     }
 }

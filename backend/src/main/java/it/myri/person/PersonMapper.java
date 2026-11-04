@@ -2,6 +2,7 @@ package it.myri.person;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 
 public final class PersonMapper {
     private PersonMapper() {}
@@ -11,7 +12,7 @@ public final class PersonMapper {
                 p.role, p.hiredOn, elapsed(p.hiredOn, today), p.hiringLocation, p.residence, p.managerId,
                 p.externalManager, p.notes, p.status, p.archivedAt, p.createdAt,
                 p.updatedAt, p.version, p.careerStartedOn, elapsed(p.careerStartedOn, today),
-                p.seniorityLevel, p.mypadId);
+                p.seniorityLevel, p.mypadId, p.frameworks == null ? List.of() : List.copyOf(p.frameworks));
     }
 
     private static String elapsed(LocalDate start, LocalDate today) {
@@ -30,6 +31,9 @@ public final class PersonMapper {
         p.email = input.email();
         p.phone = input.phone();
         p.role = input.role();
+        if (input.frameworks() != null) {
+            p.frameworks = input.frameworks().stream().map(String::strip).toList();
+        }
         p.hiredOn = input.hiredOn();
         p.careerStartedOn = input.careerStartedOn();
         p.seniorityLevel = input.seniorityLevel();

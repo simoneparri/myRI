@@ -58,6 +58,10 @@ professionale. `seniority_level` e invece selezionato manualmente tra junior,
 medior e senior. Il valore legacy eventualmente presente nella colonna
 `seniority` non viene letto o aggiornato. `hiring_location` e `residence`
 sono dati anagrafici della persona.
+`frameworks` e un elenco libero (massimo 50 nomi, massimo 100 caratteri ciascuno),
+memorizzato come array JSON e mostrato vicino al ruolo nella UI. Gli spazi esterni
+sono rimossi e i duplicati sono rifiutati senza distinzione di maiuscole/minuscole.
+I record preesistenti ricevono un array vuoto, senza inferire framework.
 
 `mypad_id` e separato dalla PK auto-incrementale e univoco anche per gli
 archiviati, con la collation case-insensitive dello schema. Formato:
@@ -166,6 +170,7 @@ erDiagram
         varchar email
         varchar phone
         varchar role
+        json frameworks
         date hired_on
         date career_started_on
         varchar seniority_level

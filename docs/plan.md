@@ -35,6 +35,13 @@ fino alla compilazione; link MyPad in una nuova scheda, nessuna sincronizzazione
 esterna. Migrazione V6 additiva, senza riempire i nuovi campi con valori inventati
 o modificare date esistenti. Inclusi contratti API, export e UI.
 
+Su richiesta esplicita, la persona include anche un elenco libero di framework
+conosciuti vicino al ruolo. Massimo 50 nomi, massimo 100 caratteri ciascuno,
+normalizzati senza spazi esterni e senza duplicati case-insensitive; nessun
+catalogo predefinito. Migrazione V7 con array JSON vuoto per i record esistenti.
+La UI consente un framework per riga; API JSON mantiene l'array e CSV lo presenta
+in una cella. Nessuna integrazione o sincronizzazione esterna.
+
 ## Scelte di struttura dello Step 1 approvate
 
 - Monorepo backend/ e frontend/, Maven Wrapper, package per dominio con layer

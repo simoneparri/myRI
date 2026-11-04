@@ -32,6 +32,22 @@ describe('precision and validation', () => {
     expect(payload['dueAt']).toBe('2026-11-02T10:30:00.000Z');
     expect(payload['personId']).toBeNull();
   });
+  it('sends frameworks as a trimmed list and validates duplicates and limits', () => {
+    const frameworks = definitions.people.fields.find((field) => field.key === 'frameworks')!;
+    const control = new FormControl(' Java \nSpring Boot', {
+      nonNullable: true,
+      validators: validatorsFor(frameworks),
+    });
+    expect(control.valid).toBe(true);
+    expect(payloadFor([frameworks], { frameworks: control.value })['frameworks']).toEqual([
+      'Java',
+      'Spring Boot',
+    ]);
+    control.setValue('Java\n java ');
+    expect(control.invalid).toBe(true);
+    control.setValue('x'.repeat(101));
+    expect(control.invalid).toBe(true);
+  });
   it('rejects fractional identifiers, comma decimals and excess precision', () => {
     const id = new FormControl('1.5', validatorsFor({ key: 'id', label: '', type: 'id' }));
     expect(id.invalid).toBe(true);

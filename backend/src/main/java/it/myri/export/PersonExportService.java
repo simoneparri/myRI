@@ -80,10 +80,16 @@ public class PersonExportService {
         csv.append("\r\n");
         groups.forEach((kind, list) -> list.forEach(row -> {
             csv.append(cell(kind)).append(",1,").append(cell(snapshot.exportedAt().toString()));
-            fields.forEach(field -> csv.append(',').append(cell(row.hasNonNull(field) ? row.get(field).asText() : "")));
+            fields.forEach(field -> csv.append(',').append(cell(row.hasNonNull(field) ? csvValue(row.get(field)) : "")));
             csv.append("\r\n");
         }));
         return csv.toString();
+    }
+    private static String csvValue(JsonNode value) {
+        if (!value.isArray()) return value.asText();
+        StringJoiner items = new StringJoiner(", ");
+        value.forEach(item -> items.add(item.asText()));
+        return items.toString();
     }
     public static String cell(String value) {
         // Quoting alone does not stop spreadsheet formulas, including whitespace-prefixed formulas.

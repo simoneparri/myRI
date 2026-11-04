@@ -3,6 +3,7 @@ package it.myri.person;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 public final class PersonDtos {
     private PersonDtos() {}
@@ -24,7 +25,8 @@ public final class PersonDtos {
             @PositiveOrZero Long version,
             LocalDate careerStartedOn,
             @Pattern(regexp = "junior|medior|senior") String seniorityLevel,
-            @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9_-]+") String mypadId) {}
+            @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9_-]+") String mypadId,
+            @Size(max = 50) List<@NotBlank @Size(max = 100) @Pattern(regexp = "[^\\r\\n]+") String> frameworks) {}
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "PersonView")
     public record View(Long id, String firstName, String lastName, String email,
@@ -32,5 +34,6 @@ public final class PersonDtos {
             String hiringLocation, String residence,
             Long managerId, String externalManager, String notes, String status,
             Instant archivedAt, Instant createdAt, Instant updatedAt, Long version,
-            LocalDate careerStartedOn, String careerDuration, String seniorityLevel, String mypadId) {}
+            LocalDate careerStartedOn, String careerDuration, String seniorityLevel, String mypadId,
+            List<String> frameworks) {}
 }
