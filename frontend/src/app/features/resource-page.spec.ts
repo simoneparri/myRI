@@ -3,17 +3,28 @@ import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Api, Page, Row } from '../core/api';
 import { ResourcePage } from './resource-page';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
+import { Toast } from '../shared/toast';
 
 describe('ResourcePage', () => {
   const empty: Page<Row> = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const get = vi.fn();
+  const open = vi.fn();
+  const success = vi.fn();
+  const post = vi.fn();
   async function create() {
+    open.mockReset().mockReturnValue({ afterClosed: () => of(false) });
+    success.mockReset();
+    post.mockReset().mockResolvedValue({});
     get.mockReset().mockResolvedValue(empty);
     TestBed.configureTestingModule({
       imports: [ResourcePage],
       providers: [
         provideRouter([]),
-        { provide: Api, useValue: { get, choices: vi.fn().mockResolvedValue([]) } },
+        { provide: Api, useValue: { get, post, choices: vi.fn().mockResolvedValue([]) } },
+        { provide: MatDialog, useValue: { open } },
+        { provide: Toast, useValue: { success } },
       ],
     });
     const fixture = TestBed.createComponent(ResourcePage);
@@ -95,6 +106,29 @@ describe('ResourcePage', () => {
     const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!;
     expect(row.textContent).toContain('Dettagli');
     expect(row.textContent).toContain('Modifica');
+  });
+  it('shows a toast only after a saved editor and not after cancellation', async () => {
+    const fixture = await create();
+    await fixture.componentInstance.edit();
+    expect(success).not.toHaveBeenCalled();
+    open.mockReturnValue({ afterClosed: () => of(true) });
+    await fixture.componentInstance.edit();
+    expect(success).toHaveBeenCalledExactlyOnceWith('Salvataggio completato.');
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Dati salvati.');
+  });
+  it('uses toast confirmations for decisions and commands but not failed writes', async () => {
+    const fixture = await create();
+    open.mockReturnValue({ afterClosed: () => of(true) });
+    await fixture.componentInstance.decision({ id: '1' }, 'approve');
+    expect(success).toHaveBeenLastCalledWith('Esito registrato.');
+    await fixture.componentInstance.command({ id: '1', version: '4' }, 'archive');
+    expect(success).toHaveBeenLastCalledWith('Operazione completata.');
+    success.mockClear();
+    post.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
+    await fixture.componentInstance.command({ id: '1', version: '4' }, 'archive');
+    expect(success).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toContain('Conflitto');
   });
   it('uses calendar presets without sending hidden full-list filters', async () => {
     const fixture = await create();

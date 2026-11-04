@@ -118,6 +118,11 @@ for (const width of [1440, 390]) {
     await dialog.getByLabel('Note', { exact: true }).fill('Note aggiornate');
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
     await expect(dialog).not.toBeVisible();
+    const toast = page.locator('mat-snack-bar-container');
+    await expect(toast).toContainText('Salvataggio completato.');
+    await expect(page.locator('main')).not.toContainText('Salvataggio completato.');
+    await toast.getByRole('button', { name: 'Chiudi', exact: true }).click();
+    await expect(toast).not.toBeVisible();
     await expect(
       page.getByRole('definition').filter({ hasText: 'Ruolo aggiornato' }),
     ).toBeVisible();

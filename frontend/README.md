@@ -65,6 +65,10 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   il form: annullare, ricaricare la lista e riaprire prima di riprovare.
   Un errore di rete non ritenta automaticamente una scrittura. Per la RAL
   manuale il retry nello stesso form conserva la chiave idempotenza.
+  Salvataggi, esiti e comandi completati mostrano una conferma toast Material
+  in alto a destra per 4 secondi, chiudibile con "Chiudi" e annunciata agli
+  screen reader. Nessun messaggio di successo persistente nel contenuto;
+  errori e conflitti restano visibili nel form o nella pagina.
 - ID/versioni/importi restano stringhe. Gli importi accettano il punto decimale
   e vengono presentati in formato italiano senza convertirli a Number.
 - Le date civili non cambiano fuso. Gli orari sono visualizzati nel fuso

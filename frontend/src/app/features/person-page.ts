@@ -16,6 +16,7 @@ import { SalaryTrend } from './salary-trend';
 import { ButtonIcon } from '../shared/button-icon';
 import { Editor, EditorData } from '../shared/editor';
 import { canEdit, definitions } from '../shared/schema';
+import { Toast } from '../shared/toast';
 
 @Component({
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
@@ -47,9 +48,6 @@ import { canEdit, definitions } from '../shared/schema';
           </button>
         }
       </div>
-      @if (message()) {
-        <p role="status">{{ message() }}</p>
-      }
       <dl class="person-details" aria-label="Informazioni persona">
         @for (field of fields; track field.key) {
           <div [class.full-width]="field.type === 'textarea'">
@@ -198,10 +196,10 @@ export class PersonPage {
   readonly id = input.required<string>();
   private readonly api = inject(Api);
   private readonly dialogs = inject(MatDialog);
+  private readonly toast = inject(Toast);
   readonly fields = definitions.people.fields;
   readonly editable = canEdit;
   readonly editing = signal(false);
-  readonly message = signal('');
   readonly person = signal<Row | null>(null);
   readonly name = personLabel;
   readonly error = signal('');
@@ -237,7 +235,6 @@ export class PersonPage {
         this.pageIndex = 0;
         this.kind = this.appliedKind = '';
         this.includeArchived = this.appliedArchived = false;
-        this.message.set('');
         void this.load();
       });
     });
@@ -264,7 +261,7 @@ export class PersonPage {
           .afterClosed(),
       );
       if (changed && generation === this.personGeneration) {
-        this.message.set('Dati salvati.');
+        this.toast.success('Salvataggio completato.');
         await this.load();
       }
     } finally {

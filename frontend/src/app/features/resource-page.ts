@@ -17,6 +17,7 @@ import { Resource, canEdit, definitions, newLabel } from '../shared/schema';
 import { italianPaginator } from '../shared/paginator';
 import { ButtonIcon } from '../shared/button-icon';
 import { DateInput, dateInputDisplay, parseDateInput } from '../shared/date-input';
+import { Toast } from '../shared/toast';
 
 @Component({
   selector: 'app-resource-page',
@@ -154,9 +155,6 @@ import { DateInput, dateInputDisplay, parseDateInput } from '../shared/date-inpu
       }
       @if (error()) {
         <p role="alert" class="error">{{ error() }}</p>
-      }
-      @if (message()) {
-        <p role="status">{{ message() }}</p>
       }
       @if (loading()) {
         <p role="status">Caricamento...</p>
@@ -301,6 +299,7 @@ export class ResourcePage {
   readonly view = input<string>();
   private readonly api = inject(Api);
   private readonly dialogs = inject(MatDialog);
+  private readonly toast = inject(Toast);
   readonly definition = signal(definitions.people);
   readonly page = signal<Page<Row>>({
     items: [],
@@ -311,7 +310,6 @@ export class ResourcePage {
   });
   readonly people = signal<Row[]>([]);
   readonly error = signal('');
-  readonly message = signal('');
   readonly loading = signal(false);
   readonly busy = signal(false);
   readonly editable = canEdit;
@@ -459,7 +457,7 @@ export class ResourcePage {
       this.dialogs.open(Editor, { data, width: '720px', maxWidth: '95vw' }).afterClosed(),
     );
     if (changed) {
-      this.message.set('Dati salvati.');
+      this.toast.success('Salvataggio completato.');
       await this.reload();
     }
   }
@@ -474,7 +472,7 @@ export class ResourcePage {
         .afterClosed(),
     );
     if (changed) {
-      this.message.set('Esito registrato.');
+      this.toast.success('Esito registrato.');
       await this.reload();
     }
   }
@@ -492,11 +490,10 @@ export class ResourcePage {
       return;
     this.busy.set(true);
     this.error.set('');
-    this.message.set('');
     try {
       const path = `${this.resource()}/${row.id}/${command}`;
       await this.api.post(path, { version: row.version ?? null });
-      this.message.set('Operazione completata.');
+      this.toast.success('Operazione completata.');
       await this.reload();
     } catch (error) {
       this.error.set(errorMessage(error));

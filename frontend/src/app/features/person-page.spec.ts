@@ -7,6 +7,7 @@ import { Api, Row } from '../core/api';
 import { Editor } from '../shared/editor';
 import { definitions } from '../shared/schema';
 import { PersonPage } from './person-page';
+import { Toast } from '../shared/toast';
 
 describe('PersonPage', () => {
   const person: Row = {
@@ -33,8 +34,10 @@ describe('PersonPage', () => {
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const get = vi.fn();
   const open = vi.fn();
+  const success = vi.fn();
 
   async function create(row: Row = person) {
+    success.mockReset();
     get
       .mockReset()
       .mockImplementation(async (path: string) => (path.endsWith('/timeline') ? empty : row));
@@ -45,6 +48,7 @@ describe('PersonPage', () => {
         provideRouter([]),
         { provide: Api, useValue: { get } },
         { provide: MatDialog, useValue: { open } },
+        { provide: Toast, useValue: { success } },
       ],
     });
     const fixture = TestBed.createComponent(PersonPage);
@@ -114,7 +118,8 @@ describe('PersonPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('dl')?.textContent).toContain(
       'Ruolo aggiornato',
     );
-    expect(fixture.componentInstance.message()).toBe('Dati salvati.');
+    expect(success).toHaveBeenCalledExactlyOnceWith('Salvataggio completato.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Dati salvati.');
     expect(fixture.componentInstance.editing()).toBe(false);
   });
 
@@ -123,7 +128,7 @@ describe('PersonPage', () => {
     get.mockClear();
     await fixture.componentInstance.edit();
     expect(get).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.message()).toBe('');
+    expect(success).not.toHaveBeenCalled();
   });
 
   it('keeps archived people readable without offering editing', async () => {
