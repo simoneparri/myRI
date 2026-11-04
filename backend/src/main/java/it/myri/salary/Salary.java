@@ -16,6 +16,12 @@ public class Salary extends PersistentEntity {
     @Column(columnDefinition = "char(3)")
     public String currency;
     public LocalDate effectiveOn;
+    @Column(length = 100)
+    public String contractType;
+    @Column(precision = 5, scale = 2)
+    public BigDecimal weeklyHours;
+    @Column(length = 100)
+    public String classificationLevel;
     @Column(columnDefinition = "text")
     public String reason;
     public Long sourceRaiseRequestId;

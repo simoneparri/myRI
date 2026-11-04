@@ -86,10 +86,24 @@ ID, timestamp tecnici, archivedAt o stato esito imposto dal client.
 I mapper espliciti sono in PersonMapper e nei metodi view/apply dei DTO degli altri
 domini; le entity non sono restituite dalle API e non hanno relazioni lazy serializzate.
 
+PersonInput richiede `hiredOn` (data inizio lavoro) e accetta `hiringLocation`
+(sede di assunzione, massimo 200 caratteri) e `residence` (residenza, massimo
+500). PersonView restituisce anche `seniority`, calcolata come anni e mesi
+completati dalla data di inizio alla data corrente nel fuso applicativo; non e
+modificabile ne salvata separatamente. L'eventuale valore legacy salvato in
+precedenza resta nel database ma non viene piu letto o aggiornato.
+
 ### RAL e audit
 
 POST salaries richiede amount, currency ISO 4217, effectiveOn, reason e
-`requestKey` (1-100 lettere ASCII/numeri/underscore/trattino, consigliato UUID).
+`requestKey` (1-100 lettere ASCII/numeri/underscore/trattino, consigliato UUID),
+oltre a `contractType`, `weeklyHours` (da 0.01 a 168, massimo due decimali) e
+`classificationLevel`. Questi tre campi sono inclusi in ogni voce e nel relativo
+storico immutabile. Una RAL creata approvando un aumento eredita i dati dalla
+RAL base. Se la RAL base e precedente alla V5, i dati contrattuali non disponibili
+restano nulli anche nella voce generata; non vengono inventati valori.
+Le voci precedenti alla migrazione V5 mantengono questi campi nulli, perche non
+e possibile ricostruire retroattivamente dati mancanti.
 Ripetere la stessa chiave e payload restituisce la stessa voce, senza audit
 duplicato; chiave riutilizzata con payload diverso produce 409. La chiave e
 unica nell'intero database e usa la collation case-insensitive MySQL.

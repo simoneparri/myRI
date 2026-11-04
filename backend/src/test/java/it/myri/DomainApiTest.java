@@ -39,6 +39,9 @@ class DomainApiTest extends IntegrationTest {
         var person = send(post("/api/v1/people"), body, 201);
         String id = person.get("id").asText();
         assertTrue(person.get("id").isTextual());
+        assertEquals("Sede fittizia", person.get("hiringLocation").asText());
+        assertEquals("Residenza fittizia", person.get("residence").asText());
+        assertTrue(person.get("seniority").asText().matches("\\d+ anni e \\d+ mesi"));
         body.put("version", person.get("version").asText());
         body.put("role", "Lead");
         var changed = send(put("/api/v1/people/" + id), body, 200);
@@ -118,6 +121,9 @@ class DomainApiTest extends IntegrationTest {
         String person = person();
         var body = salaryInput();
         var salary = send(post("/api/v1/people/" + person + "/salaries"), body, 201);
+        assertEquals("Tempo indeterminato", salary.get("contractType").asText());
+        assertEquals("40.00", salary.get("weeklyHours").asText());
+        assertEquals("Livello fittizio", salary.get("classificationLevel").asText());
         var retry = send(post("/api/v1/people/" + person + "/salaries"), body, 201);
         assertEquals(salary.get("id"), retry.get("id"));
         assertEquals("50000.00", salary.get("amount").asText());
@@ -134,6 +140,9 @@ class DomainApiTest extends IntegrationTest {
         send(post("/api/v1/people/" + person + "/salaries"), invalid, 400);
         invalid.put("currency", "EUR");
         invalid.put("amount", "1.001");
+        send(post("/api/v1/people/" + person + "/salaries"), invalid, 400);
+        invalid.put("amount", "50000");
+        invalid.put("weeklyHours", "168.01");
         send(post("/api/v1/people/" + person + "/salaries"), invalid, 400);
     }
 
@@ -171,6 +180,19 @@ class DomainApiTest extends IntegrationTest {
         send(post(path + "/reopen"), Map.of("version", approved.get("version").asText()), 409);
         mvc.perform(get("/api/v1/people/" + person + "/salaries").session(session))
                 .andExpect(jsonPath("$.totalElements").value(2));
+        var salaryRows = mvc.perform(get("/api/v1/people/" + person + "/salaries").session(session))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode generatedSalary = null;
+        for (JsonNode item : json.readTree(salaryRows).get("items")) {
+            if (!item.get("sourceRaiseRequestId").isNull()) {
+                generatedSalary = item;
+                break;
+            }
+        }
+        assertNotNull(generatedSalary);
+        assertEquals("Tempo indeterminato", generatedSalary.get("contractType").asText());
+        assertEquals("40.00", generatedSalary.get("weeklyHours").asText());
+        assertEquals("Livello fittizio", generatedSalary.get("classificationLevel").asText());
         assertEquals(6, jdbc.queryForObject("SELECT COUNT(*) FROM audit_event WHERE person_id = ?", Long.class, person));
     }
 
@@ -370,13 +392,17 @@ class DomainApiTest extends IntegrationTest {
         input.put("firstName", "Fictitious");
         input.put("lastName", UUID.randomUUID().toString());
         input.put("hiredOn", "2020-01-01");
+        input.put("hiringLocation", "Sede fittizia");
+        input.put("residence", "Residenza fittizia");
         input.put("status", "active");
         return input;
     }
 
     static Map<String, Object> salaryInput() {
         return new HashMap<>(Map.of("amount", "50000.00", "currency", "EUR",
-                "effectiveOn", "2025-01-01", "reason", "Fictitious salary",
+                "effectiveOn", "2025-01-01", "contractType", "Tempo indeterminato",
+                "weeklyHours", "40.00", "classificationLevel", "Livello fittizio",
+                "reason", "Fictitious salary",
                 "requestKey", UUID.randomUUID().toString()));
     }
 

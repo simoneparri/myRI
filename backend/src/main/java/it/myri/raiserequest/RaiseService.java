@@ -137,8 +137,10 @@ public class RaiseService {
         request.touch(clock);
         requests.saveAndFlush(request);
         if (command.createSalary()) {
+            Salary base = salaryService.get(request.baseSalaryId);
             salaryService.generateApproved(request.personId, target, request.currency,
-                    command.effectiveOn(), "Approvazione richiesta " + request.id, request.id);
+                    command.effectiveOn(), base.contractType, base.weeklyHours,
+                    base.classificationLevel, "Approvazione richiesta " + request.id, request.id);
         }
         record(request, "raise_updated", "status,outcomeOn,outcomeNotes");
         return view(request);

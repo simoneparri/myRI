@@ -63,6 +63,13 @@ describe('precision and validation', () => {
       validatorsFor({ key: 'value', label: '', type: 'integer' }),
     );
     expect(maxInteger.invalid).toBe(true);
+    const weeklyHours = new FormControl(
+      '168.01',
+      validatorsFor({ key: 'weeklyHours', label: '', type: 'decimal', fraction: 2 }),
+    );
+    expect(weeklyHours.invalid).toBe(true);
+    weeklyHours.setValue('168.00');
+    expect(weeklyHours.valid).toBe(true);
   });
   it('never enables modification of salary history, closed requests or archived rows', () => {
     expect(canEdit('salaries', { id: '1' })).toBe(false);
@@ -114,6 +121,9 @@ describe('Editor', () => {
       amount: '45000.00',
       currency: 'EUR',
       effectiveOn: '2026-01-01',
+      contractType: 'Tempo indeterminato',
+      weeklyHours: '40.00',
+      classificationLevel: 'Livello fittizio',
       reason: 'Fittizia',
     });
     post.mockRejectedValueOnce(new HttpErrorResponse({ status: 503 })).mockResolvedValueOnce({});

@@ -3,6 +3,8 @@ package it.myri.person;
 import it.myri.auth.AppUserRepository;
 import it.myri.common.*;
 import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -15,11 +17,13 @@ public class PersonService {
     private final PersonRepository people;
     private final AppUserRepository users;
     private final Clock clock;
+    private final ZoneId zone;
 
-    public PersonService(PersonRepository people, AppUserRepository users, Clock clock) {
+    public PersonService(PersonRepository people, AppUserRepository users, Clock clock, ZoneId zone) {
         this.people = people;
         this.users = users;
         this.clock = clock;
+        this.zone = zone;
     }
 
     @Transactional(readOnly = true)
@@ -30,12 +34,16 @@ public class PersonService {
                 .and(Queries.text(q, "firstName", "lastName", "email", "role"))
                 .and(Queries.equal("status", status)).and(Queries.equal("managerId", managerId)),
                 Queries.page(page, size, sort, Set.of("id", "lastName", "firstName", "hiredOn", "createdAt"))),
-                PersonMapper::view);
+                this::view);
     }
 
     @Transactional(readOnly = true)
     public Person get(Long id) {
         return people.findById(id).orElseThrow(ApiException::missing);
+    }
+
+    public PersonDtos.View view(Person person) {
+        return PersonMapper.view(person, LocalDate.now(clock.withZone(zone)));
     }
 
     @Transactional(readOnly = true)
@@ -51,7 +59,7 @@ public class PersonService {
         Person person = new Person();
         person.initialize(clock);
         PersonMapper.apply(person, input);
-        return PersonMapper.view(people.saveAndFlush(person));
+        return view(people.saveAndFlush(person));
     }
 
     public PersonDtos.View update(Long id, PersonDtos.Input input) {
@@ -62,13 +70,13 @@ public class PersonService {
         validateManager(id, input);
         PersonMapper.apply(person, input);
         person.touch(clock);
-        return PersonMapper.view(people.saveAndFlush(person));
+        return view(people.saveAndFlush(person));
     }
 
     public PersonDtos.View archive(Long id, Long version) {
         Person person = get(id);
         person.archive(version, clock);
-        return PersonMapper.view(people.saveAndFlush(person));
+        return view(people.saveAndFlush(person));
     }
 
     private void validateManager(Long id, PersonDtos.Input input) {

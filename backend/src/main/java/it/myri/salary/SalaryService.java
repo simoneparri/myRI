@@ -63,20 +63,26 @@ public class SalaryService {
             Salary salary = existing.get();
             if (!Objects.equals(salary.personId, personId) || salary.amount.compareTo(input.amount()) != 0
                     || !salary.currency.equals(input.currency()) || !salary.effectiveOn.equals(input.effectiveOn())
+                    || !Objects.equals(salary.contractType, input.contractType().strip())
+                    || !sameDecimal(salary.weeklyHours, input.weeklyHours())
+                    || !Objects.equals(salary.classificationLevel, input.classificationLevel().strip())
                     || !salary.reason.equals(input.reason())) {
                 throw ApiException.conflict("Chiave idempotenza gia usata con dati diversi.");
             }
             return SalaryDtos.view(salary);
         }
-        Salary salary = build(personId, input.amount(), input.currency(), input.effectiveOn(), input.reason());
+        Salary salary = build(personId, input.amount(), input.currency(), input.effectiveOn(),
+                input.contractType().strip(), input.weeklyHours(), input.classificationLevel().strip(), input.reason());
         salary.requestKey = input.requestKey();
         return SalaryDtos.view(saveAndAudit(salary));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Salary generateApproved(Long personId, BigDecimal amount, String currency,
-            LocalDate effectiveOn, String reason, Long requestId) {
-        Salary salary = build(personId, amount, currency, effectiveOn, reason);
+            LocalDate effectiveOn, String contractType, BigDecimal weeklyHours,
+            String classificationLevel, String reason, Long requestId) {
+        Salary salary = build(personId, amount, currency, effectiveOn, contractType,
+                weeklyHours, classificationLevel, reason);
         salary.sourceRaiseRequestId = requestId;
         return saveAndAudit(salary);
     }
@@ -90,12 +96,16 @@ public class SalaryService {
         }
     }
 
-    private Salary build(Long personId, BigDecimal amount, String currency, LocalDate effectiveOn, String reason) {
+    private Salary build(Long personId, BigDecimal amount, String currency, LocalDate effectiveOn,
+            String contractType, BigDecimal weeklyHours, String classificationLevel, String reason) {
         Salary salary = new Salary();
         salary.personId = personId;
         salary.amount = amount;
         salary.currency = currency;
         salary.effectiveOn = effectiveOn;
+        salary.contractType = contractType;
+        salary.weeklyHours = weeklyHours;
+        salary.classificationLevel = classificationLevel;
         salary.reason = reason;
         salary.createdAt = clock.instant();
         return salary;
@@ -104,7 +114,11 @@ public class SalaryService {
     private Salary saveAndAudit(Salary salary) {
         salaries.saveAndFlush(salary);
         audit.record(salary.personId, salary.id, null, "salary_created",
-                "amount,currency,effectiveOn,reason,sourceRaiseRequestId");
+                "amount,currency,effectiveOn,contractType,weeklyHours,classificationLevel,reason,sourceRaiseRequestId");
         return salary;
+    }
+
+    private static boolean sameDecimal(BigDecimal a, BigDecimal b) {
+        return a == null ? b == null : b != null && a.compareTo(b) == 0;
     }
 }

@@ -53,8 +53,8 @@ class SchemaMigrationTest {
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
-                    INSERT INTO person (id, first_name, last_name, hired_on)
-                    VALUES (700000, 'Fictitious', 'Upgrade fixture', '2026-01-01')
+                    INSERT INTO person (id, first_name, last_name, seniority, hired_on)
+                    VALUES (700000, 'Fictitious', 'Upgrade fixture', 'Legacy seniority', '2026-01-01')
                     """);
             statement.executeUpdate("""
                     INSERT INTO salary (id, person_id, amount, currency, effective_on, reason)
@@ -62,7 +62,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(3, flyway.migrate().migrationsExecuted);
+        assertEquals(4, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -91,6 +91,17 @@ class SchemaMigrationTest {
                 SELECT COUNT(*) FROM salary
                 WHERE id = 700000 AND person_id = 700000 AND amount = 40000.12
                 """));
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM salary
+                WHERE id = 700000 AND contract_type IS NULL AND weekly_hours IS NULL
+                  AND classification_level IS NULL
+                """));
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT seniority FROM person WHERE id = 700000");
+                ResultSet result = statement.executeQuery()) {
+            assertTrue(result.next());
+            assertEquals("Legacy seniority", result.getString(1));
+        }
         assertEquals(1644, rejected("UPDATE salary SET amount = 1 WHERE id = 700000").getErrorCode());
         assertEquals(1644, rejected("DELETE FROM salary WHERE id = 700000").getErrorCode());
     }

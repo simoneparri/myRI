@@ -49,6 +49,11 @@ singola voce RAL; l'archiviazione persona conserva l'intero storico.
 
 ### Persona e manager
 
+`hired_on` e la data di inizio lavoro. PersonView calcola la seniority in anni e
+mesi completi nel fuso applicativo; il valore legacy eventualmente presente nella
+colonna `seniority` non viene piu letto o aggiornato. `hiring_location` e `residence`
+sono dati anagrafici della persona.
+
 Manager interno opzionale oppure external_manager testuale opzionale, mai entrambi.
 Nessun auto-riporto (trigger) o ciclo diretto/indiretto (service).
 I cambi manager dovranno serializzare la verifica del grafo, non usare solo
@@ -147,8 +152,9 @@ erDiagram
         varchar email
         varchar phone
         varchar role
-        varchar seniority
         date hired_on
+        varchar hiring_location
+        varchar residence
         bigint manager_id FK
         varchar external_manager
         text notes
@@ -169,6 +175,9 @@ erDiagram
         decimal amount
         char currency
         date effective_on
+        varchar contract_type
+        decimal weekly_hours
+        varchar classification_level
         text reason
         bigint source_raise_request_id FK,UK
         datetime created_at
@@ -266,6 +275,9 @@ mutabile; notification usa read_at/archived_at, non updated_at.
 - V2 aggiunge trigger append-only, anti-delete e anti-auto-riporto.
 - V3 (Step 2) aggiunge salary.request_key nullable con UNIQUE per idempotenza
   degli inserimenti manuali; le righe storiche V1/V2 rimangono inalterate.
+- V5 aggiunge sede/residenza e i dati contrattuali alla persona/RAL. Le colonne
+  contrattuali restano nullable per preservare le voci RAL storiche; nuove voci
+  manuali le richiedono e quelle generate da aumento le ereditano dalla base.
 - Flyway con flyway-mysql; Hibernate ddl-auto=validate attivo nello Step 2.
 - Harness con Spring Boot parent 3.5.16 e Java 21. Flyway 11.20.3 fissato
   esplicitamente per supportare MySQL 8.4 senza l'avviso del ramo 10

@@ -10,8 +10,10 @@ e le protezioni append-only. L'utente ha scelto di documentarlo senza separare
 le migrazioni. Uso solo locale su host fidato; dettagli in
 [review finale](docs/review-step5.md) e [guida operativa](docs/operations.md).
 
-Funzioni disponibili: anagrafica/contatti, RAL con storico immutabile, richieste
-di aumento, career talk, task/reminder, timeline, dashboard ed export CSV/JSON.
+Funzioni disponibili: scheda persona con inizio lavoro, anzianita calcolata,
+sede di assunzione e residenza; RAL immutabile con dati contrattuali storicizzati,
+richieste di aumento, career talk, task/reminder, timeline, dashboard ed export
+CSV/JSON.
 
 ## Workspace disponibile
 
@@ -258,7 +260,9 @@ log_bin_trust_function_creators=1 consente i trigger senza assegnare SUPER a Fly
 Gli script MySQL iniziali girano soltanto su volume vuoto: cambiare password
 nel .env non ruota automaticamente quelle di un DB esistente. Su dati esistenti
 occorre una procedura amministrativa esplicita, senza eliminare il volume.
-Flyway V1/V2/V3 non sono state modificate; V4 aggiunge indici per le viste Step 4.
+Flyway V1-V4 non sono state modificate; V5 aggiunge sede/residenza e i dati
+contrattuali storicizzati per le nuove voci RAL. I dati contrattuali preesistenti
+non sono ricostruiti e rimangono nulli.
 
 Bootstrap applicativo non cambia la password a un account gia esistente.
 Per reset amministrativo locale, senza scrivere la password nella cronologia:
@@ -324,7 +328,7 @@ cd backend
 ```
 
 I test avviano MySQL effimero `mysql:8`. Lo schema viene creato da V1 e aggiornato
-a V2/V3/V4, verificando conservazione e protezione dello storico.
+fino a V5, verificando conservazione e protezione dello storico.
 Usa le stesse migrazioni di produzione, valida Flyway e verifica il no-op
 di una successiva migrate. Controlla tipi,
 charset/collation, FK/indici, immutabilita RAL/audit, soft archive, account unico,

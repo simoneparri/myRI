@@ -35,7 +35,11 @@ import { SalaryTrend } from './salary-trend';
     @if (person(); as person) {
       <h1>{{ name(person) }}</h1>
       <p>{{ person['role'] }} · {{ person['email'] }} · {{ person['status'] | display }}</p>
-      <p>Assunzione: {{ person['hiredOn'] | display: 'date' }}. Orari in {{ timezone }}.</p>
+      <p>Data inizio lavoro: {{ person['hiredOn'] | display: 'date' }}</p>
+      <p>Anzianita aziendale: {{ person['seniority'] }}</p>
+      <p>Sede di assunzione: {{ person['hiringLocation'] | display }}</p>
+      <p>Residenza: {{ person['residence'] | display }}</p>
+      <p>Orari visualizzati in {{ timezone }}.</p>
       <p>
         Export completo della persona, incluse voci archiviate (massimo 1000 record). Il file
         contiene dati personali: conservalo in modo protetto.

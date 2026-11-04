@@ -12,8 +12,11 @@ public class Person extends MutableEntity {
     public String email;
     public String phone;
     public String role;
-    public String seniority;
     public LocalDate hiredOn;
+    @Column(length = 200)
+    public String hiringLocation;
+    @Column(length = 500)
+    public String residence;
     public Long managerId;
     public String externalManager;
     @Column(columnDefinition = "text")

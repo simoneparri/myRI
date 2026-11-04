@@ -14,8 +14,9 @@ public final class PersonDtos {
             @Email @Size(max = 254) String email,
             @Size(max = 50) String phone,
             @Size(max = 150) String role,
-            @Size(max = 100) String seniority,
             @NotNull LocalDate hiredOn,
+            @Size(max = 200) String hiringLocation,
+            @Size(max = 500) String residence,
             @Positive Long managerId,
             @Pattern(regexp = ".*\\S.*") @Size(max = 200) String externalManager,
             @Size(max = 10000) String notes,
@@ -24,7 +25,8 @@ public final class PersonDtos {
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "PersonView")
     public record View(Long id, String firstName, String lastName, String email,
-            String phone, String role, String seniority, LocalDate hiredOn,
+            String phone, String role, LocalDate hiredOn, String seniority,
+            String hiringLocation, String residence,
             Long managerId, String externalManager, String notes, String status,
             Instant archivedAt, Instant createdAt, Instant updatedAt, Long version) {}
 }

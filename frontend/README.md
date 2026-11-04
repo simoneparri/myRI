@@ -31,7 +31,9 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
 
 - Login, logout e sessione server HttpOnly; token CSRF solo in memoria.
   Nessun token o dato personale in localStorage/sessionStorage, log o telemetria.
-- Persone e scheda con timeline, contatti, RAL append-only, richieste con
+- Persone e scheda con data inizio lavoro, anzianita aziendale calcolata,
+  sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
+  contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
 - Dashboard con conteggi e persone senza career talk recente; notifiche storiche
   leggibili/archiviabili e dettaglio del task collegato.

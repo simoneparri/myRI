@@ -42,7 +42,7 @@ public class PersonExportService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Snapshot snapshot(Long personId) {
-        var person = PersonMapper.view(people.get(personId));
+        var person = people.view(people.get(personId));
         var salaryRows = rows(salaries, personId, SalaryDtos::view);
         Map<Long, Long> generated = new HashMap<>();
         salaryRows.stream().filter(s -> s.sourceRaiseRequestId() != null).forEach(s -> generated.put(s.sourceRaiseRequestId(), s.id()));

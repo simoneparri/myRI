@@ -60,6 +60,12 @@ class FinancialAtomicityTest extends IntegrationTest {
         assertEquals(outcomes.get(0).salaryId(), outcomes.get(1).salaryId());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM salary WHERE source_raise_request_id = ?",
                 Long.class, request.id()));
+        assertEquals("Tempo indeterminato", jdbc.queryForObject(
+                "SELECT contract_type FROM salary WHERE source_raise_request_id = ?", String.class, request.id()));
+        assertEquals(new BigDecimal("40.00"), jdbc.queryForObject(
+                "SELECT weekly_hours FROM salary WHERE source_raise_request_id = ?", BigDecimal.class, request.id()));
+        assertEquals("Livello fittizio", jdbc.queryForObject(
+                "SELECT classification_level FROM salary WHERE source_raise_request_id = ?", String.class, request.id()));
         assertEquals(3, jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_event WHERE raise_request_id = ?", Long.class, request.id()));
     }
@@ -68,7 +74,8 @@ class FinancialAtomicityTest extends IntegrationTest {
     void concurrentManualSalaryRetriesUseOneRecord() throws Exception {
         var person = asOwner(this::person);
         var input = new SalaryDtos.Input(new BigDecimal("50000"), "EUR",
-                LocalDate.of(2025, 1, 1), "Fictitious", UUID.randomUUID().toString());
+                LocalDate.of(2025, 1, 1), "Tempo indeterminato", new BigDecimal("40.00"),
+                "Livello fittizio", "Fictitious", UUID.randomUUID().toString());
         var results = parallel(() -> asOwner(() -> salaries.create(person.id(), input)));
         assertEquals(results.get(0).id(), results.get(1).id());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM salary WHERE person_id = ?", Long.class, person.id()));
@@ -107,7 +114,7 @@ class FinancialAtomicityTest extends IntegrationTest {
     private boolean updateManager(PersonDtos.View person, Long manager) {
         try {
             people.update(person.id(), new PersonDtos.Input(person.firstName(), person.lastName(), null,
-                    null, null, null, person.hiredOn(), manager, null, null, "active", person.version()));
+                    null, null, person.hiredOn(), null, null, manager, null, null, "active", person.version()));
             return true;
         } catch (ApiException exception) {
             assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
@@ -118,7 +125,8 @@ class FinancialAtomicityTest extends IntegrationTest {
     private RaiseDtos.View submitted() {
         var person = person();
         var salary = salaries.create(person.id(), new SalaryDtos.Input(new BigDecimal("50000.00"),
-                "EUR", LocalDate.of(2025, 1, 1), "Fictitious", UUID.randomUUID().toString()));
+                "EUR", LocalDate.of(2025, 1, 1), "Tempo indeterminato", new BigDecimal("40.00"),
+                "Livello fittizio", "Fictitious", UUID.randomUUID().toString()));
         var request = raises.create(new RaiseDtos.Input(person.id(), salary.id(), LocalDate.of(2026, 1, 1),
                 new BigDecimal("55000.00"), new BigDecimal("10.0000"), "Fictitious", null));
         return raises.submit(request.id(), request.version());
@@ -131,7 +139,7 @@ class FinancialAtomicityTest extends IntegrationTest {
 
     private PersonDtos.View person() {
         return people.create(new PersonDtos.Input("Fictitious", UUID.randomUUID().toString(), null, null,
-                null, null, LocalDate.of(2020, 1, 1), null, null, null, "active", null));
+                null, LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null));
     }
 
     private <T> T asOwner(Supplier<T> operation) {

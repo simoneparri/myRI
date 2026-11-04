@@ -40,7 +40,8 @@ export function validatorsFor(field: Field): ValidatorFn[] {
       control.value && Number(control.value) > 2147483647 ? { max: true } : null,
     );
   if (field.type === 'decimal') {
-    const maxIntegerDigits = field.key === 'requestedPercentage' ? 5 : 10;
+    const maxIntegerDigits =
+      field.key === 'requestedPercentage' ? 5 : field.key === 'weeklyHours' ? 3 : 10;
     rules.push(
       Validators.pattern(
         new RegExp(
@@ -54,6 +55,10 @@ export function validatorsFor(field: Field): ValidatorFn[] {
           ? { min: true }
           : null,
     );
+    if (field.key === 'weeklyHours')
+      rules.push((control) =>
+        control.value && Number(control.value) > 168 ? { max: true } : null,
+      );
   }
   if (field.key === 'currency') rules.push(Validators.pattern(/^[A-Z]{3}$/));
   if (field.type === 'date') rules.push(Validators.pattern(/^[1-9]\d{3}-\d{2}-\d{2}$/));

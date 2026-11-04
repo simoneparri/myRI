@@ -284,6 +284,21 @@ Review statica senza garanzia di assenza vulnerabilita. Nessuna release, tag,
 push, distribuzione remota o nuova funzione autorizzata implicitamente.
 Stack di verifica fermati alla consegna, volumi fittizi conservati.
 
+## Estensione autorizzata dopo Step 5 - dati della scheda e RAL
+
+Su richiesta esplicita dell'utente, la scheda persona mostra data inizio lavoro,
+anzianita aziendale calcolata in anni/mesi nel fuso applicativo, sede di assunzione
+e residenza. Le voci RAL includono tipo contratto, ore settimanali e livello di
+inquadramento; le nuove voci manuali li richiedono. Una RAL generata da aumento
+eredita i dati della RAL base. La migrazione V5 aggiunge i campi mantenendoli
+nulli sulle righe storiche, senza inventare dati; la vecchia seniority rimane
+preservata nel DB ma non e piu usata.
+
+Verifiche dell'estensione: **65 test backend passati** con Flyway/MySQL; **26 test
+frontend passati** e build production riuscita (467.32 kB iniziali). E2E browser
+aggiornato ma non rieseguito: richiede uno stack Compose e credenziali fittizie
+dedicati. Nessuna release o pubblicazione.
+
 ## Regole di integrazione
 
 Ogni incarico elenca file posseduti, dipendenze e condizione di stop.

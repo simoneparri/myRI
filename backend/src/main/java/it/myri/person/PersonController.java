@@ -22,7 +22,7 @@ public class PersonController {
     }
 
     @GetMapping("/{id}")
-    public PersonDtos.View get(@PathVariable Long id) { return PersonMapper.view(service.get(id)); }
+    public PersonDtos.View get(@PathVariable Long id) { return service.view(service.get(id)); }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class PersonServiceTest {
     private final PersonRepository repository = mock(PersonRepository.class);
     private final AppUserRepository users = mock(AppUserRepository.class);
-    private final PersonService service = new PersonService(repository, users, Clock.systemUTC());
+    private final PersonService service = new PersonService(repository, users, Clock.systemUTC(), ZoneId.of("UTC"));
 
     @Test
     void managerGraphIsLockedBeforeRejectingCycle() {
@@ -37,6 +37,15 @@ class PersonServiceTest {
         verify(repository, never()).saveAndFlush(any());
     }
 
+    @Test
+    void seniorityUsesCompletedYearsAndMonthsInApplicationTimezone() {
+        var localDayBoundary = Clock.fixed(Instant.parse("2026-11-04T23:30:00Z"), ZoneOffset.UTC);
+        var personService = new PersonService(repository, users, localDayBoundary, ZoneId.of("Europe/Rome"));
+        Person person = person(3L);
+        person.hiredOn = LocalDate.of(2020, 11, 5);
+        assertEquals("6 anni e 0 mesi", personService.view(person).seniority());
+    }
+
     private static Person person(Long id) {
         Person p = new Person();
         p.id = id;
@@ -45,7 +54,7 @@ class PersonServiceTest {
     }
 
     private static PersonDtos.Input input(Long manager, Long version) {
-        return new PersonDtos.Input("Fictitious", "Example", null, null, null, null,
-                LocalDate.of(2020, 1, 1), manager, null, null, "active", version);
+        return new PersonDtos.Input("Fictitious", "Example", null, null, null,
+                LocalDate.of(2020, 1, 1), null, null, manager, null, null, "active", version);
     }
 }

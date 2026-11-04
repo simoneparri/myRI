@@ -43,7 +43,9 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
   await dialog.getByLabel('Email', { exact: true }).fill(`e2e-${suffix}@example.test`);
-  await dialog.getByLabel('Data assunzione').fill('2026-01-02');
+  await dialog.getByLabel('Data inizio lavoro').fill('2026-01-02');
+  await dialog.getByLabel('Sede di assunzione').fill('Sede fittizia');
+  await dialog.getByLabel('Residenza').fill('Residenza fittizia');
   await save(page);
   await page.getByLabel('Cerca', { exact: true }).fill(firstName);
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
@@ -57,6 +59,9 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
+  await expect(page.getByText(/^Anzianita aziendale:/)).toBeVisible();
+  await expect(page.getByText('Sede di assunzione: Sede fittizia', { exact: true })).toBeVisible();
+  await expect(page.getByText('Residenza: Residenza fittizia', { exact: true })).toBeVisible();
   const personUrl = page.url();
 
   await page.getByRole('tab', { name: 'Contatti', exact: true }).click();
@@ -86,12 +91,18 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.00');
   await dialog.getByLabel('Decorrenza', { exact: true }).fill('2026-01-02');
+  await dialog.getByLabel('Tipo contratto', { exact: true }).fill('Tempo indeterminato');
+  await dialog.getByLabel('Ore settimanali', { exact: true }).fill('40.00');
+  await dialog.getByLabel('Livello di inquadramento', { exact: true }).fill('Livello fittizio');
   await dialog.getByLabel('Motivo della variazione').fill('RAL fittizia iniziale');
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'RAL fittizia iniziale' });
   await expect(row).toContainText('45.000,00');
   await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
   await expect(row.getByRole('button', { name: 'Archivia', exact: true })).toHaveCount(0);
+  await expect(row).toContainText('Tempo indeterminato');
+  await expect(row).toContainText('40,00');
+  await expect(row).toContainText('Livello fittizio');
 
   await page.getByRole('tab', { name: 'Aumenti', exact: true }).click();
   await page.getByRole('button', { name: 'Nuova richiesta', exact: true }).click();
@@ -121,7 +132,11 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await expect(row).toContainText('Approvata');
   await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
   await page.getByRole('tab', { name: 'RAL', exact: true }).click();
-  await expect(page.getByRole('row').filter({ hasText: '48.000,00' })).toHaveCount(1);
+  const generatedSalary = page.getByRole('row').filter({ hasText: '48.000,00' });
+  await expect(generatedSalary).toHaveCount(1);
+  await expect(generatedSalary).toContainText('Tempo indeterminato');
+  await expect(generatedSalary).toContainText('40,00');
+  await expect(generatedSalary).toContainText('Livello fittizio');
 
   await page.getByRole('tab', { name: 'Career talk', exact: true }).click();
   await page.getByRole('button', { name: 'Nuovo career talk', exact: true }).click();
@@ -255,7 +270,7 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   let dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
-  await dialog.getByLabel('Data assunzione').fill('2020-01-02');
+  await dialog.getByLabel('Data inizio lavoro').fill('2020-01-02');
   await save(page);
   await page.getByLabel('Cerca', { exact: true }).fill(firstName);
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
@@ -273,6 +288,9 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('RAL annua (es. 45000.00)', { exact: true }).fill('45000.12');
   await dialog.getByLabel('Decorrenza', { exact: true }).fill('2099-01-01');
+  await dialog.getByLabel('Tipo contratto', { exact: true }).fill('Tempo determinato');
+  await dialog.getByLabel('Ore settimanali', { exact: true }).fill('32.00');
+  await dialog.getByLabel('Livello di inquadramento', { exact: true }).fill('Livello fittizio');
   await dialog.getByLabel('Motivo della variazione').fill('Andamento fittizio');
   await save(page);
   await page.getByRole('tab', { name: 'Andamento RAL', exact: true }).click();
