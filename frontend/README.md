@@ -39,6 +39,13 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
   I framework conosciuti sono un elenco libero, inserito uno per riga e mostrato
   accanto al ruolo nella lista persone e nella scheda.
+  Manager interno/esterno non sono piu mostrati o modificabili; gli eventuali
+  valori legacy sono preservati durante le modifiche della persona.
+  La nuova tab Progetti gestisce cliente, date da/a facoltative, BM di riferimento,
+  Presenza/Remoto/Ibrido e note. Progetti attivi ora evidenziati e filtri dedicati
+  per attivi, passati e futuri; dettaglio, modifica e archiviazione con versione.
+  Gli estremi data sono inclusivi nel fuso applicativo; date assenti indicano
+  estremi aperti (entrambe assenti = progetto attivo). Sono ammesse sovrapposizioni.
   La lista persone apre la Scheda: tutte le informazioni del precedente dettaglio
   sono visibili nella pagina, da cui si puo modificare la persona non archiviata.
   Le azioni di lista, scheda e dialog hanno icone SVG locali decorative e label
@@ -116,10 +123,10 @@ lockfile (attualmente `mcr.microsoft.com/playwright:v1.64.1-noble`), montando
 questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
-`e2e/people-sheet.spec.ts` usa soltanto API simulate con dati fittizi e verifica
+`e2e/people-sheet.spec.ts` e `e2e/projects.spec.ts` usano soltanto API simulate con dati fittizi e verificano
 lista, scheda, modifica, icone e calendario su desktop/mobile, oltre ai filtri
-data/ora e ai payload UTC: si puo eseguire senza database
-o credenziali con `E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts`
+data/ora, payload UTC, creazione/modifica progetti e filtri dei periodi: si possono eseguire senza database
+o credenziali con `E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts e2e/projects.spec.ts`
 contro il dev server.
 
 ## Consegna e limiti

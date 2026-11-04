@@ -77,7 +77,6 @@ for (const width of [1440, 390]) {
       'Recapito fittizio',
       'Sede fittizia',
       'Residenza fittizia',
-      'Manager fittizio',
       'Note fittizie',
     ]) {
       await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();

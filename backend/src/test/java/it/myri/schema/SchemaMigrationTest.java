@@ -63,7 +63,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(6, flyway.migrate().migrationsExecuted);
+        assertEquals(7, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -140,6 +140,21 @@ class SchemaMigrationTest {
     }
 
     @Test
+    void projectsAllowOpenDatesButRejectReversedDatesInvalidModesAndPhysicalDeletion() throws SQLException {
+        long owner = person();
+        long project = insert("""
+                INSERT INTO project(person_id,client,work_mode,created_at,updated_at)
+                VALUES (?,'Cliente fittizio','remote',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))
+                """, owner);
+        assertEquals(1, scalar("SELECT COUNT(*) FROM project WHERE id = ? AND starts_on IS NULL AND ends_on IS NULL", project));
+        rejected("UPDATE project SET starts_on='2026-11-06',ends_on='2026-11-05' WHERE id=?", project);
+        rejected("UPDATE project SET work_mode='invalid' WHERE id=?", project);
+        rejected("DELETE FROM project WHERE id=?", project);
+        execute("UPDATE project SET archived_at=UTC_TIMESTAMP(6) WHERE id=?", project);
+        assertEquals(1, scalar("SELECT COUNT(*) FROM project WHERE id = ? AND archived_at IS NOT NULL", project));
+    }
+
+    @Test
     void allTablesUseInnoDbUtf8AndLowercaseNames() throws SQLException {
         try (Statement statement = connection.createStatement();
                 ResultSet tables = statement.executeQuery("""
@@ -154,13 +169,13 @@ class SchemaMigrationTest {
                 assertEquals("utf8mb4_0900_ai_ci", tables.getString(3));
                 count++;
             }
-            assertEquals(9, count);
+            assertEquals(10, count);
         }
         assertEquals(0, scalar("""
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND data_type = 'enum'
                 """));
-        assertEquals(9, scalar("""
+        assertEquals(10, scalar("""
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND column_name = 'id'
                   AND data_type = 'bigint' AND extra = 'auto_increment'

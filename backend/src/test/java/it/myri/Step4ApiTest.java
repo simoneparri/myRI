@@ -161,7 +161,10 @@ class Step4ApiTest extends IntegrationTest {
         }
         mvc.perform(get("/api/v1/people/" + p + "/export")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.contacts.length()").value(999));
-        insert("INSERT INTO contact(person_id,type,value,version) VALUES(?,'chat','Fittizio',0)", p);
+        insert("""
+                INSERT INTO project(person_id,client,work_mode,created_at,updated_at)
+                VALUES (?,'Cliente fittizio','remote',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))
+                """, p);
         mvc.perform(get("/api/v1/people/" + p + "/export"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("nessun dato e stato troncato")));

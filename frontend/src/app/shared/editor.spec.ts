@@ -180,6 +180,37 @@ describe('Editor', () => {
     editor.form.controls['mypadId'].setValue('');
     expect(editor.form.controls['mypadId'].invalid).toBe(true);
   });
+  it('hides legacy manager fields and preserves their stored values when editing people', async () => {
+    const editor = create({
+      resource: 'people', path: 'people',
+      row: {
+        id: '1', version: '4', firstName: 'Persona', lastName: 'Fittizia',
+        hiredOn: '2020-01-01', status: 'active', managerId: '2', externalManager: null,
+      },
+    });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    expect(editor.form.controls['managerId']).toBeUndefined();
+    expect(editor.form.controls['externalManager']).toBeUndefined();
+    put.mockResolvedValue({});
+    await editor.save();
+    expect(put).toHaveBeenCalledWith('people/1',
+      expect.objectContaining({ managerId: '2', externalManager: null }));
+  });
+  it('validates project dates and allows both endpoints to be absent', async () => {
+    const editor = create({ resource: 'projects', path: 'people/1/projects', personId: '1' });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    editor.form.patchValue({ client: 'Cliente fittizio', startsOn: '2026-11-06', endsOn: '2026-11-05' });
+    await editor.save();
+    expect(post).not.toHaveBeenCalled();
+    expect(editor.error()).toContain('fine progetto');
+    editor.form.patchValue({ startsOn: '', endsOn: '', businessManager: 'BM fittizio' });
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenCalledWith('people/1/projects', expect.objectContaining({
+      client: 'Cliente fittizio', startsOn: null, endsOn: null,
+      businessManager: 'BM fittizio', workMode: 'hybrid',
+    }));
+  });
   it('uses the same salary idempotency key on retry and surfaces the failed request', async () => {
     const editor = create({ resource: 'salaries', path: 'people/1/salaries', personId: '1' });
     await vi.waitFor(() => expect(editor.loading()).toBe(false));

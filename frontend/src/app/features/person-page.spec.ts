@@ -72,7 +72,6 @@ describe('PersonPage', () => {
       '02/01/2020',
       'Sede fittizia',
       'Residenza fittizia',
-      '9007199254740994',
       'Note fittizie\nSeconda riga',
       'Attiva',
       '6 anni',
@@ -84,6 +83,8 @@ describe('PersonPage', () => {
       expect(details.textContent).toContain(value);
     }
     expect(details.textContent).not.toContain(person.id);
+    expect(details.textContent).not.toContain('Manager interno');
+    expect(details.textContent).not.toContain('Manager esterno');
     const link = details.querySelector('a')!;
     expect(link.href).toBe('https://mypad.altengroup.com/employees/fictitious-123');
     expect(link.target).toBe('_blank');

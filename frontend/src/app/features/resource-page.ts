@@ -73,7 +73,7 @@ import { Toast } from '../shared/toast';
             </mat-form-field>
           }
         }
-        @if (!personId() && resource() !== 'people') {
+        @if (!personId() && resource() !== 'people' && resource() !== 'projects') {
           <mat-form-field appearance="outline"
             ><mat-label>Persona</mat-label>
             <mat-select name="person" [(ngModel)]="personFilter">
@@ -95,14 +95,14 @@ import { Toast } from '../shared/toast';
             </mat-select>
           </mat-form-field>
         }
-        @if (resource() === 'people') {
-          <mat-form-field appearance="outline"
-            ><mat-label>Manager interno</mat-label>
-            <mat-select name="manager" [(ngModel)]="manager">
-              <mat-option value="">Tutti</mat-option>
-              @for (person of people(); track person.id) {
-                <mat-option [value]="person.id">{{ name(person) }}</mat-option>
-              }
+        @if (resource() === 'projects') {
+          <mat-form-field appearance="outline">
+            <mat-label>Periodo</mat-label>
+            <mat-select name="period" [(ngModel)]="projectPeriod">
+              <mat-option value="">Tutti i progetti</mat-option>
+              <mat-option value="current">Attivi ora</mat-option>
+              <mat-option value="past">Passati</mat-option>
+              <mat-option value="upcoming">Futuri</mat-option>
             </mat-select>
           </mat-form-field>
         }
@@ -153,6 +153,10 @@ import { Toast } from '../shared/toast';
           iniziano domani. Task senza scadenza solo in Tutti aperti.
         </p>
       }
+      @if (resource() === 'projects') {
+        <p>Le date sono facoltative: una data assente indica un periodo aperto.
+          Il giorno di fine e incluso. I progetti attivi ora sono evidenziati.</p>
+      }
       @if (error()) {
         <p role="alert" class="error">{{ error() }}</p>
       }
@@ -179,7 +183,10 @@ import { Toast } from '../shared/toast';
             </thead>
             <tbody>
               @for (row of page().items; track row.id) {
-                <tr [class.archived]="row['archivedAt']">
+                <tr
+                  [class.archived]="row['archivedAt']"
+                  [class.current-project]="resource() === 'projects' && row['status'] === 'current'"
+                >
                   @for (column of definition().columns; track column.key) {
                     <td>
                       {{
@@ -189,6 +196,9 @@ import { Toast } from '../shared/toast';
                       }}
                       @if ($first && row['archivedAt']) {
                         <span class="badge">Archiviato</span>
+                      }
+                      @if ($first && resource() === 'projects' && row['status'] === 'current') {
+                        <strong class="badge">Attivo ora</strong>
                       }
                     </td>
                   }
@@ -292,6 +302,14 @@ import { Toast } from '../shared/toast';
       ></mat-paginator>
     </section>
   `,
+  styles: `
+    .current-project {
+      background: var(--mat-sys-secondary-container, #e8f5e9);
+    }
+    .current-project td:first-child {
+      border-inline-start: 4px solid var(--mat-sys-primary, #256342);
+    }
+  `,
 })
 export class ResourcePage {
   readonly resource = input.required<Resource>();
@@ -323,7 +341,7 @@ export class ResourcePage {
   priority = '';
   from = '';
   to = '';
-  manager = '';
+  projectPeriod = '';
   category = '';
   includeArchived = false;
   pageIndex = 0;
@@ -351,7 +369,7 @@ export class ResourcePage {
           this.priority =
           this.from =
           this.to =
-          this.manager =
+          this.projectPeriod =
           this.category =
             '';
         this.includeArchived = false;
@@ -361,7 +379,7 @@ export class ResourcePage {
     });
   }
   private path(): string {
-    return this.resource() === 'contacts' || this.resource() === 'salaries'
+    return ['contacts', 'salaries', 'projects'].includes(this.resource())
       ? `people/${this.personId()}/${this.resource()}`
       : this.resource();
   }
@@ -381,7 +399,8 @@ export class ResourcePage {
     if (this.q.trim()) this.applied['q'] = this.q.trim();
     if (this.status) this.applied['status'] = this.status;
     if (this.priority) this.applied['priority'] = this.priority;
-    if (this.manager) this.applied['managerId'] = this.manager;
+    if (this.resource() === 'projects' && this.projectPeriod)
+      this.applied['period'] = this.projectPeriod;
     if (this.category.trim())
       this.applied[this.resource() === 'contacts' ? 'type' : 'currency'] = this.category.trim();
     if (this.personFilter) this.applied['personId'] = this.personFilter;
@@ -411,7 +430,7 @@ export class ResourcePage {
     try {
       const query = { ...this.applied, page: this.pageIndex, size: this.size };
       if (this.appliedView) Object.assign(query, { view: this.appliedView });
-      if (this.personId() && !['contacts', 'salaries'].includes(this.resource())) {
+      if (this.personId() && !['contacts', 'salaries', 'projects'].includes(this.resource())) {
         Object.assign(query, { personId: this.personId() });
       }
       const [page, people] = await Promise.all([

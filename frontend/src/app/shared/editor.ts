@@ -337,7 +337,6 @@ export class Editor {
                 : {},
             );
             results[field.key] = rows
-              .filter((row) => field.key !== 'managerId' || row.id !== this.data.row?.id)
               .map((row) => ({
                 value: row.id,
                 label:
@@ -377,16 +376,21 @@ export class Editor {
       return;
     }
     if (
+      this.data.resource === 'projects' &&
+      values['startsOn'] &&
+      values['endsOn'] &&
+      values['startsOn'] > values['endsOn']
+    ) {
+      this.error.set('La data di fine progetto non puo precedere quella di inizio.');
+      return;
+    }
+    if (
       this.data.resource === 'raise-requests' &&
       !this.data.command &&
       !values['requestedSalary'] &&
       !values['requestedPercentage']
     ) {
       this.error.set('Indica una RAL target o una percentuale.');
-      return;
-    }
-    if (values['managerId'] && values['externalManager']) {
-      this.error.set('Scegli un solo tipo di manager.');
       return;
     }
     if (
@@ -407,6 +411,10 @@ export class Editor {
     this.saving.set(true);
     try {
       const payload = payloadFor(this.fields, values);
+      if (this.data.resource === 'people' && this.data.row) {
+        payload['managerId'] = this.data.row['managerId'] ?? null;
+        payload['externalManager'] = this.data.row['externalManager'] ?? null;
+      }
       if (this.data.row) payload['version'] = this.data.row.version ?? null;
       if (this.data.resource === 'salaries') payload['requestKey'] = this.requestKey;
       if (this.data.command === 'approve')

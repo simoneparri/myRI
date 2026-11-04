@@ -42,6 +42,18 @@ catalogo predefinito. Migrazione V7 con array JSON vuoto per i record esistenti.
 La UI consente un framework per riga; API JSON mantiene l'array e CSV lo presenta
 in una cella. Nessuna integrazione o sincronizzazione esterna.
 
+Estensione progetti autorizzata: rimuovere dalla UI manager interno/esterno e
+aggiungere una tab Progetti alla scheda persona, con cliente, date da/a nullable,
+BM testuale, modalita Presenza/Remoto/Ibrido e note. Date inclusive nel fuso
+applicativo; estremi assenti aperti, entrambe null = attivo. Evidenziazione
+Attivo ora e filtri Passati/Futuri; sovrapposizioni ammesse, archiviazione logica.
+Migrazione V8 additiva, API paginate, export comprensivo dei progetti e grant
+runtime senza DELETE. Dati manager e API legacy preservati, nessun backfill.
+Richiesta di disattivazione trigger in sviluppo gestita con comando amministrativo
+esplicito e reversibile, solo profilo dev e database *_dev/*_test con conferma
+di dati fittizi; nessuna modifica alle migrazioni applicate o ai grant runtime.
+Nessuna disattivazione automatica su installazioni esistenti o normali.
+
 ## Scelte di struttura dello Step 1 approvate
 
 - Monorepo backend/ e frontend/, Maven Wrapper, package per dominio con layer

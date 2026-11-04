@@ -9,6 +9,7 @@ import it.myri.salary.*;
 import it.myri.raiserequest.*;
 import it.myri.careertalk.*;
 import it.myri.task.*;
+import it.myri.project.*;
 import java.time.*;
 import java.util.*;
 import java.util.function.Function;
@@ -29,16 +30,20 @@ public class PersonExportService {
     private final RaiseRequestRepository raises;
     private final CareerTalkRepository talks;
     private final TaskRepository tasks;
+    private final ProjectRepository projects;
+    private final ProjectService projectService;
     private final Clock clock;
     private final ObjectMapper json;
     public PersonExportService(PersonService people, ContactRepository contacts, SalaryRepository salaries,
-            RaiseRequestRepository raises, CareerTalkRepository talks, TaskRepository tasks, Clock clock, ObjectMapper json) {
+            RaiseRequestRepository raises, CareerTalkRepository talks, TaskRepository tasks, Clock clock, ObjectMapper json,
+            ProjectRepository projects, ProjectService projectService) {
         this.people = people; this.contacts = contacts; this.salaries = salaries;
         this.raises = raises; this.talks = talks; this.tasks = tasks; this.clock = clock; this.json = json;
+        this.projects = projects; this.projectService = projectService;
     }
     public record Snapshot(int schemaVersion, Instant exportedAt, PersonDtos.View person,
             List<ContactDtos.View> contacts, List<SalaryDtos.View> salaries, List<RaiseDtos.View> raiseRequests,
-            List<CareerTalkDtos.View> careerTalks, List<TaskDtos.View> tasks) {}
+            List<CareerTalkDtos.View> careerTalks, List<TaskDtos.View> tasks, List<ProjectDtos.View> projects) {}
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Snapshot snapshot(Long personId) {
@@ -48,9 +53,10 @@ public class PersonExportService {
         salaryRows.stream().filter(s -> s.sourceRaiseRequestId() != null).forEach(s -> generated.put(s.sourceRaiseRequestId(), s.id()));
         var result = new Snapshot(1, clock.instant(), person, rows(contacts, personId, ContactDtos::view), salaryRows,
                 rows(raises, personId, r -> RaiseDtos.view(r, generated.get(r.id))),
-                rows(talks, personId, CareerTalkDtos::view), rows(tasks, personId, TaskDtos::view));
+                rows(talks, personId, CareerTalkDtos::view), rows(tasks, personId, TaskDtos::view),
+                rows(projects, personId, projectService::view));
         int count = 1 + result.contacts().size() + result.salaries().size() + result.raiseRequests().size()
-                + result.careerTalks().size() + result.tasks().size();
+                + result.careerTalks().size() + result.tasks().size() + result.projects().size();
         if (count > MAX_RECORDS) throw tooLarge();
         return result;
     }
@@ -72,6 +78,7 @@ public class PersonExportService {
         groups.put("raise_request", snapshot.raiseRequests().stream().map(json::<JsonNode>valueToTree).toList());
         groups.put("career_talk", snapshot.careerTalks().stream().map(json::<JsonNode>valueToTree).toList());
         groups.put("task", snapshot.tasks().stream().map(json::<JsonNode>valueToTree).toList());
+        groups.put("project", snapshot.projects().stream().map(json::<JsonNode>valueToTree).toList());
         LinkedHashSet<String> fields = new LinkedHashSet<>();
         groups.values().forEach(list -> list.forEach(row -> row.fieldNames().forEachRemaining(fields::add)));
         StringBuilder csv = new StringBuilder();

@@ -73,11 +73,23 @@ La UI usa il valore per un link alla pagina dipendente MyPad, senza chiamate API
 o sincronizzazione di dati verso servizi esterni.
 
 Manager interno opzionale oppure external_manager testuale opzionale, mai entrambi.
+Questi campi sono ora legacy: rimossi dalla UI, conservati nel DB e nelle API
+senza migrazione distruttiva e senza conversioni automatiche in progetti.
 Nessun auto-riporto (trigger) o ciclo diretto/indiretto (service).
 I cambi manager dovranno serializzare la verifica del grafo, non usare solo
 controlli ottimistici sui singoli nodi: un lock sulla riga app_user singleton,
 poi verifica antenati e modifica nella stessa transazione evita cicli concorrenti.
 L'archiviazione non elimina riferimenti storici.
+
+### Progetti della persona
+
+La tabella `project` registra cliente, date civili nullable `starts_on`/`ends_on`,
+BM testuale, `work_mode` (`onsite|remote|hybrid`) e note. FK person_id con indice
+e ON DELETE RESTRICT, versionamento ottimistico e archiviazione logica.
+Le date sono inclusive; un limite assente e aperto, entrambi assenti indicano
+un progetto attivo. Lo stato attivo/passato/futuro e derivato dal calendario
+APP_TIMEZONE, mai memorizzato. Progetti sovrapposti sono ammessi.
+L'export include anche i progetti archiviati nel limite complessivo di 1000 record.
 
 ### Richiesta aumento e RAL
 
@@ -191,6 +203,17 @@ erDiagram
         text notes
         datetime archived_at
     }
+    project {
+        bigint id PK
+        bigint person_id FK
+        varchar client
+        date starts_on
+        date ends_on
+        varchar business_manager
+        varchar work_mode
+        text notes
+        datetime archived_at
+    }
     salary {
         bigint id PK
         bigint person_id FK
@@ -268,6 +291,7 @@ erDiagram
     }
     person o|--o{ person : manages
     person ||--o{ contact : has
+    person ||--o{ project : project_history
     person ||--o{ salary : salary_history
     person ||--o{ raise_request : requests
     salary ||--o{ raise_request : immutable_base

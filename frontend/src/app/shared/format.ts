@@ -15,6 +15,13 @@ export function calendarDate(instant: Date, zone: string): string {
 }
 export const labels: Record<string, string> = {
   active: 'Attiva',
+  onsite: 'Presenza',
+  remote: 'Remoto',
+  hybrid: 'Ibrido',
+  current: 'Attivo ora',
+  past: 'Passato',
+  upcoming: 'Futuro',
+  archived: 'Archiviato',
   junior: 'Junior',
   medior: 'Medior',
   senior: 'Senior',

@@ -215,6 +215,7 @@ export class PersonPage {
     totalPages: 0,
   });
   readonly tabs = [
+    { resource: 'projects' as const, label: 'Progetti' },
     { resource: 'contacts' as const, label: 'Contatti' },
     { resource: 'salaries' as const, label: 'RAL' },
     { resource: 'raise-requests' as const, label: 'Aumenti' },

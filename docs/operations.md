@@ -49,6 +49,36 @@ Cambiare password DB nel `.env` **non** cambia le utenze gia presenti: ruotarle
 con procedura amministrativa esplicita, senza esporre segreti o perdere il volume.
 Il profilo `dev` e soltanto per installazioni fittizie dedicate.
 
+### Trigger solo in sviluppo
+
+Le migrazioni normali continuano a creare i trigger di protezione di RAL, audit,
+cancellazioni e riferimenti. MySQL non offre un comando temporaneo DISABLE TRIGGER:
+lo script amministrativo seguente li rimuove e li ricrea esplicitamente.
+Usarlo esclusivamente su dati fittizi sacrificabili. Non disabilita CSRF,
+autenticazione, CHECK/FK, validazioni service o privilegi runtime.
+La rimozione non autorizza DELETE/UPDATE finanziari tramite l'account runtime.
+
+Il comando richiede un backend avviato con profilo `dev`, un database con nome
+terminante in `_dev` o `_test` e una conferma esplicita. Usa il migrator del
+servizio MySQL interno senza stampare credenziali; fallisce se i requisiti mancano.
+Per istanze MySQL esterne serve una procedura DBA dedicata: questo comando
+non le gestisce. Evitare scritture concorrenti durante rimozione/ripristino.
+
+```sh
+MYRI_DEV_DATABASE_CONFIRM=fictitious-data-only bash scripts/dev-triggers.sh disable
+MYRI_DEV_DATABASE_CONFIRM=fictitious-data-only bash scripts/dev-triggers.sh enable
+```
+
+`MYRI_ENV_FILE` seleziona un env file privato alternativo; `COMPOSE_FILE` e
+`COMPOSE_PROJECT_NAME` consentono di selezionare lo stack fittizio dedicato.
+Il ripristino ricrea le definizioni versionate V2/V8, senza riscrivere la storia
+Flyway. Riavviare il backend **non** ripristina automaticamente i trigger rimossi:
+eseguire `enable` prima di riutilizzare il database con protezioni normali.
+Il DDL non e transazionale: in caso di errore il comando fallisce esplicitamente
+e possono essere presenti solo alcuni trigger; rieseguire `enable` e verificare.
+Nessuno stack esistente e modificato automaticamente dall'aggiunta dello script.
+Harness: `bash scripts/test-dev-triggers.sh`.
+
 `docker compose down` rimuove container/reti, **non il volume dati**.
 Non usare `down -v`, prune o cancellazioni di volumi per risolvere errori.
 Le sessioni sono in memoria: un riavvio backend richiede un nuovo login.

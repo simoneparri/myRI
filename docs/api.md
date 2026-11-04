@@ -59,6 +59,9 @@ Keycloak/OIDC rimane un'opzione futura, non un provider fittizio gia attivo.
 | people/{id}/contacts | GET, POST | q su tipo/valore, type |
 | contacts/{id} | GET, PUT | persona non trasferibile |
 | contacts/{id}/archive | POST | version |
+| people/{id}/projects | GET, POST | q su cliente/BM/note, period=current/past/upcoming, includeArchived |
+| projects/{id} | GET, PUT | persona non trasferibile, versione obbligatoria in PUT |
+| projects/{id}/archive | POST | version |
 | people/{id}/salaries | GET, POST | q su motivo, currency, from/to per decorrenza |
 | raise-requests | GET, POST | q su motivazione, personId, status |
 | raise-requests/{id} | GET, PUT | modifica solo draft/submitted |
@@ -114,6 +117,30 @@ campi restano null, `hiredOn` resta invariata. L'eventuale colonna legacy
 `seniority` resta nel database senza essere letta o aggiornata.
 JSON/CSV includono i nuovi campi. Reminder e soglie aziendali continuano a usare
 la data di assunzione, non quella di inizio carriera.
+
+### Progetti
+
+La scheda persona contiene una tab Progetti distinta dalla timeline.
+`ProjectInput`: `client` obbligatorio (massimo 200 caratteri), `startsOn` e
+`endsOn` facoltativi, `businessManager` testuale (BM di riferimento, massimo 200),
+`workMode` obbligatorio (`onsite|remote|hybrid`, Presenza/Remoto/Ibrido) e `notes`
+facoltative (massimo 10000). Le date sono civili; quando entrambe presenti
+l'inizio non puo seguire la fine. Sono ammessi progetti contemporanei.
+
+`ProjectView.status` e calcolato alla data corrente in APP_TIMEZONE:
+`current` se oggi cade nell'intervallo inclusivo, `past` se la fine precede oggi,
+`upcoming` se l'inizio segue oggi, `archived` se archiviato. Un estremo null
+indica un limite aperto: con entrambe le date null il progetto e attivo ora.
+Lo stato non e modificabile dal client. Il filtro `period` esclude gli archiviati
+anche se `includeArchived=true`; senza `period` quest'ultimo li rende consultabili.
+Liste paginate, ordinamento predefinito `startsOn,desc`; ammessi anche id, client,
+endsOn e createdAt. Archiviazione logica, nessun DELETE o trasferimento di persona.
+Progetti di persone archiviate restano leggibili, non creabili/modificabili.
+La migrazione V8 non converte i precedenti manager in progetti.
+
+Manager interno/esterno e relativo filtro non sono piu visibili nel frontend.
+I dati e i campi API legacy restano preservati per compatibilita; modificare
+la persona dalla UI non azzera il precedente manager.
 
 ### RAL e audit
 
@@ -228,17 +255,17 @@ nessuna conversione di valuta o importo in floating point.
 
 Accesso OWNER obbligatorio come per le altre API. Snapshot transazionale
 REPEATABLE_READ comprendente persona, contatti, storico RAL, aumenti,
-career talk e task collegati, **anche archiviati**. Non include notifiche,
+career talk, task e progetti collegati, **anche archiviati**. Non include notifiche,
 audit finanziario, utenti o password; questi appartengono al backup completo.
 Nessuna importazione e prevista dal formato export.
 
-JSON: `{schemaVersion:1,exportedAt,person,contacts,salaries,raiseRequests,careerTalks,tasks}`.
+JSON: `{schemaVersion:1,exportedAt,person,contacts,salaries,raiseRequests,careerTalks,tasks,projects}`.
 ID/versioni/denaro come stringhe, date civili e istanti come nelle API.
 Record ordinati per ID all'interno di ogni gruppo. `sourceRaiseRequestId` e
 l'eventuale salaryId nella richiesta preservano i collegamenti.
 CSV UTF-8 unico con intestazione `recordType,schemaVersion,exportedAt` e unione
 dei nomi campo dei DTO presenti. recordType e person/contact/salary/raise_request/
-career_talk/task; campi assenti o null vuoti. Separatore virgola, record CRLF,
+career_talk/task/project; campi assenti o null vuoti. Separatore virgola, record CRLF,
 doppi apici raddoppiati, celle tra doppi apici (tranne metadati fissi).
 Campi testuali potenzialmente interpretati come formule (`=+-@`, anche dopo
 whitespace iniziale, oppure tab/CR/LF iniziali) ricevono un apostrofo iniziale.

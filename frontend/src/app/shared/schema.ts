@@ -25,7 +25,7 @@ export interface Column {
   type?: string;
 }
 export type Resource =
-  'people' | 'contacts' | 'salaries' | 'raise-requests' | 'career-talks' | 'tasks';
+  'people' | 'contacts' | 'projects' | 'salaries' | 'raise-requests' | 'career-talks' | 'tasks';
 export interface Definition {
   title: string;
   singular: string;
@@ -35,7 +35,7 @@ export interface Definition {
 }
 export function newLabel(resource: Resource): string {
   return (
-    (['contacts', 'career-talks', 'tasks'].includes(resource) ? 'Nuovo ' : 'Nuova ') +
+    (['contacts', 'projects', 'career-talks', 'tasks'].includes(resource) ? 'Nuovo ' : 'Nuova ') +
     definitions[resource].singular
   );
 }
@@ -100,8 +100,6 @@ export const definitions: Record<Resource, Definition> = {
       },
       { key: 'hiringLocation', label: 'Sede di assunzione', max: 200 },
       { key: 'residence', label: 'Residenza', max: 500 },
-      { key: 'managerId', label: 'Manager interno', type: 'id', reference: 'people' },
-      { key: 'externalManager', label: 'Manager esterno (alternativo)', max: 200 },
       text('notes', 'Note'),
       choice('status', 'Stato', ['active', 'inactive'], 'active'),
     ],
@@ -126,6 +124,26 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'type', label: 'Tipo' },
       { key: 'value', label: 'Recapito' },
       { key: 'notes', label: 'Note' },
+    ],
+  },
+  projects: {
+    title: 'Progetti',
+    singular: 'progetto',
+    fields: [
+      { key: 'client', label: 'Cliente', required: true, max: 200 },
+      { key: 'startsOn', label: 'Data da', type: 'date' },
+      { key: 'endsOn', label: 'Data a', type: 'date' },
+      { key: 'businessManager', label: 'BM di riferimento', max: 200 },
+      choice('workMode', 'Modalita di lavoro', ['onsite', 'remote', 'hybrid'], 'hybrid'),
+      text('notes', 'Note'),
+    ],
+    columns: [
+      { key: 'client', label: 'Cliente' },
+      { key: 'startsOn', label: 'Data da', type: 'date' },
+      { key: 'endsOn', label: 'Data a', type: 'date' },
+      { key: 'businessManager', label: 'BM di riferimento' },
+      { key: 'workMode', label: 'Modalita di lavoro' },
+      { key: 'status', label: 'Periodo' },
     ],
   },
   salaries: {

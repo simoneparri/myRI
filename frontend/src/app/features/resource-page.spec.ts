@@ -107,6 +107,28 @@ describe('ResourcePage', () => {
     expect(row.textContent).toContain('Dettagli');
     expect(row.textContent).toContain('Modifica');
   });
+  it('highlights current projects, displays past projects and sends period filters to the person endpoint', async () => {
+    const fixture = await create();
+    get.mockResolvedValue({
+      ...empty, totalElements: 2,
+      items: [
+        { id: '1', client: 'Cliente attuale', status: 'current', workMode: 'hybrid' },
+        { id: '2', client: 'Cliente passato', status: 'past', workMode: 'remote' },
+      ],
+    });
+    fixture.componentRef.setInput('resource', 'projects');
+    fixture.componentRef.setInput('personId', '9');
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('tbody tr.current-project')).toHaveLength(1);
+    expect(element.querySelector('tbody tr.current-project')?.textContent).toContain('Attivo ora');
+    expect(element.textContent).toContain('Cliente passato');
+    expect(element.textContent).toContain('Passato');
+    expect(element.textContent).toContain('Ibrido');
+    fixture.componentInstance.projectPeriod = 'past';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenLastCalledWith('people/9/projects', expect.objectContaining({ period: 'past' }));
+  });
   it('shows a toast only after a saved editor and not after cancellation', async () => {
     const fixture = await create();
     await fixture.componentInstance.edit();
