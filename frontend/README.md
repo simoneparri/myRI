@@ -35,6 +35,10 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
   contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
+  La lista persone apre la Scheda: tutte le informazioni del precedente dettaglio
+  sono visibili nella pagina, da cui si puo modificare la persona non archiviata.
+  Le azioni di lista, scheda e dialog hanno icone SVG locali decorative e label
+  testuali accessibili, senza font o richieste a servizi esterni.
 - Dashboard con conteggi e persone senza career talk recente; notifiche storiche
   leggibili/archiviabili e dettaglio del task collegato.
 - Viste Task oggi/scaduti/prossimi 7 giorni/tutti aperti, anche per persona.
@@ -88,6 +92,10 @@ lockfile (attualmente `mcr.microsoft.com/playwright:v1.64.1-noble`), montando
 questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
+`e2e/people-sheet.spec.ts` usa soltanto API simulate con dati fittizi e verifica
+lista, scheda, modifica e icone su desktop/mobile: si puo eseguire senza database
+o credenziali con `E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts`
+contro il dev server.
 
 ## Consegna e limiti
 

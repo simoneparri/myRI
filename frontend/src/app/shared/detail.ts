@@ -4,9 +4,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { Row } from '../core/api';
 import { DisplayPipe } from './format';
 import { Definition } from './schema';
+import { ButtonIcon } from './button-icon';
 
 @Component({
-  imports: [MatDialogModule, MatButtonModule, DisplayPipe],
+  imports: [MatDialogModule, MatButtonModule, DisplayPipe, ButtonIcon],
   template: `
     <h2 mat-dialog-title>Dettaglio {{ data.definition.singular }}</h2>
     <mat-dialog-content>
@@ -51,7 +52,9 @@ import { Definition } from './schema';
         }
       </dl>
     </mat-dialog-content>
-    <mat-dialog-actions><button mat-button mat-dialog-close>Chiudi</button></mat-dialog-actions>
+    <mat-dialog-actions>
+      <button mat-button mat-dialog-close><svg appButtonIcon="close"></svg>Chiudi</button>
+    </mat-dialog-actions>
   `,
 })
 export class Detail {

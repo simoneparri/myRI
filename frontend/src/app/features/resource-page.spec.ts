@@ -49,6 +49,39 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('keeps only the sheet and archive actions in the people list with decorative icons', async () => {
+    const fixture = await create();
+    fixture.componentRef.setInput('resource', 'people');
+    get.mockResolvedValue({
+      ...empty,
+      items: [{ id: '1', firstName: 'Persona', lastName: 'Fittizia', status: 'active' }],
+      totalElements: 1,
+    });
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const row = element.querySelector('tbody tr')!;
+    expect(row.querySelector('a')?.getAttribute('href')).toBe('/people/1');
+    expect(row.textContent).toContain('Scheda');
+    expect(row.textContent).toContain('Archivia');
+    expect(row.textContent).not.toContain('Dettagli');
+    expect(row.textContent).not.toContain('Modifica');
+    for (const button of element.querySelectorAll('button:not(.mat-mdc-paginator button), a')) {
+      expect(button.querySelector('svg[aria-hidden="true"] path')).not.toBeNull();
+    }
+  });
+  it('preserves detail and edit actions for other resources', async () => {
+    const fixture = await create();
+    get.mockResolvedValue({
+      ...empty,
+      items: [{ id: '1', title: 'Task fittizio', status: 'todo' }],
+      totalElements: 1,
+    });
+    await fixture.componentInstance.reload();
+    await fixture.whenStable();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!;
+    expect(row.textContent).toContain('Dettagli');
+    expect(row.textContent).toContain('Modifica');
+  });
   it('uses calendar presets without sending hidden full-list filters', async () => {
     const fixture = await create();
     fixture.componentRef.setInput('view', 'today');

@@ -4,10 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { Api, Page, Row, errorMessage } from '../core/api';
 import { DisplayPipe, TIMEZONE, calendarDate } from '../shared/format';
 import { italianPaginator } from '../shared/paginator';
+import { ButtonIcon } from '../shared/button-icon';
 
 @Component({
   selector: 'app-salary-trend',
-  imports: [MatPaginatorModule, MatButtonModule, DisplayPipe],
+  imports: [MatPaginatorModule, MatButtonModule, DisplayPipe, ButtonIcon],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   template: `
     <h2>Andamento RAL</h2>
@@ -15,7 +16,9 @@ import { italianPaginator } from '../shared/paginator';
       Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate; nessuna conversione
       tra valute.
     </p>
-    <button mat-button (click)="load()" [disabled]="loading()">Aggiorna andamento</button>
+    <button mat-button (click)="load()" [disabled]="loading()">
+      <svg appButtonIcon="refresh"></svg>Aggiorna andamento
+    </button>
     @if (error()) {
       <p role="alert" class="error">{{ error() }}</p>
     }

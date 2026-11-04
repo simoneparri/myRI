@@ -51,17 +51,22 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
   let row = page.getByRole('row').filter({ hasText: firstName });
   await expect(row).toBeVisible();
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Ruolo', { exact: true }).fill('Team engineer');
-  await save(page);
-  await expect(row).toContainText('Team engineer');
+  await expect(row.getByRole('button', { name: 'Dettagli', exact: true })).toHaveCount(0);
+  await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
   await row.getByRole('link', { name: 'Scheda', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/^Anzianita aziendale:/)).toBeVisible();
-  await expect(page.getByText('Sede di assunzione: Sede fittizia', { exact: true })).toBeVisible();
-  await expect(page.getByText('Residenza: Residenza fittizia', { exact: true })).toBeVisible();
+  const information = page.getByRole('definition');
+  await expect(page.getByText('Anzianita aziendale', { exact: true })).toBeVisible();
+  await expect(information.filter({ hasText: 'Sede fittizia' })).toBeVisible();
+  await expect(information.filter({ hasText: 'Residenza fittizia' })).toBeVisible();
+  await page.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Ruolo', { exact: true }).fill('Team engineer');
+  await page.getByRole('dialog').getByLabel('Note', { exact: true }).fill('Nota persona fittizia');
+  await save(page);
+  await expect(information.filter({ hasText: 'Team engineer' })).toBeVisible();
+  await expect(information.filter({ hasText: 'Nota persona fittizia' })).toBeVisible();
   const personUrl = page.url();
 
   await page.getByRole('tab', { name: 'Contatti', exact: true }).click();

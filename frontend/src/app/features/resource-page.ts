@@ -15,6 +15,7 @@ import { Editor, EditorData } from '../shared/editor';
 import { DisplayPipe, TIMEZONE, personLabel } from '../shared/format';
 import { Resource, canEdit, definitions, newLabel } from '../shared/schema';
 import { italianPaginator } from '../shared/paginator';
+import { ButtonIcon } from '../shared/button-icon';
 
 @Component({
   selector: 'app-resource-page',
@@ -28,12 +29,14 @@ import { italianPaginator } from '../shared/paginator';
     MatPaginatorModule,
     MatSelectModule,
     DisplayPipe,
+    ButtonIcon,
   ],
   template: `
     <section>
       <div class="section-heading">
         <h2>{{ definition().title }}</h2>
         <button mat-flat-button (click)="edit()" [disabled]="busy() || loading()">
+          <svg appButtonIcon="add"></svg>
           {{ newLabel(resource()) }}
         </button>
       </div>
@@ -140,8 +143,12 @@ import { italianPaginator } from '../shared/paginator';
             >Includi archiviati</mat-checkbox
           >
         }
-        <button mat-stroked-button type="submit" [disabled]="loading()">Applica filtri</button>
-        <button mat-button type="button" (click)="reload()" [disabled]="loading()">Ricarica</button>
+        <button mat-stroked-button type="submit" [disabled]="loading()">
+          <svg appButtonIcon="filter"></svg>Applica filtri
+        </button>
+        <button mat-button type="button" (click)="reload()" [disabled]="loading()">
+          <svg appButtonIcon="refresh"></svg>Ricarica
+        </button>
       </form>
       <p class="muted">Orari visualizzati in {{ timezone }}. Inserimento e filtri orari in UTC.</p>
       @if (todoView) {
@@ -194,12 +201,17 @@ import { italianPaginator } from '../shared/paginator';
                   }
                   <td class="actions">
                     @if (resource() === 'people') {
-                      <a mat-button [routerLink]="['/people', row.id]">Scheda</a>
+                      <a mat-button [routerLink]="['/people', row.id]">
+                        <svg appButtonIcon="person"></svg>Scheda
+                      </a>
+                    } @else {
+                      <button mat-button (click)="details(row)">
+                        <svg appButtonIcon="detail"></svg>Dettagli
+                      </button>
                     }
-                    <button mat-button (click)="details(row)">Dettagli</button>
-                    @if (editable(resource(), row)) {
+                    @if (resource() !== 'people' && editable(resource(), row)) {
                       <button mat-button (click)="edit(row)" [disabled]="busy() || loading()">
-                        Modifica
+                        <svg appButtonIcon="edit"></svg>Modifica
                       </button>
                     }
                     @if (!row['archivedAt'] && resource() !== 'salaries') {
@@ -210,7 +222,7 @@ import { italianPaginator } from '../shared/paginator';
                             (click)="command(row, 'submit')"
                             [disabled]="busy() || loading()"
                           >
-                            Invia
+                            <svg appButtonIcon="send"></svg>Invia
                           </button>
                         }
                         @if (row['status'] === 'postponed') {
@@ -219,7 +231,7 @@ import { italianPaginator } from '../shared/paginator';
                             (click)="command(row, 'reopen')"
                             [disabled]="busy() || loading()"
                           >
-                            Riapri
+                            <svg appButtonIcon="refresh"></svg>Riapri
                           </button>
                         }
                         @if (row['status'] === 'submitted') {
@@ -228,21 +240,21 @@ import { italianPaginator } from '../shared/paginator';
                             (click)="decision(row, 'approve')"
                             [disabled]="busy() || loading()"
                           >
-                            Approva
+                            <svg appButtonIcon="check"></svg>Approva
                           </button>
                           <button
                             mat-button
                             (click)="decision(row, 'reject')"
                             [disabled]="busy() || loading()"
                           >
-                            Rifiuta
+                            <svg appButtonIcon="close"></svg>Rifiuta
                           </button>
                           <button
                             mat-button
                             (click)="decision(row, 'postpone')"
                             [disabled]="busy() || loading()"
                           >
-                            Rimanda
+                            <svg appButtonIcon="clock"></svg>Rimanda
                           </button>
                         }
                       }
@@ -252,14 +264,14 @@ import { italianPaginator } from '../shared/paginator';
                           (click)="command(row, 'complete')"
                           [disabled]="busy() || loading()"
                         >
-                          Completa
+                          <svg appButtonIcon="check"></svg>Completa
                         </button>
                         <button
                           mat-button
                           (click)="command(row, 'cancel')"
                           [disabled]="busy() || loading()"
                         >
-                          Annulla task
+                          <svg appButtonIcon="close"></svg>Annulla task
                         </button>
                       }
                       <button
@@ -267,7 +279,7 @@ import { italianPaginator } from '../shared/paginator';
                         (click)="command(row, 'archive')"
                         [disabled]="busy() || loading()"
                       >
-                        Archivia
+                        <svg appButtonIcon="archive"></svg>Archivia
                       </button>
                     }
                   </td>

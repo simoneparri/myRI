@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Api, Payload, Row, errorMessage } from '../core/api';
 import { DisplayPipe, TIMEZONE, calendarDate, decimalDisplay, personLabel } from './format';
 import { Field, Option, Resource, definitions, newLabel } from './schema';
+import { ButtonIcon } from './button-icon';
 
 export interface EditorData {
   resource: Resource;
@@ -91,6 +92,7 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
     MatInputModule,
     MatSelectModule,
     DisplayPipe,
+    ButtonIcon,
   ],
   template: `
     <h2 mat-dialog-title>{{ title }}</h2>
@@ -161,13 +163,16 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button [disabled]="saving()" (click)="close()">Annulla</button>
+      <button mat-button [disabled]="saving()" (click)="close()">
+        <svg appButtonIcon="close"></svg>Annulla
+      </button>
       <button
         mat-flat-button
         type="submit"
         form="entity-form"
         [disabled]="saving() || loading() || referencesFailed()"
       >
+        <svg appButtonIcon="save"></svg>
         {{ saving() ? 'Salvataggio...' : 'Salva' }}
       </button>
     </mat-dialog-actions>

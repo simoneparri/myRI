@@ -6,11 +6,16 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../core/api';
 import { DisplayPipe, TIMEZONE, personLabel } from '../shared/format';
 import { ResourcePage } from './resource-page';
 import { italianPaginator } from '../shared/paginator';
 import { SalaryTrend } from './salary-trend';
+import { ButtonIcon } from '../shared/button-icon';
+import { Editor, EditorData } from '../shared/editor';
+import { canEdit, definitions } from '../shared/schema';
 
 @Component({
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
@@ -25,30 +30,58 @@ import { SalaryTrend } from './salary-trend';
     ResourcePage,
     DisplayPipe,
     SalaryTrend,
+    ButtonIcon,
   ],
   template: `
-    <a mat-button routerLink="/people">Torna alle persone</a>
+    <a mat-button routerLink="/people"> <svg appButtonIcon="back"></svg>Torna alle persone </a>
     @if (error()) {
       <p role="alert" class="error">{{ error() }}</p>
-      <button mat-button (click)="load()">Riprova</button>
+      <button mat-button (click)="load()"><svg appButtonIcon="refresh"></svg>Riprova</button>
     }
     @if (person(); as person) {
-      <h1>{{ name(person) }}</h1>
-      <p>{{ person['role'] }} · {{ person['email'] }} · {{ person['status'] | display }}</p>
-      <p>Data inizio lavoro: {{ person['hiredOn'] | display: 'date' }}</p>
-      <p>Anzianita aziendale: {{ person['seniority'] }}</p>
-      <p>Sede di assunzione: {{ person['hiringLocation'] | display }}</p>
-      <p>Residenza: {{ person['residence'] | display }}</p>
+      <div class="section-heading">
+        <h1>{{ name(person) }}</h1>
+        @if (editable('people', person)) {
+          <button mat-stroked-button (click)="edit()" [disabled]="editing()">
+            <svg appButtonIcon="edit"></svg>Modifica
+          </button>
+        }
+      </div>
+      @if (message()) {
+        <p role="status">{{ message() }}</p>
+      }
+      <dl class="person-details" aria-label="Informazioni persona">
+        @for (field of fields; track field.key) {
+          <div [class.full-width]="field.type === 'textarea'">
+            <dt>{{ field.label }}</dt>
+            <dd>{{ person[field.key] | display: field.type }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Anzianita aziendale</dt>
+          <dd>{{ person['seniority'] | display }}</dd>
+        </div>
+        <div>
+          <dt>ID</dt>
+          <dd>{{ person.id }}</dd>
+        </div>
+        @if (person['archivedAt']) {
+          <div>
+            <dt>Archiviato</dt>
+            <dd>{{ person['archivedAt'] | display: 'instant' }}</dd>
+          </div>
+        }
+      </dl>
       <p>Orari visualizzati in {{ timezone }}.</p>
       <p>
         Export completo della persona, incluse voci archiviate (massimo 1000 record). Il file
         contiene dati personali: conservalo in modo protetto.
       </p>
       <button mat-stroked-button (click)="download('json')" [disabled]="exporting()">
-        Esporta JSON
+        <svg appButtonIcon="download"></svg>Esporta JSON
       </button>
       <button mat-stroked-button (click)="download('csv')" [disabled]="exporting()">
-        Esporta CSV
+        <svg appButtonIcon="download"></svg>Esporta CSV
       </button>
       @if (exportError()) {
         <p role="alert" class="error">{{ exportError() }}</p>
@@ -72,7 +105,7 @@ import { SalaryTrend } from './salary-trend';
               <mat-checkbox name="archived" [(ngModel)]="includeArchived"
                 >Includi archiviati</mat-checkbox
               >
-              <button mat-stroked-button>Applica filtri</button>
+              <button mat-stroked-button><svg appButtonIcon="filter"></svg>Applica filtri</button>
             </form>
             @if (timelineError()) {
               <p role="alert" class="error">{{ timelineError() }}</p>
@@ -123,18 +156,40 @@ import { SalaryTrend } from './salary-trend';
           ></mat-tab>
         }
         <mat-tab label="Andamento RAL"
-          ><ng-template matTabContent>
-            <app-salary-trend [personId]="id()" /> </ng-template
+          ><ng-template matTabContent> <app-salary-trend [personId]="id()" /> </ng-template
         ></mat-tab>
       </mat-tab-group>
     } @else if (!error()) {
       <p role="status">Caricamento persona...</p>
     }
   `,
+  styles: `
+    .person-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      gap: 1rem 2rem;
+    }
+    .person-details > div {
+      min-width: 0;
+    }
+    .person-details .full-width {
+      grid-column: 1 / -1;
+    }
+    .person-details dt,
+    .person-details dd {
+      margin-top: 0;
+      margin-bottom: 0.25rem;
+    }
+  `,
 })
 export class PersonPage {
   readonly id = input.required<string>();
   private readonly api = inject(Api);
+  private readonly dialogs = inject(MatDialog);
+  readonly fields = definitions.people.fields;
+  readonly editable = canEdit;
+  readonly editing = signal(false);
+  readonly message = signal('');
   readonly timezone = inject(TIMEZONE);
   readonly person = signal<Row | null>(null);
   readonly name = personLabel;
@@ -171,9 +226,33 @@ export class PersonPage {
         this.pageIndex = 0;
         this.kind = this.appliedKind = '';
         this.includeArchived = this.appliedArchived = false;
+        this.message.set('');
         void this.load();
       });
     });
+  }
+  async edit(): Promise<void> {
+    const row = this.person();
+    if (!row || !canEdit('people', row) || this.editing()) return;
+    const generation = this.personGeneration;
+    this.editing.set(true);
+    try {
+      const changed = await firstValueFrom(
+        this.dialogs
+          .open(Editor, {
+            data: { resource: 'people', path: 'people', row } satisfies EditorData,
+            width: '720px',
+            maxWidth: '95vw',
+          })
+          .afterClosed(),
+      );
+      if (changed && generation === this.personGeneration) {
+        this.message.set('Dati salvati.');
+        await this.load();
+      }
+    } finally {
+      this.editing.set(false);
+    }
   }
   async download(format: 'json' | 'csv'): Promise<void> {
     this.exporting.set(true);
