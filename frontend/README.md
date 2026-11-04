@@ -31,7 +31,9 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
 
 - Login, logout e sessione server HttpOnly; token CSRF solo in memoria.
   Nessun token o dato personale in localStorage/sessionStorage, log o telemetria.
-- Persone e scheda con data inizio lavoro, anzianita aziendale calcolata,
+- Persone e scheda con data di assunzione e data di inizio carriera distinte,
+  ciascuna con durata calcolata in anni e mesi tra parentesi; livello di seniority
+  Junior/Medior/Senior selezionabile manualmente,
   sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
   contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
@@ -39,6 +41,14 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   sono visibili nella pagina, da cui si puo modificare la persona non archiviata.
   Le azioni di lista, scheda e dialog hanno icone SVG locali decorative e label
   testuali accessibili, senza font o richieste a servizi esterni.
+  Il censimento richiede un MyPad ID univoco (1-100 lettere ASCII/numeri,
+  underscore o trattino), separato dall'ID tecnico myRI non mostrato in anagrafica.
+  Il valore apre `https://mypad.altengroup.com/employees/{mypad-id}` in una
+  nuova scheda con `noopener noreferrer`; nessun accesso al servizio al caricamento.
+  I record esistenti mantengono la data gia salvata come assunzione; inizio
+  carriera, livello e MyPad ID restano non specificati fino alla compilazione.
+  Un MyPad ID assegnato non puo essere svuotato; puo essere corretto senza
+  cambiare la PK myRI. L'inizio carriera non puo essere successivo all'assunzione.
 - Dashboard con conteggi e persone senza career talk recente; notifiche storiche
   leggibili/archiviabili e dettaglio del task collegato.
 - Viste Task oggi/scaduti/prossimi 7 giorni/tutti aperti, anche per persona.

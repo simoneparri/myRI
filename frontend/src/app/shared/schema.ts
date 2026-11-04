@@ -10,6 +10,8 @@ export interface Field {
   type?:
     'text' | 'textarea' | 'email' | 'date' | 'instant' | 'id' | 'decimal' | 'integer' | 'select';
   required?: boolean;
+  requiredOnCreate?: boolean;
+  pattern?: string;
   max?: number;
   fraction?: number;
   options?: Option[];
@@ -68,10 +70,28 @@ export const definitions: Record<Resource, Definition> = {
     fields: [
       { key: 'firstName', label: 'Nome', required: true, max: 100 },
       { key: 'lastName', label: 'Cognome', required: true, max: 100 },
+      {
+        key: 'mypadId',
+        label: 'MyPad ID',
+        max: 100,
+        pattern: '^[A-Za-z0-9_-]+$',
+        requiredOnCreate: true,
+      },
       { key: 'email', label: 'Email', type: 'email', max: 254 },
       { key: 'phone', label: 'Telefono', max: 50 },
       { key: 'role', label: 'Ruolo', max: 150 },
-      { key: 'hiredOn', label: 'Data inizio lavoro', type: 'date', required: true },
+      { key: 'hiredOn', label: 'Data di assunzione', type: 'date', required: true },
+      { key: 'careerStartedOn', label: 'Data di inizio lavoro', type: 'date' },
+      {
+        key: 'seniorityLevel',
+        label: 'Livello di seniority',
+        type: 'select',
+        options: [
+          { value: 'junior', label: 'Junior' },
+          { value: 'medior', label: 'Medior' },
+          { value: 'senior', label: 'Senior' },
+        ],
+      },
       { key: 'hiringLocation', label: 'Sede di assunzione', max: 200 },
       { key: 'residence', label: 'Residenza', max: 500 },
       { key: 'managerId', label: 'Manager interno', type: 'id', reference: 'people' },

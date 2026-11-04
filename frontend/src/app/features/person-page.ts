@@ -54,17 +54,28 @@ import { canEdit, definitions } from '../shared/schema';
         @for (field of fields; track field.key) {
           <div [class.full-width]="field.type === 'textarea'">
             <dt>{{ field.label }}</dt>
-            <dd>{{ person[field.key] | display: field.type }}</dd>
+            <dd>
+              @if (field.key === 'mypadId' && mypadUrl(person); as url) {
+                <a
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Apri MyPad (nuova scheda)"
+                >
+                  <svg appButtonIcon="external"></svg>{{ person[field.key] }}
+                </a>
+              } @else {
+                {{ person[field.key] | display: field.type }}
+              }
+              @if (field.key === 'hiredOn' && person['seniority']) {
+                ({{ person['seniority'] }})
+              }
+              @if (field.key === 'careerStartedOn' && person['careerDuration']) {
+                ({{ person['careerDuration'] }})
+              }
+            </dd>
           </div>
         }
-        <div>
-          <dt>Anzianita aziendale</dt>
-          <dd>{{ person['seniority'] | display }}</dd>
-        </div>
-        <div>
-          <dt>ID</dt>
-          <dd>{{ person.id }}</dd>
-        </div>
         @if (person['archivedAt']) {
           <div>
             <dt>Archiviato</dt>
@@ -230,6 +241,12 @@ export class PersonPage {
         void this.load();
       });
     });
+  }
+  mypadUrl(person: Row): string | null {
+    const id = person['mypadId'];
+    return typeof id === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(id)
+      ? `https://mypad.altengroup.com/employees/${encodeURIComponent(id)}`
+      : null;
   }
   async edit(): Promise<void> {
     const row = this.person();

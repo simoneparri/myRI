@@ -15,6 +15,9 @@ export function calendarDate(instant: Date, zone: string): string {
 }
 export const labels: Record<string, string> = {
   active: 'Attiva',
+  junior: 'Junior',
+  medior: 'Medior',
+  senior: 'Senior',
   inactive: 'Non piu nel team',
   draft: 'Bozza',
   submitted: 'Inviata',

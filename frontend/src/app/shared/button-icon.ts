@@ -15,6 +15,7 @@ const paths = {
   clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',
   save: 'M4 3h13l3 3v15H4ZM8 3v6h8V3M8 21v-8h8v8',
+  external: 'M14 3h7v7M21 3 10 14M10 3H3v18h18v-7',
 };
 
 @Component({

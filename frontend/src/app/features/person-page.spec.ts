@@ -25,6 +25,10 @@ describe('PersonPage', () => {
     notes: 'Note fittizie\nSeconda riga',
     status: 'active',
     seniority: '6 anni',
+    careerStartedOn: '2017-01-02',
+    careerDuration: '9 anni e 10 mesi',
+    seniorityLevel: 'senior',
+    mypadId: 'fictitious-123',
   };
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const get = vi.fn();
@@ -49,14 +53,12 @@ describe('PersonPage', () => {
     return fixture;
   }
 
-  it('shows all former dialog fields, seniority and ID directly in the sheet', async () => {
+  it('shows both dates with elapsed time, seniority level and a separate MyPad ID', async () => {
     const fixture = await create();
     const element = fixture.nativeElement as HTMLElement;
     const details = element.querySelector('dl')!;
     expect([...details.querySelectorAll('dt')].map((label) => label.textContent)).toEqual([
       ...definitions.people.fields.map((field) => field.label),
-      'Anzianita aziendale',
-      'ID',
     ]);
     for (const value of [
       'persona@example.test',
@@ -68,13 +70,29 @@ describe('PersonPage', () => {
       'Note fittizie\nSeconda riga',
       'Attiva',
       '6 anni',
-      person.id,
+      '02/01/2017',
+      '9 anni e 10 mesi',
+      'Senior',
+      'fictitious-123',
     ]) {
       expect(details.textContent).toContain(value);
     }
+    expect(details.textContent).not.toContain(person.id);
+    const link = details.querySelector('a')!;
+    expect(link.href).toBe('https://mypad.altengroup.com/employees/fictitious-123');
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
     for (const button of element.querySelectorAll('button:not(.mat-mdc-paginator button), a')) {
       expect(button.querySelector('svg[aria-hidden="true"] path')).not.toBeNull();
     }
+  });
+  it('does not link to MyPad when its ID is missing or malformed', async () => {
+    const fixture = await create({ ...person, mypadId: null });
+    expect((fixture.nativeElement as HTMLElement).querySelector('dl a')).toBeNull();
+    expect(fixture.componentInstance.mypadUrl({ id: '1', mypadId: '../other?query=1' })).toBeNull();
+    expect(
+      fixture.componentInstance.mypadUrl({ id: '1', mypadId: 'https://other.test' }),
+    ).toBeNull();
   });
 
   it('opens the existing versioned editor from the sheet and reloads saved information', async () => {

@@ -43,7 +43,10 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
   await dialog.getByLabel('Email', { exact: true }).fill(`e2e-${suffix}@example.test`);
-  await dialog.getByLabel('Data inizio lavoro').fill('02/01/2026');
+  await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-' + suffix);
+  await dialog.getByLabel('Data di assunzione').fill('02/01/2026');
+  await dialog.getByLabel('Data di inizio lavoro').fill('02/01/2020');
+  await choose(dialog, 'Livello di seniority', 'Medior');
   await dialog.getByLabel('Sede di assunzione').fill('Sede fittizia');
   await dialog.getByLabel('Residenza').fill('Residenza fittizia');
   await save(page);
@@ -58,7 +61,12 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
   const information = page.getByRole('definition');
-  await expect(page.getByText('Anzianita aziendale', { exact: true })).toBeVisible();
+  await expect(page.getByText('Data di assunzione', { exact: true })).toBeVisible();
+  await expect(page.getByText('Data di inizio lavoro', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Apri MyPad (nuova scheda)' })).toHaveAttribute(
+    'href',
+    `https://mypad.altengroup.com/employees/fictitious-${suffix}`,
+  );
   await expect(information.filter({ hasText: 'Sede fittizia' })).toBeVisible();
   await expect(information.filter({ hasText: 'Residenza fittizia' })).toBeVisible();
   await page.getByRole('button', { name: 'Modifica', exact: true }).click();
@@ -275,7 +283,8 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   let dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
-  await dialog.getByLabel('Data inizio lavoro').fill('02/01/2020');
+  await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-export-' + suffix);
+  await dialog.getByLabel('Data di assunzione').fill('02/01/2020');
   await save(page);
   await page.getByLabel('Cerca', { exact: true }).fill(firstName);
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();

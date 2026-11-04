@@ -114,6 +114,56 @@ describe('Editor', () => {
       vi.useRealTimers();
     }
   });
+  it('requires a valid MyPad ID at census and keeps career start before hiring', async () => {
+    const editor = create({ resource: 'people', path: 'people' });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    editor.form.patchValue({
+      firstName: 'Persona',
+      lastName: 'Fittizia',
+      hiredOn: '2020-01-01',
+      careerStartedOn: '2021-01-01',
+      seniorityLevel: 'medior',
+    });
+    expect(editor.form.controls['mypadId'].invalid).toBe(true);
+    editor.form.controls['mypadId'].setValue('../invalid');
+    expect(editor.form.controls['mypadId'].invalid).toBe(true);
+    editor.form.controls['mypadId'].setValue('fictitious-123');
+    await editor.save();
+    expect(post).not.toHaveBeenCalled();
+    expect(editor.error()).toContain("successivo all'assunzione");
+    editor.form.controls['careerStartedOn'].setValue('2018-01-01');
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenCalledWith(
+      'people',
+      expect.objectContaining({
+        mypadId: 'fictitious-123',
+        hiredOn: '2020-01-01',
+        careerStartedOn: '2018-01-01',
+        seniorityLevel: 'medior',
+      }),
+    );
+    expect(close).toHaveBeenCalledWith(true);
+  });
+  it('allows editing a legacy person without inventing MyPad ID or career information', () => {
+    const editor = create({
+      resource: 'people',
+      path: 'people',
+      row: { id: '1', version: '4', hiredOn: '2020-01-01' },
+    });
+    expect(editor.form.controls['mypadId'].valid).toBe(true);
+    expect(editor.form.controls['careerStartedOn'].value).toBe('');
+    expect(editor.form.controls['seniorityLevel'].value).toBe('');
+  });
+  it('requires keeping MyPad ID when editing an identified person', () => {
+    const editor = create({
+      resource: 'people',
+      path: 'people',
+      row: { id: '1', version: '4', hiredOn: '2020-01-01', mypadId: 'fictitious-123' },
+    });
+    editor.form.controls['mypadId'].setValue('');
+    expect(editor.form.controls['mypadId'].invalid).toBe(true);
+  });
   it('uses the same salary idempotency key on retry and surfaces the failed request', async () => {
     const editor = create({ resource: 'salaries', path: 'people/1/salaries', personId: '1' });
     await vi.waitFor(() => expect(editor.loading()).toBe(false));

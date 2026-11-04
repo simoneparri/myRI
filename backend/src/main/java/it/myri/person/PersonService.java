@@ -55,6 +55,9 @@ public class PersonService {
 
     public PersonDtos.View create(PersonDtos.Input input) {
         users.lockSingleton().orElseThrow(ApiException::missing);
+        if (input.mypadId() == null || input.mypadId().isBlank()) {
+            throw ApiException.invalid("MyPad ID obbligatorio per il censimento.");
+        }
         validateManager(null, input);
         Person person = new Person();
         person.initialize(clock);
@@ -67,6 +70,9 @@ public class PersonService {
         users.lockSingleton().orElseThrow(ApiException::missing);
         Person person = requireUsable(id);
         Queries.version(person, input.version());
+        if (person.mypadId != null && input.mypadId() == null) {
+            throw ApiException.invalid("MyPad ID obbligatorio per questa persona.");
+        }
         validateManager(id, input);
         PersonMapper.apply(person, input);
         person.touch(clock);
@@ -81,6 +87,20 @@ public class PersonService {
 
     private void validateManager(Long id, PersonDtos.Input input) {
         Dates.check(input.hiredOn());
+        Dates.check(input.careerStartedOn());
+        if (input.careerStartedOn() != null && input.careerStartedOn().isAfter(input.hiredOn())) {
+            throw ApiException.invalid("L'inizio lavoro non puo essere successivo all'assunzione.");
+        }
+        Queries.value(input.seniorityLevel(), Set.of("junior", "medior", "senior"));
+        if (input.mypadId() != null) {
+            if (!input.mypadId().matches("[A-Za-z0-9_-]{1,100}")) {
+                throw ApiException.invalid("Formato MyPad ID non valido.");
+            }
+            if (id == null ? people.existsByMypadId(input.mypadId())
+                    : people.existsByMypadIdAndIdNot(input.mypadId(), id)) {
+                throw ApiException.conflict("MyPad ID gia assegnato a un'altra persona.");
+            }
+        }
         if (input.managerId() != null && input.externalManager() != null) {
             throw ApiException.invalid("Scegliere manager interno oppure esterno.");
         }

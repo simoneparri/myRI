@@ -21,12 +21,16 @@ public final class PersonDtos {
             @Pattern(regexp = ".*\\S.*") @Size(max = 200) String externalManager,
             @Size(max = 10000) String notes,
             @NotNull @Pattern(regexp = "active|inactive") String status,
-            @PositiveOrZero Long version) {}
+            @PositiveOrZero Long version,
+            LocalDate careerStartedOn,
+            @Pattern(regexp = "junior|medior|senior") String seniorityLevel,
+            @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9_-]+") String mypadId) {}
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "PersonView")
     public record View(Long id, String firstName, String lastName, String email,
             String phone, String role, LocalDate hiredOn, String seniority,
             String hiringLocation, String residence,
             Long managerId, String externalManager, String notes, String status,
-            Instant archivedAt, Instant createdAt, Instant updatedAt, Long version) {}
+            Instant archivedAt, Instant createdAt, Instant updatedAt, Long version,
+            LocalDate careerStartedOn, String careerDuration, String seniorityLevel, String mypadId) {}
 }

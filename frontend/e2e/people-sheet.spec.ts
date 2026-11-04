@@ -21,6 +21,10 @@ for (const width of [1440, 390]) {
       notes: 'Note fittizie',
       status: 'active',
       seniority: '6 anni',
+      careerStartedOn: '2017-01-02',
+      careerDuration: '9 anni e 10 mesi',
+      seniorityLevel: 'medior',
+      mypadId: 'fictitious-123',
     };
     const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
     const unexpected: string[] = [];
@@ -83,22 +87,33 @@ for (const width of [1440, 390]) {
     await expect(icon).toBeVisible();
     expect(await icon.evaluate((svg) => svg.namespaceURI)).toBe('http://www.w3.org/2000/svg');
     expect(await icon.locator('path').getAttribute('d')).toBeTruthy();
+    await expect(page.getByRole('link', { name: 'Apri MyPad (nuova scheda)' })).toHaveAttribute(
+      'href',
+      'https://mypad.altengroup.com/employees/fictitious-123',
+    );
     await edit.click();
     const dialog = page.getByRole('dialog');
-    const hiredOn = dialog.getByLabel('Data inizio lavoro', { exact: true });
+    const hiredOn = dialog.getByLabel('Data di assunzione', { exact: true });
     await expect(hiredOn).toHaveValue('02/01/2020');
     await hiredOn.fill('31/02/2020');
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('alert')).toContainText('Data non valida');
     await hiredOn.fill('02/01/2020');
-    await dialog.getByRole('button', { name: 'Apri calendario', exact: true }).click();
+    await dialog
+      .locator('app-date-input')
+      .filter({ hasText: 'Data di assunzione' })
+      .getByRole('button', { name: 'Apri calendario', exact: true })
+      .click();
     await expect(page.locator('mat-calendar')).toBeVisible();
     await page
       .locator('mat-calendar')
       .getByRole('button', { name: '3 gennaio 2020', exact: true })
       .click();
     await expect(hiredOn).toHaveValue('03/01/2020');
+    await expect(dialog.getByLabel('Data di inizio lavoro', { exact: true })).toHaveValue(
+      '02/01/2017',
+    );
     await dialog.getByLabel('Ruolo', { exact: true }).fill('Ruolo aggiornato');
     await dialog.getByLabel('Note', { exact: true }).fill('Note aggiornate');
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
@@ -113,6 +128,80 @@ for (const width of [1440, 390]) {
     expect(unexpected).toEqual([]);
   });
 }
+
+test('new census requires MyPad ID and saves distinct career dates and manual seniority', async ({
+  page,
+}) => {
+  const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
+  let saved: Record<string, unknown> | null = null;
+  await page.route('**/api/v1/**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.replace('/api/v1/', '');
+    if (path === 'auth/me')
+      return route.fulfill({ json: { id: '1', username: 'utente-fittizio' } });
+    if (path === 'auth/csrf')
+      return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
+    if (path === 'people' && request.method() === 'POST') {
+      saved = {
+        ...request.postDataJSON(),
+        id: '9007199254740993',
+        version: '0',
+        seniority: '6 anni e 10 mesi',
+        careerDuration: '9 anni e 10 mesi',
+      };
+      return route.fulfill({ status: 201, json: saved });
+    }
+    if (path === 'people')
+      return route.fulfill({
+        json: {
+          ...empty,
+          items: saved ? [saved] : [],
+          totalElements: saved ? 1 : 0,
+          totalPages: saved ? 1 : 0,
+        },
+      });
+    if (path === 'people/9007199254740993') return route.fulfill({ json: saved });
+    return route.fulfill({ json: empty });
+  });
+  await page.goto('/people');
+  await page.getByRole('button', { name: 'Nuova persona', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome', { exact: true }).fill('Persona');
+  await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
+  await dialog.getByLabel('Data di assunzione', { exact: true }).fill('02/01/2020');
+  await dialog.getByLabel('Data di inizio lavoro', { exact: true }).fill('02/01/2017');
+  await dialog.getByLabel('Livello di seniority', { exact: true }).click();
+  await page.getByRole('option', { name: 'Senior', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  expect(saved).toBeNull();
+  await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-123');
+  await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(saved).toEqual(
+    expect.objectContaining({
+      mypadId: 'fictitious-123',
+      hiredOn: '2020-01-02',
+      careerStartedOn: '2017-01-02',
+      seniorityLevel: 'senior',
+    }),
+  );
+  await page.getByRole('link', { name: 'Scheda', exact: true }).click();
+  await expect(page.getByRole('definition').filter({ hasText: '02/01/2020' })).toContainText(
+    '(6 anni e 10 mesi)',
+  );
+  await expect(page.getByRole('definition').filter({ hasText: '02/01/2017' })).toContainText(
+    '(9 anni e 10 mesi)',
+  );
+  await expect(page.getByRole('definition').filter({ hasText: 'Senior' })).toBeVisible();
+  const link = page.getByRole('link', { name: 'Apri MyPad (nuova scheda)' });
+  await expect(link).toHaveAttribute(
+    'href',
+    'https://mypad.altengroup.com/employees/fictitious-123',
+  );
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+});
 
 test('date/time filters and editor preserve UTC when typing or choosing a date', async ({
   page,

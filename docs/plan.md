@@ -27,6 +27,14 @@ Verificati con parsing YAML/JSON frontmatter, destinazioni handoff/deleghe,
 restrizioni strumenti reviewer, link locali e assenza di backend/frontend.
 Resta da verificare discovery ed esecuzione in una sessione VS Code interattiva.
 
+Estensione anagrafica autorizzata: distinguere la data di assunzione esistente
+dall'inizio carriera, mostrando entrambe con il tempo trascorso; seniority
+Junior/Medior/Senior selezionata manualmente. MyPad ID separato dalla PK myRI,
+univoco e obbligatorio per i nuovi censimenti, nullable per i record precedenti
+fino alla compilazione; link MyPad in una nuova scheda, nessuna sincronizzazione
+esterna. Migrazione V6 additiva, senza riempire i nuovi campi con valori inventati
+o modificare date esistenti. Inclusi contratti API, export e UI.
+
 ## Scelte di struttura dello Step 1 approvate
 
 - Monorepo backend/ e frontend/, Maven Wrapper, package per dominio con layer

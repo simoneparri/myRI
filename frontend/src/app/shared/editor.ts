@@ -30,6 +30,7 @@ export function validatorsFor(field: Field): ValidatorFn[] {
   const rules: ValidatorFn[] = [];
   if (field.required) rules.push(Validators.required, Validators.pattern(/\S/));
   if (field.max) rules.push(Validators.maxLength(field.max));
+  if (field.pattern) rules.push(Validators.pattern(field.pattern));
   if (field.type === 'email') rules.push(Validators.email);
   if (field.type === 'id')
     rules.push(Validators.pattern(/^[1-9]\d{0,18}$/), (control) =>
@@ -209,7 +210,11 @@ export class Editor {
   constructor() {
     this.fields = this.data.command
       ? this.decisionFields()
-      : definitions[this.data.resource].fields;
+      : definitions[this.data.resource].fields.map((field) =>
+          field.requiredOnCreate
+            ? { ...field, required: !this.data.row || !!this.data.row[field.key] }
+            : field,
+        );
     this.title = this.data.command
       ? {
           approve: 'Approva richiesta',
@@ -340,6 +345,14 @@ export class Editor {
     if (this.form.invalid) return;
     this.error.set('');
     const values = this.form.getRawValue();
+    if (
+      this.data.resource === 'people' &&
+      values['careerStartedOn'] &&
+      values['careerStartedOn'] > values['hiredOn']
+    ) {
+      this.error.set("L'inizio lavoro non puo essere successivo all'assunzione.");
+      return;
+    }
     if (
       this.data.resource === 'raise-requests' &&
       !this.data.command &&

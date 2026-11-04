@@ -86,12 +86,28 @@ ID, timestamp tecnici, archivedAt o stato esito imposto dal client.
 I mapper espliciti sono in PersonMapper e nei metodi view/apply dei DTO degli altri
 domini; le entity non sono restituite dalle API e non hanno relazioni lazy serializzate.
 
-PersonInput richiede `hiredOn` (data inizio lavoro) e accetta `hiringLocation`
-(sede di assunzione, massimo 200 caratteri) e `residence` (residenza, massimo
-500). PersonView restituisce anche `seniority`, calcolata come anni e mesi
-completati dalla data di inizio alla data corrente nel fuso applicativo; non e
-modificabile ne salvata separatamente. L'eventuale valore legacy salvato in
-precedenza resta nel database ma non viene piu letto o aggiornato.
+PersonInput richiede `hiredOn` (data di assunzione in azienda) e accetta
+`careerStartedOn` (inizio della carriera lavorativa, non successivo all'assunzione),
+`seniorityLevel` (`junior|medior|senior`, selezione manuale), `hiringLocation`
+(sede di assunzione, massimo 200 caratteri) e `residence` (residenza, massimo 500).
+`mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
+1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
+archiviate (confronto secondo la collation case-insensitive del DB).
+Obbligatorio su POST; su PUT puo restare null soltanto per persone legacy che
+non lo hanno ancora. Una volta assegnato non puo essere svuotato.
+Creazione e modifica serializzano anche il controllo di unicita; il DB lo
+garantisce con un indice univoco. Duplicati restituiscono 409, dati non validi 400.
+
+PersonView mantiene `seniority` per compatibilita come durata dall'assunzione e
+aggiunge `careerDuration` come durata dall'inizio carriera: anni e mesi completi
+calcolati alla data corrente nel fuso applicativo, non editabili ne persistiti.
+Date future producono `data futura`; una data inizio carriera assente produce
+durata null. La seniority professionale manuale e invece `seniorityLevel`.
+La migrazione V6 non inventa date, livelli o ID per i record esistenti: i nuovi
+campi restano null, `hiredOn` resta invariata. L'eventuale colonna legacy
+`seniority` resta nel database senza essere letta o aggiornata.
+JSON/CSV includono i nuovi campi. Reminder e soglie aziendali continuano a usare
+la data di assunzione, non quella di inizio carriera.
 
 ### RAL e audit
 

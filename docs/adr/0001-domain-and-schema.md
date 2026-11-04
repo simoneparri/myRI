@@ -49,10 +49,24 @@ singola voce RAL; l'archiviazione persona conserva l'intero storico.
 
 ### Persona e manager
 
-`hired_on` e la data di inizio lavoro. PersonView calcola la seniority in anni e
-mesi completi nel fuso applicativo; il valore legacy eventualmente presente nella
-colonna `seniority` non viene piu letto o aggiornato. `hiring_location` e `residence`
+`hired_on` e la data di assunzione in azienda, mantenuta senza modificare i dati
+esistenti. L'estensione autorizzata distingue `career_started_on`, inizio della
+carriera lavorativa opzionale e non successivo all'assunzione. PersonView calcola
+anni e mesi completi per entrambe nel fuso applicativo: `seniority` rimane il
+nome API della durata aziendale per compatibilita, `careerDuration` e la durata
+professionale. `seniority_level` e invece selezionato manualmente tra junior,
+medior e senior. Il valore legacy eventualmente presente nella colonna
+`seniority` non viene letto o aggiornato. `hiring_location` e `residence`
 sono dati anagrafici della persona.
+
+`mypad_id` e separato dalla PK auto-incrementale e univoco anche per gli
+archiviati, con la collation case-insensitive dello schema. Formato:
+1-100 lettere ASCII/numeri/underscore/trattino. Obbligatorio nei nuovi censimenti;
+per gli esistenti puo restare null fino all'assegnazione, senza backfill fittizi.
+Una volta assegnato non puo essere svuotato. Il lock singleton di creazione e
+modifica serializza i controlli; un indice univoco protegge anche il DB.
+La UI usa il valore per un link alla pagina dipendente MyPad, senza chiamate API
+o sincronizzazione di dati verso servizi esterni.
 
 Manager interno opzionale oppure external_manager testuale opzionale, mai entrambi.
 Nessun auto-riporto (trigger) o ciclo diretto/indiretto (service).
@@ -153,6 +167,9 @@ erDiagram
         varchar phone
         varchar role
         date hired_on
+        date career_started_on
+        varchar seniority_level
+        varchar mypad_id UK
         varchar hiring_location
         varchar residence
         bigint manager_id FK

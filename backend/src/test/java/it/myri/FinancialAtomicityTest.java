@@ -83,6 +83,25 @@ class FinancialAtomicityTest extends IntegrationTest {
     }
 
     @Test
+    void concurrentCensusesWithTheSameMypadIdCreateOnlyOnePerson() throws Exception {
+        String mypadId = UUID.randomUUID().toString();
+        var input = new PersonDtos.Input("Fictitious", "Concurrent census", null, null, null,
+                LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                LocalDate.of(2018, 1, 1), "medior", mypadId);
+        var outcomes = parallel(() -> asOwner(() -> {
+            try {
+                people.create(input);
+                return true;
+            } catch (ApiException exception) {
+                assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
+                return false;
+            }
+        }));
+        assertNotEquals(outcomes.get(0), outcomes.get(1));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM person WHERE mypad_id = ?", Integer.class, mypadId));
+    }
+
+    @Test
     void concurrentManagerChangesCannotCreateCycle() throws Exception {
         var a = asOwner(this::person);
         var b = asOwner(this::person);
@@ -114,7 +133,8 @@ class FinancialAtomicityTest extends IntegrationTest {
     private boolean updateManager(PersonDtos.View person, Long manager) {
         try {
             people.update(person.id(), new PersonDtos.Input(person.firstName(), person.lastName(), null,
-                    null, null, person.hiredOn(), null, null, manager, null, null, "active", person.version()));
+                    null, null, person.hiredOn(), null, null, manager, null, null, "active", person.version(),
+                    person.careerStartedOn(), person.seniorityLevel(), person.mypadId()));
             return true;
         } catch (ApiException exception) {
             assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
@@ -139,7 +159,8 @@ class FinancialAtomicityTest extends IntegrationTest {
 
     private PersonDtos.View person() {
         return people.create(new PersonDtos.Input("Fictitious", UUID.randomUUID().toString(), null, null,
-                null, LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null));
+                null, LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                null, null, UUID.randomUUID().toString()));
     }
 
     private <T> T asOwner(Supplier<T> operation) {

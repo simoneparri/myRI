@@ -42,7 +42,8 @@ public class DevSeed {
                     var person = people.create(new PersonDtos.Input("Ada", "Esempio", "ada@example.invalid",
                             null, "Software Engineer", today.minusYears(2), "Sede fittizia",
                             "Residenza fittizia", null,
-                            "Manager fittizio", "Persona completamente fittizia.", "active", null));
+                            "Manager fittizio", "Persona completamente fittizia.", "active", null,
+                            today.minusYears(5), "medior", "dev-fictitious-ada"));
                     contacts.create(person.id(), new ContactDtos.Input("reference", "Contatto fittizio", null, null));
                     var base = salaries.create(person.id(), new SalaryDtos.Input(new BigDecimal("50000.00"),
                             "EUR", today.minusYears(1), "Tempo indeterminato", new BigDecimal("40.00"),

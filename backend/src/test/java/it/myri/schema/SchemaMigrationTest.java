@@ -62,7 +62,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(4, flyway.migrate().migrationsExecuted);
+        assertEquals(5, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -88,6 +88,10 @@ class SchemaMigrationTest {
     @Test
     void historyCreatedBeforeUpgradeIsPreservedAndProtected() throws SQLException {
         assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM person WHERE id = 700000 AND hired_on = '2026-01-01'
+                  AND career_started_on IS NULL AND seniority_level IS NULL AND mypad_id IS NULL
+                """));
+        assertEquals(1, scalar("""
                 SELECT COUNT(*) FROM salary
                 WHERE id = 700000 AND person_id = 700000 AND amount = 40000.12
                 """));
@@ -102,8 +106,22 @@ class SchemaMigrationTest {
             assertTrue(result.next());
             assertEquals("Legacy seniority", result.getString(1));
         }
+
         assertEquals(1644, rejected("UPDATE salary SET amount = 1 WHERE id = 700000").getErrorCode());
         assertEquals(1644, rejected("DELETE FROM salary WHERE id = 700000").getErrorCode());
+    }
+
+    @Test
+    void careerAndMypadConstraintsApplyWithoutChangingTechnicalIdentity() throws SQLException {
+        long first = person();
+        long second = person();
+        execute("UPDATE person SET mypad_id = ?, seniority_level = ?, career_started_on = ? WHERE id = ?",
+                "fictitious-123", "medior", "2010-01-01", first);
+        rejected("UPDATE person SET seniority_level = 'expert' WHERE id = ?", first);
+        rejected("UPDATE person SET career_started_on = '9999-12-31' WHERE id = ?", first);
+        rejected("UPDATE person SET mypad_id = 'fictitious-123' WHERE id = ?", second);
+        rejected("UPDATE person SET mypad_id = '../invalid' WHERE id = ?", second);
+        assertEquals(1, scalar("SELECT COUNT(*) FROM person WHERE id = ? AND mypad_id = 'fictitious-123'", first));
     }
 
     @Test

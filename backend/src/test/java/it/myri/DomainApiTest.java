@@ -74,6 +74,80 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void personCareerMypadValidationAndExportsPreserveDistinctFields() throws Exception {
+        var input = personInput();
+        var person = send(post("/api/v1/people"), input, 201);
+        String path = "/api/v1/people/" + person.get("id").asText();
+        assertEquals("2018-01-01", person.get("careerStartedOn").asText());
+        assertEquals("medior", person.get("seniorityLevel").asText());
+        assertEquals(input.get("mypadId"), person.get("mypadId").asText());
+        assertNotEquals(person.get("id").asText(), person.get("mypadId").asText());
+        assertTrue(person.get("careerDuration").asText().matches("\\d+ anni e \\d+ mesi"));
+        input.put("version", person.get("version").asText());
+        input.put("seniorityLevel", "senior");
+        var updated = send(put(path), input, 200);
+        assertEquals("senior", updated.get("seniorityLevel").asText());
+        assertEquals(person.get("id"), updated.get("id"));
+        var duplicate = personInput();
+        duplicate.put("mypadId", input.get("mypadId"));
+        send(post("/api/v1/people"), duplicate, 409);
+
+        var invalid = personInput();
+        invalid.remove("mypadId");
+        send(post("/api/v1/people"), invalid, 400);
+        invalid.put("mypadId", "../invalid");
+        send(post("/api/v1/people"), invalid, 400);
+        invalid.put("mypadId", "a".repeat(101));
+        send(post("/api/v1/people"), invalid, 400);
+        invalid.put("mypadId", UUID.randomUUID().toString());
+        invalid.put("seniorityLevel", "expert");
+        send(post("/api/v1/people"), invalid, 400);
+        invalid.put("seniorityLevel", "junior");
+        invalid.put("careerStartedOn", "2021-01-01");
+        send(post("/api/v1/people"), invalid, 400);
+
+        mvc.perform(get(path + "/export").session(session).param("format", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.person.mypadId").value(input.get("mypadId")))
+                .andExpect(jsonPath("$.person.seniorityLevel").value("senior"))
+                .andExpect(jsonPath("$.person.hiredOn").value("2020-01-01"))
+                .andExpect(jsonPath("$.person.careerStartedOn").value("2018-01-01"));
+        String csv = mvc.perform(get(path + "/export").session(session).param("format", "csv"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"careerStartedOn\""));
+        assertTrue(csv.contains("\"seniorityLevel\""));
+        assertTrue(csv.contains("\"mypadId\""));
+
+        send(post(path + "/archive"), Map.of("version", updated.get("version").asText()), 200);
+        send(post("/api/v1/people"), duplicate, 409);
+    }
+
+    @Test
+    void legacyPersonCanBeUpdatedWithoutInventingCareerLevelOrMypadIdentity() throws Exception {
+        String suffix = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO person(first_name,last_name,hired_on,status,version) VALUES('Fictitious',?,'2020-01-01','active',0)", suffix);
+        Long id = jdbc.queryForObject("SELECT id FROM person WHERE last_name = ?", Long.class, suffix);
+        var input = personInput();
+        input.remove("mypadId");
+        input.remove("careerStartedOn");
+        input.remove("seniorityLevel");
+        input.put("version", "0");
+        var updated = send(put("/api/v1/people/" + id), input, 200);
+        assertTrue(updated.get("careerStartedOn").isNull());
+        assertTrue(updated.get("careerDuration").isNull());
+        assertTrue(updated.get("seniorityLevel").isNull());
+        assertTrue(updated.get("mypadId").isNull());
+        input.put("version", updated.get("version").asText());
+        input.put("mypadId", "fictitious-" + suffix);
+        var identified = send(put("/api/v1/people/" + id), input, 200);
+        assertEquals("fictitious-" + suffix, identified.get("mypadId").asText());
+        assertEquals(id.toString(), identified.get("id").asText());
+        input.put("version", identified.get("version").asText());
+        input.remove("mypadId");
+        send(put("/api/v1/people/" + id), input, 400);
+    }
+
+    @Test
     void managerCyclesAndInternalExternalConflictAreRejected() throws Exception {
         var aBody = personInput();
         var a = send(post("/api/v1/people"), aBody, 201);
@@ -392,6 +466,9 @@ class DomainApiTest extends IntegrationTest {
         input.put("firstName", "Fictitious");
         input.put("lastName", UUID.randomUUID().toString());
         input.put("hiredOn", "2020-01-01");
+        input.put("careerStartedOn", "2018-01-01");
+        input.put("seniorityLevel", "medior");
+        input.put("mypadId", UUID.randomUUID().toString());
         input.put("hiringLocation", "Sede fittizia");
         input.put("residence", "Residenza fittizia");
         input.put("status", "active");

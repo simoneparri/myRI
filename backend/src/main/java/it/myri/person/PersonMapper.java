@@ -7,15 +7,21 @@ public final class PersonMapper {
     private PersonMapper() {}
 
     public static PersonDtos.View view(Person p, LocalDate today) {
-        Period tenure = p.hiredOn.isAfter(today) ? Period.ZERO : Period.between(p.hiredOn, today);
+        return new PersonDtos.View(p.id, p.firstName, p.lastName, p.email, p.phone,
+                p.role, p.hiredOn, elapsed(p.hiredOn, today), p.hiringLocation, p.residence, p.managerId,
+                p.externalManager, p.notes, p.status, p.archivedAt, p.createdAt,
+                p.updatedAt, p.version, p.careerStartedOn, elapsed(p.careerStartedOn, today),
+                p.seniorityLevel, p.mypadId);
+    }
+
+    private static String elapsed(LocalDate start, LocalDate today) {
+        if (start == null) return null;
+        if (start.isAfter(today)) return "data futura";
+        Period tenure = Period.between(start, today);
         String yearLabel = tenure.getYears() == 1 ? "anno" : "anni";
         String monthLabel = tenure.getMonths() == 1 ? "mese" : "mesi";
-        String seniority = "%d %s e %d %s".formatted(
+        return "%d %s e %d %s".formatted(
                 tenure.getYears(), yearLabel, tenure.getMonths(), monthLabel);
-        return new PersonDtos.View(p.id, p.firstName, p.lastName, p.email, p.phone,
-                p.role, p.hiredOn, seniority, p.hiringLocation, p.residence, p.managerId,
-                p.externalManager, p.notes, p.status, p.archivedAt, p.createdAt,
-                p.updatedAt, p.version);
     }
 
     public static void apply(Person p, PersonDtos.Input input) {
@@ -25,6 +31,9 @@ public final class PersonMapper {
         p.phone = input.phone();
         p.role = input.role();
         p.hiredOn = input.hiredOn();
+        p.careerStartedOn = input.careerStartedOn();
+        p.seniorityLevel = input.seniorityLevel();
+        p.mypadId = input.mypadId();
         p.hiringLocation = input.hiringLocation();
         p.residence = input.residence();
         p.managerId = input.managerId();
