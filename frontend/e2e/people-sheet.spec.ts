@@ -127,8 +127,9 @@ for (const width of [1440, 390]) {
     if (width > 800) {
       for (const fields of [
         ['rsnoAgresso', 'email', 'phone'],
+        ['bornOn', 'education'],
         ['role', 'seniorityLevel', 'frameworks'],
-        ['bornOn', 'hiredOn', 'careerStartedOn'],
+        ['hiredOn', 'careerStartedOn'],
       ]) {
         const positions = await Promise.all(
           fields.map((field) =>
@@ -145,6 +146,10 @@ for (const width of [1440, 390]) {
           ),
         );
         expect(leftPositions).toEqual([...leftPositions].sort((a, b) => a - b));
+      }
+      for (const field of ['bornOn', 'education']) {
+        expect(await page.locator(`[data-field="${field}"]`)
+          .evaluate((item) => getComputedStyle(item).gridRowStart)).toBe('2');
       }
     }
     const edit = page.getByRole('button', { name: 'Modifica', exact: true });

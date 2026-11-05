@@ -76,8 +76,8 @@ un container root senza bind mount scrivibili sulla checkout.
   data in `gg/mm/aaaa` con l'eta in anni compiuti tra parentesi, calcolata nel
   fuso applicativo e non salvata come valore statico. Per il 29 febbraio,
   negli anni non bisestili l'anno si completa il 1 marzo.
-  Su desktop la riga delle date mostra nascita, assunzione e inizio lavoro,
-  in questo ordine da sinistra a destra.
+  Su desktop la seconda riga mostra data di nascita ed educazione, in questo
+  ordine. Seguono ruolo/seniority/framework e poi assunzione e inizio lavoro.
   RSNO Agresso e Inside ID sono codici testuali univoci (massimo 100 caratteri,
   zeri iniziali preservati, unicita anche sulle persone archiviate).
   Educazione e un menu a scelta singola: Diploma, Laurea breve, Laurea magistrale,
