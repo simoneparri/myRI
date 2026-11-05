@@ -407,7 +407,6 @@ describe('Editor', () => {
     await vi.waitFor(() => expect(editor.loading()).toBe(false));
     editor.form.patchValue({
       amount: '45000.00',
-      currency: 'EUR',
       effectiveOn: '2026-01-01',
       contractType: 'Tempo indeterminato',
       weeklyHours: '40.00',
@@ -416,9 +415,13 @@ describe('Editor', () => {
     });
     post.mockRejectedValueOnce(new HttpErrorResponse({ status: 503 })).mockResolvedValueOnce({});
     await editor.save();
+    expect(editor.fields.some((field) => field.key === 'currency')).toBe(false);
+    expect(editor.form.controls['currency']).toBeUndefined();
+    expect(post.mock.calls[0][1]['currency']).toBe('EUR');
     expect(editor.error()).not.toBe('');
     expect(close).not.toHaveBeenCalled();
     await editor.save();
+    expect(post.mock.calls[1][1]['currency']).toBe('EUR');
     expect(post.mock.calls[0][1]['requestKey']).toBe(post.mock.calls[1][1]['requestKey']);
     expect(close).toHaveBeenCalledWith(true);
   });

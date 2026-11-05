@@ -80,7 +80,6 @@ export function validatorsFor(field: Field): ValidatorFn[] {
         control.value && Number(control.value) > 168 ? { max: true } : null,
       );
   }
-  if (field.key === 'currency') rules.push(Validators.pattern(/^[A-Z]{3}$/));
   if (field.type === 'date') rules.push(Validators.pattern(/^[1-9]\d{3}-\d{2}-\d{2}$/));
   if (field.type === 'date' || field.type === 'instant')
     rules.push((control) =>
@@ -453,7 +452,7 @@ export class Editor implements AfterViewInit, OnDestroy {
                   field.reference === 'people'
                     ? personLabel(row)
                     : field.reference === 'salaries'
-                      ? `${moneyDisplay(String(row['amount']))} ${row['currency']} - ${this.display.transform(row['effectiveOn'], 'date')} (#${row.id})`
+                      ? `${moneyDisplay(String(row['amount']))} - ${this.display.transform(row['effectiveOn'], 'date')} (#${row.id})`
                       : `${row['title'] ?? this.display.transform(row['heldAt'] ?? row['requestedOn'], row['heldAt'] ? 'instant' : 'date')} (#${row.id}, persona #${row['personId']})`,
               }));
           }),
@@ -615,7 +614,10 @@ export class Editor implements AfterViewInit, OnDestroy {
         payload['externalManager'] = this.data.row['externalManager'] ?? null;
       }
       if (this.data.row) payload['version'] = this.data.row.version ?? null;
-      if (this.data.resource === 'salaries') payload['requestKey'] = this.requestKey;
+      if (this.data.resource === 'salaries') {
+        payload['currency'] = 'EUR';
+        payload['requestKey'] = this.requestKey;
+      }
       if (this.data.command === 'approve')
         payload['createSalary'] = values['createSalary'] === 'true';
       if (this.data.command)

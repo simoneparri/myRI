@@ -104,7 +104,7 @@
                 }}</span
               >
               @if (event['amount']) {
-                <span> · {{ event['amount'] | display: 'money' }} {{ event['currency'] }}</span>
+                <span> · {{ event['amount'] | display: 'money' }}</span>
               }
               @if (event['status']) {
                 <span> · {{ event['status'] | display }}</span>

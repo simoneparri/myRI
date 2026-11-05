@@ -169,7 +169,6 @@ export const definitions: Record<Resource, Definition> = {
         required: true,
         fraction: 2,
       },
-      { key: 'currency', label: 'Valuta ISO (es. EUR)', required: true, max: 3, initial: 'EUR' },
       { key: 'effectiveOn', label: 'Decorrenza', type: 'date', required: true },
       { key: 'contractType', label: 'Tipo contratto', required: true, max: 100 },
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal', required: true, fraction: 2 },
@@ -178,7 +177,6 @@ export const definitions: Record<Resource, Definition> = {
     ],
     columns: [
       { key: 'amount', label: 'RAL annua', type: 'money' },
-      { key: 'currency', label: 'Valuta' },
       { key: 'effectiveOn', label: 'Decorrenza', type: 'date' },
       { key: 'contractType', label: 'Tipo contratto' },
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal' },
@@ -215,7 +213,6 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'requestedOn', label: 'Richiesta', type: 'date' },
       { key: 'requestedSalary', label: 'RAL target', type: 'money' },
       { key: 'requestedPercentage', label: '%', type: 'percentage' },
-      { key: 'currency', label: 'Valuta' },
       { key: 'status', label: 'Stato' },
     ],
   },

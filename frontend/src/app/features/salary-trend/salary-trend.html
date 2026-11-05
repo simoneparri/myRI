@@ -1,7 +1,6 @@
 <h2>Andamento RAL</h2>
 <p>
-  Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate; nessuna conversione
-  tra valute.
+  Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate.
 </p>
 <button mat-button (click)="load()" [disabled]="loading()">
   <svg appButtonIcon="refresh"></svg>Aggiorna andamento
@@ -23,7 +22,6 @@
       <tr>
         <th>Decorrenza</th>
         <th>RAL annua</th>
-        <th>Valuta</th>
         <th>Motivo</th>
       </tr>
     </thead>
@@ -37,7 +35,6 @@
             }
           </td>
           <td>{{ item['amount'] | display: 'money' }}</td>
-          <td>{{ item['currency'] }}</td>
           <td>{{ item['reason'] }}</td>
         </tr>
       }
@@ -51,4 +48,3 @@
   (page)="paginate($event)"
   aria-label="Paginazione andamento RAL"
 ></mat-paginator>
-

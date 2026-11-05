@@ -72,6 +72,31 @@ describe('ResourcePage', () => {
     expect(element.querySelector('tbody')?.textContent).toContain('5,80%');
     expect(element.querySelector('tbody')?.textContent).toContain('45.000,50');
   });
+  it('hides salary currency columns and filters while preserving contact filters', async () => {
+    const fixture = await create();
+    get.mockResolvedValue({
+      ...empty,
+      items: [{ id: '1', amount: '45000.50', currency: 'EUR' }],
+    });
+    fixture.componentRef.setInput('resource', 'salaries');
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).not.toContain('Valuta');
+    expect(element.textContent).not.toContain('EUR');
+    expect(element.querySelector('input[name="category"]')).toBeNull();
+    fixture.componentInstance.category = 'USD';
+    await fixture.componentInstance.search();
+    expect(get.mock.calls.at(-1)?.[1]).not.toHaveProperty('currency');
+    fixture.componentRef.setInput('resource', 'contacts');
+    fixture.componentRef.setInput('personId', '9');
+    await fixture.whenStable();
+    fixture.componentInstance.category = 'reference';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenLastCalledWith(
+      'people/9/contacts',
+      expect.objectContaining({ type: 'reference' }),
+    );
+  });
   it('requests contacts by descending contact date on every server-side page and displays dates', async () => {
     const fixture = await create();
     get.mockResolvedValue({

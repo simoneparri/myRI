@@ -54,6 +54,10 @@ un container root senza bind mount scrivibili sulla checkout.
 
 ## Funzioni e contratti
 
+- Valuta non mostrata nei form, filtri, elenchi, dettagli, timeline e andamento
+  RAL. La creazione RAL invia automaticamente `currency: "EUR"`; gli aumenti
+  ereditano la valuta della RAL base secondo il contratto API esistente.
+  Campo DB, dati storici ed export restano invariati, senza conversioni.
 - Pipe `percentage` per formato italiano con due decimali: frazione `0.058`
   visualizzata come `5,80%`. Liste e dettagli degli aumenti usano esplicitamente
   la modalita `points`: DB/API e form conservano `5.8` per indicare `5,80%`,

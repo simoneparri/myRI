@@ -69,14 +69,14 @@
         </mat-select>
       </mat-form-field>
     }
-    @if (resource() === 'contacts' || resource() === 'salaries') {
+    @if (resource() === 'contacts') {
       <mat-form-field appearance="outline"
-        ><mat-label>{{ resource() === 'contacts' ? 'Tipo contatto' : 'Valuta ISO' }}</mat-label>
+        ><mat-label>Tipo contatto</mat-label>
         <input
           matInput
           name="category"
           [(ngModel)]="category"
-          [attr.maxlength]="resource() === 'contacts' ? 50 : 3"
+          maxlength="50"
         />
       </mat-form-field>
     }

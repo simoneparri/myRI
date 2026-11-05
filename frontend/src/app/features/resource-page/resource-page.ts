@@ -129,8 +129,8 @@ export class ResourcePage {
     if (this.priority) this.applied['priority'] = this.priority;
     if (this.resource() === 'projects' && this.projectPeriod)
       this.applied['period'] = this.projectPeriod;
-    if (this.category.trim())
-      this.applied[this.resource() === 'contacts' ? 'type' : 'currency'] = this.category.trim();
+    if (this.resource() === 'contacts' && this.category.trim())
+      this.applied['type'] = this.category.trim();
     if (this.personFilter) this.applied['personId'] = this.personFilter;
     try {
       for (const value of [this.from, this.to]) {
