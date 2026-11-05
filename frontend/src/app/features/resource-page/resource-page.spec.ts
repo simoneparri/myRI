@@ -144,7 +144,7 @@ describe('ResourcePage', () => {
       expect.objectContaining({ from: '2026-11-04T10:30:00.000Z' }),
     );
   });
-  it('keeps only the sheet and archive actions in the people list with decorative icons', async () => {
+  it('keeps only the sheet action in the people list with decorative icons', async () => {
     const fixture = await create();
     fixture.componentRef.setInput('resource', 'people');
     get.mockResolvedValue({
@@ -155,12 +155,10 @@ describe('ResourcePage', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
     const row = element.querySelector('tbody tr')!;
-    expect(row.querySelector('button[aria-label="Azioni"]')).not.toBeNull();
+    expect(row.querySelector('button[aria-label="Azioni"]')).toBeNull();
+    expect(row.querySelector('a')?.textContent).toContain('Scheda');
     expect(fixture.componentInstance.actionsFor(fixture.componentInstance.page().items[0])).toEqual(
-      [
-        { key: 'sheet', label: 'Scheda', icon: 'person', link: ['/people', '1'] },
-        { key: 'archive', label: 'Archivia', icon: 'archive' },
-      ],
+      [{ key: 'sheet', label: 'Scheda', icon: 'person', link: ['/people', '1'] }],
     );
     expect(row.textContent).not.toContain('Dettagli');
     expect(row.textContent).not.toContain('Modifica');

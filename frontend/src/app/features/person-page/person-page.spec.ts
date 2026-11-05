@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of } from 'rxjs';
 import { Api, Row } from '../../core/api';
+import { Confirm } from '../../shared/confirm/confirm';
 import { Editor } from '../../shared/editor/editor';
 import { definitions } from '../../shared/schema';
 import { PersonPage } from './person-page';
@@ -39,11 +40,13 @@ describe('PersonPage', () => {
   };
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const get = vi.fn();
+  const post = vi.fn();
   const open = vi.fn();
   const success = vi.fn();
 
   async function create(row: Row = person) {
     success.mockReset();
+    post.mockReset().mockResolvedValue({});
     get
       .mockReset()
       .mockImplementation(async (path: string) => (path.endsWith('/timeline') ? empty : row));
@@ -52,7 +55,7 @@ describe('PersonPage', () => {
       imports: [PersonPage],
       providers: [
         provideRouter([]),
-        { provide: Api, useValue: { get } },
+        { provide: Api, useValue: { get, post } },
         { provide: MatDialog, useValue: { open } },
         { provide: Toast, useValue: { success } },
       ],
@@ -176,6 +179,46 @@ describe('PersonPage', () => {
     expect(fixture.componentInstance.editing()).toBe(false);
   });
 
+  it('archives an active person from the sheet with confirmation and the current version', async () => {
+    const fixture = await create();
+    const archived = { ...person, archivedAt: '2026-11-05T10:00:00Z' };
+    open.mockReturnValue({ afterClosed: () => of(true) });
+    get.mockImplementation(async (path: string) => (path.endsWith('/timeline') ? empty : archived));
+
+    const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')];
+    expect(buttons.map((button) => button.textContent?.trim())).toContain('Archivia');
+    await fixture.componentInstance.archive();
+
+    expect(open).toHaveBeenCalledWith(Confirm, {
+      data: 'Archiviare la persona? Lo storico sara conservato.',
+    });
+    expect(post).toHaveBeenCalledExactlyOnceWith(`people/${person.id}/archive`, {
+      version: person.version,
+    });
+    expect(fixture.componentInstance.person()).toEqual(archived);
+    expect(success).toHaveBeenCalledExactlyOnceWith('Persona archiviata.');
+    await fixture.whenStable();
+    expect(
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].some(
+        (button) => button.textContent?.trim() === 'Archivia',
+      ),
+    ).toBe(false);
+    expect(fixture.componentInstance.archiving()).toBe(false);
+  });
+
+  it('reports an archive failure without showing success', async () => {
+    const fixture = await create();
+    open.mockReturnValue({ afterClosed: () => of(true) });
+    post.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
+
+    await fixture.componentInstance.archive();
+
+    expect(fixture.componentInstance.error()).toContain('Conflitto');
+    expect(success).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.person()).toEqual(person);
+    expect(fixture.componentInstance.archiving()).toBe(false);
+  });
+
   it('does not reload when editing is cancelled', async () => {
     const fixture = await create();
     get.mockClear();
@@ -189,11 +232,12 @@ describe('PersonPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.person-details')?.textContent).toContain('Archiviato');
     expect(
-      [...element.querySelectorAll('button')].some(
-        (button) => button.textContent?.trim() === 'Modifica',
+      [...element.querySelectorAll('button')].some((button) =>
+        ['Modifica', 'Archivia'].includes(button.textContent?.trim() ?? ''),
       ),
     ).toBe(false);
     await fixture.componentInstance.edit();
+    await fixture.componentInstance.archive();
     expect(open).not.toHaveBeenCalled();
   });
 

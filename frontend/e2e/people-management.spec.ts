@@ -65,7 +65,8 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await expect(row).toBeVisible();
   await expect(row.getByRole('button', { name: 'Dettagli', exact: true })).toHaveCount(0);
   await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
-  await rowAction(row, 'Scheda');
+  await expect(row.getByRole('button', { name: 'Azioni', exact: true })).toHaveCount(0);
+  await row.getByRole('link', { name: 'Scheda', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
@@ -100,8 +101,12 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await rowAction(row, 'Dettagli');
   await expect(page.getByRole('dialog')).toContainText('Nota fittizia');
   await page.getByRole('dialog').getByRole('button', { name: 'Chiudi', exact: true }).click();
-  await rowAction(row, 'Archivia');
+  await page.getByRole('button', { name: 'Archivia', exact: true }).click();
   await confirm(page);
+  await expect(page.locator('[data-field="archivedAt"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Archivia', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Torna alle persone', exact: true }).click();
   await expect(row).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();

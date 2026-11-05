@@ -34,8 +34,11 @@
       </h3>
     </div>
     @if (editable('people', person)) {
-      <button mat-stroked-button (click)="edit()" [disabled]="editing()">
+      <button mat-stroked-button (click)="edit()" [disabled]="editing() || archiving()">
         <svg appButtonIcon="edit"></svg>Modifica
+      </button>
+      <button mat-stroked-button (click)="archive()" [disabled]="editing() || archiving()">
+        <svg appButtonIcon="archive"></svg>Archivia
       </button>
     }
   </div>

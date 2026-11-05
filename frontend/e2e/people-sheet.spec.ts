@@ -72,8 +72,7 @@ for (const width of [1440, 390]) {
     const deviconStylesheet = page.waitForResponse((response) =>
       response.url().endsWith('/assets/devicon/devicon.min.css'),
     );
-    await personRow.getByRole('button', { name: 'Azioni', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Scheda', exact: true }).click();
+    await personRow.getByRole('link', { name: 'Scheda', exact: true }).click();
     expect((await deviconStylesheet).ok()).toBe(true);
     await expect(
       page.getByRole('heading', { name: 'Persona FITTIZIA', exact: true }),
@@ -233,8 +232,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('definition').filter({ hasText: '03/01/2020' })).toBeVisible();
     await page.getByRole('link', { name: 'Torna alle persone', exact: true }).click();
     await expect(personRow).toContainText('Ruolo aggiornato');
-    await personRow.getByRole('button', { name: 'Azioni', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Scheda', exact: true }).click();
+    await personRow.getByRole('link', { name: 'Scheda', exact: true }).click();
     await page.getByRole('button', { name: 'Modifica', exact: true }).click();
     const phoneEditor = page.getByRole('dialog');
     await expect(phoneEditor.getByText(/Il numero esistente non e valido/)).toBeVisible();
@@ -333,9 +331,8 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   await page
     .getByRole('row')
     .filter({ hasText: 'Persona' })
-    .getByRole('button', { name: 'Azioni', exact: true })
+    .getByRole('link', { name: 'Scheda', exact: true })
     .click();
-  await page.getByRole('menuitem', { name: 'Scheda', exact: true }).click();
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('05/11/1990');
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('(36 anni)');
   await expect(page.locator('[data-field="rsnoAgresso"] dd')).toHaveText('00011');

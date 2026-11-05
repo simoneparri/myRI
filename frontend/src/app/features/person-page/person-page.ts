@@ -9,6 +9,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../../core/api';
+import { Confirm } from '../../shared/confirm/confirm';
 import { DisplayPipe } from '../../shared/format';
 import { ResourcePage } from '../resource-page/resource-page';
 import { italianPaginator } from '../../shared/paginator';
@@ -65,6 +66,7 @@ export class PersonPage {
   readonly error = signal('');
   readonly timelineError = signal('');
   readonly loading = signal(false);
+  readonly archiving = signal(false);
   readonly exporting = signal(false);
   readonly exportError = signal('');
   readonly timeline = signal<Page<Row>>({
@@ -130,7 +132,7 @@ export class PersonPage {
   }
   async edit(): Promise<void> {
     const row = this.person();
-    if (!row || !canEdit('people', row) || this.editing()) return;
+    if (!row || !canEdit('people', row) || this.editing() || this.archiving()) return;
     const generation = this.personGeneration;
     this.editing.set(true);
     try {
@@ -149,6 +151,27 @@ export class PersonPage {
       }
     } finally {
       this.editing.set(false);
+    }
+  }
+  async archive(): Promise<void> {
+    const row = this.person();
+    if (!row || !canEdit('people', row) || this.editing() || this.archiving()) return;
+    this.archiving.set(true);
+    try {
+      const confirmed = await firstValueFrom(
+        this.dialogs
+          .open(Confirm, { data: 'Archiviare la persona? Lo storico sara conservato.' })
+          .afterClosed(),
+      );
+      if (!confirmed) return;
+      this.error.set('');
+      await this.api.post(`people/${row.id}/archive`, { version: row.version ?? null });
+      this.toast.success('Persona archiviata.');
+      await this.load();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.archiving.set(false);
     }
   }
   async download(format: 'json' | 'csv'): Promise<void> {

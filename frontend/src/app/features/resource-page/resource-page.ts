@@ -220,7 +220,8 @@ export class ResourcePage {
         { key: 'complete', label: 'Completa', icon: 'check' },
         { key: 'cancel', label: 'Annulla task', icon: 'close' },
       );
-    actions.push({ key: 'archive', label: 'Archivia', icon: 'archive' });
+    if (this.resource() !== 'people')
+      actions.push({ key: 'archive', label: 'Archivia', icon: 'archive' });
     return actions;
   }
   runAction(row: Row, action: string): void {

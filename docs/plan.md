@@ -8,8 +8,10 @@ approvazione, con override esplicito e senza modificare lo storico. V13 mantiene
 distinte le richieste legacy senza proposta e il gruppo intenzionalmente vuoto.
 Rifiniture UI autorizzate: una colonna Benefit a icone (anche No e zero), menu
 per righe con piu azioni, icone sulle card dashboard e campanella nell'header
-con contatore e pannello delle non lette, senza lettura implicita. Scaduti resta
-la prima card, senza blocchi duplicati. Nessun deploy o riavvio implicito.
+con contatore e pannello delle non lette, senza lettura implicita. Archiviazione
+delle persone dalla scheda dettaglio, accanto a Modifica, rimossa dalle azioni
+della lista. Scaduti resta la prima card, senza blocchi duplicati. Nessun deploy
+o riavvio implicito.
 
 Estensione RAL autorizzata: gruppo Benefit con buoni pasto e auto booleani
 nullable, lettera di bonus come importo EUR facoltativo non negativo (zero ammesso).
