@@ -50,6 +50,7 @@ export class PersonPage {
     [],
     ['role', 'seniorityLevel', 'frameworks'],
     ['hiredOn','hiringLocation', 'residence'],
+    [],
     ['notes'],
   ].map((row) =>
     row.map((key) => {
