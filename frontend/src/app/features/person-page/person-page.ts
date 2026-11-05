@@ -95,6 +95,12 @@ export class PersonPage {
       ? `https://mypad.altengroup.com/employees/${encodeURIComponent(id)}`
       : null;
   }
+  insideUrl(person: Row): string | null {
+    const id = person['insideId'];
+    return typeof id === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(id)
+      ? `https://inside.alten.com/it/alten-profile/profile/${encodeURIComponent(id)}/structured`
+      : null;
+  }
   frameworkList(person: Row): string[] {
     const frameworks = person['frameworks'];
     if (!Array.isArray(frameworks)) return [];

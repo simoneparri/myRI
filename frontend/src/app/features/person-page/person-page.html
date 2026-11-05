@@ -16,9 +16,20 @@
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Apri MyPad (nuova scheda)"
-        > MyPAD
-          {{ person['mypadId'] }} <svg appButtonIcon="external"></svg>
+        > MyPAD <svg appButtonIcon="external"></svg>
         </a>
+        }
+      </h3>
+      <h3>
+
+        @if (person['insideId'] && insideUrl(person); as url) {
+          <a
+            [href]="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Apri Inside (nuova scheda)"
+          > Inside <svg appButtonIcon="external"></svg>
+          </a>
         }
       </h3>
     </div>
