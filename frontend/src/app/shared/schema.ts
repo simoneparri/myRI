@@ -79,6 +79,7 @@ export const definitions: Record<Resource, Definition> = {
     fields: [
       { key: 'firstName', label: 'Nome', required: true, max: 100 },
       { key: 'lastName', label: 'Cognome', required: true, max: 100 },
+      { key: 'bornOn', label: 'Data di nascita', type: 'date', requiredOnCreate: true },
       {
         key: 'mypadId',
         label: 'MyPad ID',

@@ -221,6 +221,7 @@ describe('Editor', () => {
     editor.form.patchValue({
       firstName: 'Persona',
       lastName: 'Fittizia',
+      bornOn: '1990-01-01',
       hiredOn: '2020-01-01',
       careerStartedOn: '2021-01-01',
       seniorityLevel: 'medior',
@@ -255,6 +256,38 @@ describe('Editor', () => {
     expect(editor.form.controls['mypadId'].valid).toBe(true);
     expect(editor.form.controls['careerStartedOn'].value).toBe('');
     expect(editor.form.controls['seniorityLevel'].value).toBe('');
+    expect(editor.form.controls['bornOn'].value).toBe('');
+    expect(editor.form.controls['bornOn'].valid).toBe(true);
+  });
+  it('requires birth date at census and rejects impossible and future dates', async () => {
+    const editor = create({ resource: 'people', path: 'people' });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    editor.form.patchValue({
+      firstName: 'Persona',
+      lastName: 'Fittizia',
+      mypadId: 'fictitious-birth',
+      hiredOn: '2020-01-01',
+    });
+    expect(editor.form.controls['bornOn'].invalid).toBe(true);
+    editor.form.controls['bornOn'].setValue('1990-02-30');
+    expect(editor.form.controls['bornOn'].invalid).toBe(true);
+    editor.form.controls['bornOn'].setValue('9999-12-31');
+    await editor.save();
+    expect(post).not.toHaveBeenCalled();
+    expect(editor.error()).toContain('nascita non puo essere futura');
+    editor.form.controls['bornOn'].setValue('1990-01-01');
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenCalledWith('people', expect.objectContaining({ bornOn: '1990-01-01' }));
+  });
+  it('requires keeping an assigned birth date', () => {
+    const editor = create({
+      resource: 'people',
+      path: 'people',
+      row: { id: '1', version: '0', bornOn: '1990-01-01' },
+    });
+    editor.form.controls['bornOn'].setValue('');
+    expect(editor.form.controls['bornOn'].invalid).toBe(true);
   });
   it('requires keeping MyPad ID when editing an identified person', () => {
     const editor = create({

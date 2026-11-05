@@ -12,7 +12,8 @@ public final class PersonMapper {
                 p.role, p.hiredOn, elapsed(p.hiredOn, today), p.hiringLocation, p.residence, p.managerId,
                 p.externalManager, p.notes, p.status, p.archivedAt, p.createdAt,
                 p.updatedAt, p.version, p.careerStartedOn, elapsed(p.careerStartedOn, today),
-                p.seniorityLevel, p.mypadId, p.frameworks == null ? List.of() : List.copyOf(p.frameworks));
+                p.seniorityLevel, p.mypadId, p.frameworks == null ? List.of() : List.copyOf(p.frameworks),
+                p.bornOn, p.bornOn == null ? null : Period.between(p.bornOn, today).getYears());
     }
 
     private static String elapsed(LocalDate start, LocalDate today) {
@@ -35,6 +36,7 @@ public final class PersonMapper {
             p.frameworks = input.frameworks().stream().map(String::strip).toList();
         }
         p.hiredOn = input.hiredOn();
+        p.bornOn = input.bornOn();
         p.careerStartedOn = input.careerStartedOn();
         p.seniorityLevel = input.seniorityLevel();
         p.mypadId = input.mypadId();

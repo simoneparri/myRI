@@ -20,6 +20,8 @@ describe('PersonPage', () => {
     role: 'Ruolo fittizio',
     frameworks: ['Java', 'Spring Boot'],
     hiredOn: '2020-01-02',
+    bornOn: '1990-11-05',
+    age: 36,
     hiringLocation: 'Sede fittizia',
     residence: 'Residenza fittizia',
     managerId: '9007199254740994',
@@ -65,18 +67,14 @@ describe('PersonPage', () => {
     expect([...details.querySelectorAll('dt')].map((label) => label.textContent)).toEqual([
       ...definitions.people.fields
         .filter((field) => !['status', 'firstName', 'lastName'].includes(field.key))
-        .map((field) =>
-          field.key === 'frameworks' ? 'Framework conosciuti' : field.label,
-        ),
+        .map((field) => (field.key === 'frameworks' ? 'Framework conosciuti' : field.label)),
     ]);
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
     expect(element.querySelector('.person-title .badge')?.textContent?.trim()).toBe('Attiva');
     expect(details.textContent).not.toContain('Nome');
     expect(details.textContent).not.toContain('Cognome');
     expect(
-      [...details.querySelectorAll('.framework-list li')].map((item) =>
-        item.textContent?.trim(),
-      ),
+      [...details.querySelectorAll('.framework-list li')].map((item) => item.textContent?.trim()),
     ).toEqual(['Java', 'Spring Boot']);
     expect(details.querySelector('.framework-list .devicon-java-plain')).not.toBeNull();
     expect(details.querySelector('.framework-list .devicon-spring-original')).not.toBeNull();
@@ -115,6 +113,22 @@ describe('PersonPage', () => {
     expect(
       fixture.componentInstance.mypadUrl({ id: '1', mypadId: 'https://other.test' }),
     ).toBeNull();
+  });
+
+  it('displays age including zero and singular years, but no invented age for legacy people', async () => {
+    const fixture = await create();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-field="bornOn"] dd')?.textContent).toContain('05/11/1990');
+    expect(element.querySelector('[data-field="bornOn"] dd')?.textContent).toContain('(36 anni)');
+    fixture.componentInstance.person.set({ ...person, age: 0 });
+    await fixture.whenStable();
+    expect(element.querySelector('[data-field="bornOn"] dd')?.textContent).toContain('(0 anni)');
+    fixture.componentInstance.person.set({ ...person, age: 1 });
+    await fixture.whenStable();
+    expect(element.querySelector('[data-field="bornOn"] dd')?.textContent).toContain('(1 anno)');
+    fixture.componentInstance.person.set({ ...person, bornOn: null, age: null });
+    await fixture.whenStable();
+    expect(element.querySelector('[data-field="bornOn"] dd')?.textContent).not.toContain('anni');
   });
 
   it('opens the existing versioned editor from the sheet and reloads saved information', async () => {

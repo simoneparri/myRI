@@ -62,6 +62,12 @@ un container root senza bind mount scrivibili sulla checkout.
   sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
   contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
+  Data di nascita obbligatoria per le nuove persone, facoltativa per i record
+  preesistenti senza date inventate; una data assegnata puo essere corretta ma
+  non svuotata. Date future o impossibili sono rifiutate. La scheda mostra la
+  data in `gg/mm/aaaa` con l'eta in anni compiuti tra parentesi, calcolata nel
+  fuso applicativo e non salvata come valore statico. Per il 29 febbraio,
+  negli anni non bisestili l'anno si completa il 1 marzo.
   La tab Contatti mostra la data di contatto (`gg/mm/aaaa`), obbligatoria per i
   nuovi inserimenti e non svuotabile dopo l'assegnazione. Le righe sono ordinate
   dal backend per data decrescente anche tra pagine; i contatti legacy senza data

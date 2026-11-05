@@ -67,7 +67,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(8, flyway.migrate().migrationsExecuted);
+        assertEquals(9, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -99,6 +99,7 @@ class SchemaMigrationTest {
         assertEquals(1, scalar("""
                 SELECT COUNT(*) FROM person WHERE id = 700000 AND hired_on = '2026-01-01'
                   AND career_started_on IS NULL AND seniority_level IS NULL AND mypad_id IS NULL
+                  AND born_on IS NULL
                   AND JSON_TYPE(frameworks) = 'ARRAY' AND JSON_LENGTH(frameworks) = 0
                 """));
         assertEquals(1, scalar("""

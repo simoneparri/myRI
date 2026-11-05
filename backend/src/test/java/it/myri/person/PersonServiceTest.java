@@ -56,19 +56,68 @@ class PersonServiceTest {
     }
 
     @Test
+    void ageUsesCompletedYearsAndTheApplicationCalendarIncludingLeapBirthdays() {
+        var clock = Clock.fixed(Instant.parse("2026-11-04T23:30:00Z"), ZoneOffset.UTC);
+        var localService = new PersonService(repository, users, clock, ZoneId.of("Europe/Rome"));
+        Person person = person(1L);
+        assertNull(localService.view(person).age());
+        person.bornOn = LocalDate.of(1990, 11, 5);
+        assertEquals(36, localService.view(person).age());
+        assertEquals(35, PersonMapper.view(person, LocalDate.of(2026, 11, 4)).age());
+        person.bornOn = LocalDate.of(2000, 2, 29);
+        assertEquals(24, PersonMapper.view(person, LocalDate.of(2025, 2, 28)).age());
+        assertEquals(25, PersonMapper.view(person, LocalDate.of(2025, 3, 1)).age());
+        person.bornOn = LocalDate.of(2026, 11, 5);
+        assertEquals(0, localService.view(person).age());
+    }
+
+    @Test
+    void birthDateIsRequiredAtCensusAndValidatedAgainstTheLocalDay() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var clock = Clock.fixed(Instant.parse("2026-11-04T23:30:00Z"), ZoneOffset.UTC);
+        var localService = new PersonService(repository, users, clock, ZoneId.of("Europe/Rome"));
+        for (LocalDate invalid : new LocalDate[] { null, LocalDate.of(999, 1, 1), LocalDate.of(2026, 11, 6) }) {
+            assertThrows(ApiException.class, () -> localService.create(birthInput(invalid, null)));
+        }
+        verify(repository, never()).saveAndFlush(any());
+        assertEquals(0, localService.create(birthInput(LocalDate.of(2026, 11, 5), null)).age());
+    }
+
+    @Test
+    void legacyBirthDateCanRemainUnknownButCannotBeClearedOnceAssigned() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        Person person = person(1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(person));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        assertNull(service.update(1L, birthInput(null, 0L)).age());
+        LocalDate date = LocalDate.of(1990, 1, 1);
+        assertEquals(date, service.update(1L, birthInput(date, 0L)).bornOn());
+        assertThrows(ApiException.class, () -> service.update(1L, birthInput(null, 0L)));
+        assertEquals(date, person.bornOn);
+    }
+
+    private static PersonDtos.Input birthInput(LocalDate date, Long version) {
+        var valid = input(null, version);
+        return new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
+                valid.hiredOn(), null, null, null, null, null, "active", version,
+                valid.careerStartedOn(), valid.seniorityLevel(), valid.mypadId(), null, date);
+    }
+
+    @Test
     void frameworksAreTrimmedAndDuplicatesAreRejected() {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         when(repository.existsByMypadId("test-fictitious")).thenReturn(false);
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var input = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, "test-fictitious", List.of(" Java ", "Spring Boot"));
+                null, null, "test-fictitious", List.of(" Java ", "Spring Boot"), LocalDate.of(1990, 1, 1));
         var saved = service.create(input);
         assertEquals(List.of("Java", "Spring Boot"), saved.frameworks());
 
         var duplicate = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, "test-fictitious", List.of("Java", " java "));
+                null, null, "test-fictitious", List.of("Java", " java "), LocalDate.of(1990, 1, 1));
         assertThrows(ApiException.class, () -> service.create(duplicate));
         verify(repository, times(1)).saveAndFlush(any());
     }
@@ -91,7 +140,7 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var valid = input(null, null);
         var missing = new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
-                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null);
+                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null, valid.bornOn());
         assertThrows(ApiException.class, () -> service.create(missing));
         when(repository.existsByMypadId(valid.mypadId())).thenReturn(true);
         var duplicate = assertThrows(ApiException.class, () -> service.create(valid));
@@ -104,7 +153,7 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var invalid = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null);
+                LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null, LocalDate.of(1990, 1, 1));
         assertThrows(ApiException.class, () -> service.create(invalid));
         verify(repository, never()).saveAndFlush(any());
         Person person = person(1L);
@@ -125,6 +174,6 @@ class PersonServiceTest {
     private static PersonDtos.Input input(Long manager, Long version) {
         return new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, manager, null, null, "active", version,
-                LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null);
+                LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null, LocalDate.of(1990, 1, 1));
     }
 }

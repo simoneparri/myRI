@@ -2,6 +2,12 @@
 
 ## Stato e autorizzazioni
 
+Estensione anagrafica autorizzata: data di nascita obbligatoria per i nuovi
+censimenti, nullable per le persone esistenti senza backfill; dopo l'assegnazione
+correggibile ma non svuotabile. Migrazione V10 additiva, API/export e form con
+validazione date non future. Eta derivata in anni compiuti nel fuso applicativo
+e mostrata nella scheda accanto alla data, senza persistere il valore.
+
 Estensione contatti autorizzata: data civile di contatto obbligatoria per i nuovi
 inserimenti, nullable per i contatti legacy senza backfill; dopo l'assegnazione
 non svuotabile. Migrazione V9 additiva e indice persona/data, DTO/API/export,

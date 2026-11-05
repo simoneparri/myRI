@@ -524,6 +524,14 @@ export class Editor implements AfterViewInit, OnDestroy {
     const values = this.form.getRawValue();
     if (
       this.data.resource === 'people' &&
+      values['bornOn'] &&
+      values['bornOn'] > calendarDate(new Date(), this.timezone)
+    ) {
+      this.error.set('La data di nascita non puo essere futura.');
+      return;
+    }
+    if (
+      this.data.resource === 'people' &&
       values['careerStartedOn'] &&
       values['careerStartedOn'] > values['hiredOn']
     ) {

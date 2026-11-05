@@ -107,6 +107,14 @@ tra maiuscole e minuscole. In PUT, `frameworks` omesso conserva l'elenco esisten
 un elenco vuoto lo cancella. PersonView restituisce sempre un array, anche vuoto.
 La UI usa una riga per framework; JSON mantiene l'array e il CSV lo serializza
 come testo separato da virgole in una singola cella.
+
+`bornOn` e la data di nascita civile, negli anni 1000-9999 e non futura rispetto
+al giorno applicativo: obbligatoria in POST, nullable per i record legacy in PUT,
+non svuotabile dopo l'assegnazione. PersonView include `bornOn` e `age`, intero
+nullable in anni compiuti calcolato con Clock e fuso applicativo; l'eta non e
+persistita. Il 29 febbraio completa l'anno il 1 marzo negli anni non bisestili.
+Entrambi i campi sono inclusi negli export JSON/CSV; nessun backfill inventato.
+
 `mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
 1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
 archiviate (confronto secondo la collation case-insensitive del DB).

@@ -60,6 +60,9 @@ public class PersonService {
         if (input.mypadId() == null || input.mypadId().isBlank()) {
             throw ApiException.invalid("MyPad ID obbligatorio per il censimento.");
         }
+        if (input.bornOn() == null) {
+            throw ApiException.invalid("La data di nascita e obbligatoria per il censimento.");
+        }
         validateManager(null, input);
         Person person = new Person();
         person.initialize(clock);
@@ -74,6 +77,9 @@ public class PersonService {
         Queries.version(person, input.version());
         if (person.mypadId != null && input.mypadId() == null) {
             throw ApiException.invalid("MyPad ID obbligatorio per questa persona.");
+        }
+        if (person.bornOn != null && input.bornOn() == null) {
+            throw ApiException.invalid("La data di nascita e obbligatoria per questa persona.");
         }
         validateManager(id, input);
         PersonMapper.apply(person, input);
@@ -90,6 +96,10 @@ public class PersonService {
     private void validateManager(Long id, PersonDtos.Input input) {
         validateFrameworks(input.frameworks());
         Dates.check(input.hiredOn());
+        Dates.check(input.bornOn());
+        if (input.bornOn() != null && input.bornOn().isAfter(LocalDate.now(clock.withZone(zone)))) {
+            throw ApiException.invalid("La data di nascita non puo essere futura.");
+        }
         Dates.check(input.careerStartedOn());
         if (input.careerStartedOn() != null && input.careerStartedOn().isAfter(input.hiredOn())) {
             throw ApiException.invalid("L'inizio lavoro non puo essere successivo all'assunzione.");

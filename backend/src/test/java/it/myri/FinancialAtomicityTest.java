@@ -87,7 +87,7 @@ class FinancialAtomicityTest extends IntegrationTest {
         String mypadId = UUID.randomUUID().toString();
         var input = new PersonDtos.Input("Fictitious", "Concurrent census", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                LocalDate.of(2018, 1, 1), "medior", mypadId, null);
+                LocalDate.of(2018, 1, 1), "medior", mypadId, null, LocalDate.of(1990, 1, 1));
         var outcomes = parallel(() -> asOwner(() -> {
             try {
                 people.create(input);
@@ -134,7 +134,7 @@ class FinancialAtomicityTest extends IntegrationTest {
         try {
             people.update(person.id(), new PersonDtos.Input(person.firstName(), person.lastName(), null,
                     null, null, person.hiredOn(), null, null, manager, null, null, "active", person.version(),
-                    person.careerStartedOn(), person.seniorityLevel(), person.mypadId(), null));
+                    person.careerStartedOn(), person.seniorityLevel(), person.mypadId(), null, person.bornOn()));
             return true;
         } catch (ApiException exception) {
             assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
@@ -160,7 +160,7 @@ class FinancialAtomicityTest extends IntegrationTest {
     private PersonDtos.View person() {
         return people.create(new PersonDtos.Input("Fictitious", UUID.randomUUID().toString(), null, null,
                 null, LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, UUID.randomUUID().toString(), null));
+                null, null, UUID.randomUUID().toString(), null, LocalDate.of(1990, 1, 1)));
     }
 
     private <T> T asOwner(Supplier<T> operation) {

@@ -20,6 +20,7 @@ public class Person extends MutableEntity {
     @Column(columnDefinition = "json", nullable = false)
     public List<String> frameworks = new ArrayList<>();
     public LocalDate hiredOn;
+    public LocalDate bornOn;
     public LocalDate careerStartedOn;
     @Column(length = 10)
     public String seniorityLevel;

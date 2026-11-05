@@ -159,6 +159,40 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void birthDateIsValidatedAndIncludedWithDerivedAgeInPersonAndExports() throws Exception {
+        var input = personInput();
+        input.remove("bornOn");
+        send(post("/api/v1/people"), input, 400);
+        for (String invalid : List.of("0999-01-01", "9999-12-31", "1990-02-30")) {
+            input.put("bornOn", invalid);
+            send(post("/api/v1/people"), input, 400);
+        }
+        input.put("bornOn", "1990-11-05");
+        var person = send(post("/api/v1/people"), input, 201);
+        assertEquals("1990-11-05", person.get("bornOn").asText());
+        assertTrue(person.get("age").isIntegralNumber());
+        String path = "/api/v1/people/" + person.get("id").asText();
+        mvc.perform(get(path).session(session)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.bornOn").value("1990-11-05"))
+                .andExpect(jsonPath("$.age").value(person.get("age").asInt()));
+        input.put("version", person.get("version").asText());
+        input.remove("bornOn");
+        send(put(path), input, 400);
+        input.put("bornOn", "1991-11-05");
+        var changed = send(put(path), input, 200);
+        assertEquals("1991-11-05", changed.get("bornOn").asText());
+        mvc.perform(get(path + "/export").session(session).param("format", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.person.bornOn").value("1991-11-05"))
+                .andExpect(jsonPath("$.person.age").value(changed.get("age").asInt()));
+        String csv = mvc.perform(get(path + "/export").session(session).param("format", "csv"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"bornOn\""));
+        assertTrue(csv.contains("\"age\""));
+        assertTrue(csv.contains("\"1991-11-05\""));
+    }
+
+    @Test
     void legacyPersonCanBeUpdatedWithoutInventingCareerLevelOrMypadIdentity() throws Exception {
         String suffix = UUID.randomUUID().toString();
         jdbc.update("INSERT INTO person(first_name,last_name,hired_on,status,version) VALUES('Fictitious',?,'2020-01-01','active',0)", suffix);
@@ -167,10 +201,13 @@ class DomainApiTest extends IntegrationTest {
         input.remove("mypadId");
         input.remove("careerStartedOn");
         input.remove("seniorityLevel");
+        input.remove("bornOn");
         input.put("version", "0");
         var updated = send(put("/api/v1/people/" + id), input, 200);
         assertTrue(updated.get("careerStartedOn").isNull());
         assertTrue(updated.get("careerDuration").isNull());
+        assertTrue(updated.get("bornOn").isNull());
+        assertTrue(updated.get("age").isNull());
         assertTrue(updated.get("seniorityLevel").isNull());
         assertTrue(updated.get("mypadId").isNull());
         input.put("version", updated.get("version").asText());
@@ -549,6 +586,7 @@ class DomainApiTest extends IntegrationTest {
         input.put("firstName", "Fictitious");
         input.put("lastName", UUID.randomUUID().toString());
         input.put("hiredOn", "2020-01-01");
+        input.put("bornOn", "1990-01-01");
         input.put("careerStartedOn", "2018-01-01");
         input.put("seniorityLevel", "medior");
         input.put("mypadId", UUID.randomUUID().toString());

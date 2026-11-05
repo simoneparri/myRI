@@ -1,0 +1,2 @@
+ALTER TABLE person
+    ADD COLUMN born_on DATE NULL;

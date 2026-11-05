@@ -50,6 +50,9 @@
           @if (field.key === 'hiredOn' && person['seniority']) {
             ({{ person['seniority'] }})
           }
+          @if (field.key === 'bornOn' && person['age'] !== null && person['age'] !== undefined) {
+            ({{ person['age'] }} {{ person['age'] === 1 ? 'anno' : 'anni' }})
+          }
           @if (field.key === 'careerStartedOn' && person['careerDuration']) {
             ({{ person['careerDuration'] }})
           }
