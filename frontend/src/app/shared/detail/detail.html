@@ -1,53 +1,21 @@
 <h2 mat-dialog-title>Dettaglio {{ data.definition.singular }}</h2>
 <mat-dialog-content>
   <dl>
-    @for (field of data.definition.fields; track field.key) {
-      <dt>{{ field.label }}</dt>
-      <dd>
-        @if (field.key === 'requestedPercentage') {
-          {{ data.row[field.key] | percentage: 'points' }}
-        } @else {
-          {{
-            data.row[field.key]
-              | display
-                : (field.key === 'amount' || field.key === 'requestedSalary' ? 'money' : field.type)
-          }}
-        }
-      </dd>
-    }
-    <dt>ID</dt>
-    <dd>{{ data.row.id }}</dd>
-    @if (data.row['status']) {
-      <dt>Stato</dt>
-      <dd>{{ data.row['status'] | display }}</dd>
-    }
-    @if (data.row['outcomeOn']) {
-      <dt>Data esito</dt>
-      <dd>{{ data.row['outcomeOn'] | display: 'date' }}</dd>
-    }
-    @if (data.row['outcomeNotes']) {
-      <dt>Note esito</dt>
-      <dd>{{ data.row['outcomeNotes'] }}</dd>
-    }
-    @if (data.row['salaryId']) {
-      <dt>RAL generata</dt>
-      <dd>#{{ data.row['salaryId'] }}</dd>
-    }
-    @if (data.row['sourceRaiseRequestId']) {
-      <dt>Richiesta origine</dt>
-      <dd>#{{ data.row['sourceRaiseRequestId'] }}</dd>
-    }
-    @if (data.row['sourceTaskId']) {
-      <dt>Task origine</dt>
-      <dd>#{{ data.row['sourceTaskId'] }}</dd>
-    }
-    @if (data.row['completedAt']) {
-      <dt>Completato</dt>
-      <dd>{{ data.row['completedAt'] | display: 'instant' }}</dd>
-    }
-    @if (data.row['archivedAt']) {
-      <dt>Archiviato</dt>
-      <dd>{{ data.row['archivedAt'] | display: 'instant' }}</dd>
+    @for (row of fieldRows; track $index) {
+      @for (field of row; track field.key) {
+        <dt>{{ field.label }}</dt>
+        <dd>
+          @if (field.key === 'requestedPercentage') {
+            {{ data.row[field.key] | percentage: 'points' }}
+          } @else if (field.type === 'reference') {
+            #{{ data.row[field.key] }}
+          } @else if (field.key === 'outcomeNotes') {
+            {{ data.row[field.key] }}
+          } @else {
+            {{ data.row[field.key] | display: field.type }}
+          }
+        </dd>
+      }
     }
   </dl>
 </mat-dialog-content>

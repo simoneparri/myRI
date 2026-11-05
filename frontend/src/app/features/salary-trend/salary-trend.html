@@ -1,7 +1,5 @@
 <h2>Andamento RAL</h2>
-<p>
-  Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate.
-</p>
+<p>Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate.</p>
 <button mat-button (click)="load()" [disabled]="loading()">
   <svg appButtonIcon="refresh"></svg>Aggiorna andamento
 </button>
@@ -20,22 +18,26 @@
     </caption>
     <thead>
       <tr>
-        <th>Decorrenza</th>
-        <th>RAL annua</th>
-        <th>Motivo</th>
+        @for (column of columns; track column.key) {
+          <th scope="col">{{ column.label }}</th>
+        }
       </tr>
     </thead>
     <tbody>
       @for (item of data().items; track item.id) {
         <tr>
-          <td>
-            {{ item['effectiveOn'] | display: 'date' }}
-            @if (future(item)) {
-              <span class="badge">Futura</span>
-            }
-          </td>
-          <td>{{ item['amount'] | display: 'money' }}</td>
-          <td>{{ item['reason'] }}</td>
+          @for (column of columns; track column.key) {
+            <td>
+              @if (column.type === 'text') {
+                {{ item[column.key] }}
+              } @else {
+                {{ item[column.key] | display: column.type }}
+              }
+              @if (column.key === 'effectiveOn' && future(item)) {
+                <span class="badge">Futura</span>
+              }
+            </td>
+          }
         </tr>
       }
     </tbody>

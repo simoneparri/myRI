@@ -44,8 +44,19 @@ export class PersonPage {
   private readonly dialogs = inject(MatDialog);
   private readonly toast = inject(Toast);
   private readonly frameworkIcons = inject(FrameworkIcons);
-  readonly fields = definitions.people.fields.filter(
-    (field) => !['status', 'firstName', 'lastName', 'insideId', 'mypadId'].includes(field.key),
+  readonly fieldRows = [
+    ['rsnoAgresso', 'email', 'phone'],
+    ['bornOn', 'education'],
+    ['role', 'seniorityLevel', 'frameworks'],
+    ['hiredOn', 'careerStartedOn'],
+    ['hiringLocation', 'residence'],
+    ['notes'],
+  ].map((row) =>
+    row.map((key) => {
+      const field = definitions.people.fields.find((field) => field.key === key);
+      if (!field) throw new Error(`Campo persona non definito: ${key}`);
+      return field;
+    }),
   );
   readonly editable = canEdit;
   readonly editing = signal(false);

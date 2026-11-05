@@ -10,23 +10,34 @@ import { SalaryTrend } from './salary-trend/salary-trend';
 describe('Step 4 views', () => {
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   it('renders dashboard totals and calendar links and surfaces failures', async () => {
-    const get = vi
-      .fn()
-      .mockImplementation(async (path: string) =>
-        path === 'dashboard'
-          ? {
-              asOf: '2026-11-03T11:00:00Z',
-              timezone: 'Europe/Rome',
-              careerMonths: 3,
-              todayTasks: 2,
-              overdueTasks: 1,
-              nextSevenTasks: 4,
-              peopleWithoutRecentTalk: 0,
-              openRaiseRequests: 3,
-              unreadNotifications: 5,
-            }
-          : empty,
-      );
+    const get = vi.fn().mockImplementation(async (path: string) =>
+      path === 'dashboard'
+        ? {
+            asOf: '2026-11-03T11:00:00Z',
+            timezone: 'Europe/Rome',
+            careerMonths: 3,
+            todayTasks: 2,
+            overdueTasks: 1,
+            nextSevenTasks: 4,
+            peopleWithoutRecentTalk: 0,
+            openRaiseRequests: 3,
+            unreadNotifications: 5,
+          }
+        : {
+            ...empty,
+            items: [
+              {
+                personId: '1',
+                firstName: 'Persona',
+                lastName: 'Fittizia',
+                referenceOn: '2026-01-03',
+                dueAfter: '2026-04-03',
+                lastTalkId: null,
+              },
+            ],
+            totalElements: 1,
+          },
+    );
     TestBed.configureTestingModule({
       imports: [Dashboard],
       providers: [provideRouter([]), { provide: Api, useValue: { get } }],
@@ -36,6 +47,13 @@ describe('Step 4 views', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Task oggi: 2');
     expect(element.querySelector('a[href="/tasks?view=next7"]')).not.toBeNull();
+    expect([...element.querySelectorAll('th')].map((cell) => cell.textContent?.trim())).toEqual(
+      fixture.componentInstance.careerColumns.map((column) => column.label),
+    );
+    expect(
+      [...element.querySelectorAll('tbody td')].map((cell) => cell.textContent?.trim()),
+    ).toEqual(['Persona Fittizia', '03/01/2026', '03/04/2026', 'Scheda persona']);
+    expect(element.querySelector('tbody a[href="/people/1"]')).not.toBeNull();
     get.mockRejectedValue(new HttpErrorResponse({ status: 503 }));
     await fixture.componentInstance.load();
     await fixture.whenStable();
@@ -79,20 +97,18 @@ describe('Step 4 views', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-03T23:30:00Z'));
     try {
-      const get = vi
-        .fn()
-        .mockResolvedValue({
-          ...empty,
-          items: [
-            {
-              id: '1',
-              amount: '9999999999.99',
-              currency: 'EUR',
-              effectiveOn: '2026-11-04',
-              reason: 'Fittizia',
-            },
-          ],
-        });
+      const get = vi.fn().mockResolvedValue({
+        ...empty,
+        items: [
+          {
+            id: '1',
+            amount: '9999999999.99',
+            currency: 'EUR',
+            effectiveOn: '2026-11-04',
+            reason: 'Fittizia',
+          },
+        ],
+      });
       TestBed.configureTestingModule({
         imports: [SalaryTrend],
         providers: [
@@ -113,6 +129,13 @@ describe('Step 4 views', () => {
         size: 20,
       });
       expect((fixture.nativeElement as HTMLElement).textContent).toContain('9.999.999.999,99');
+      const element = fixture.nativeElement as HTMLElement;
+      expect([...element.querySelectorAll('th')].map((cell) => cell.textContent?.trim())).toEqual(
+        fixture.componentInstance.columns.map((column) => column.label),
+      );
+      expect(
+        [...element.querySelectorAll('tbody td')].map((cell) => cell.textContent?.trim()),
+      ).toEqual(['04/11/2026', '9.999.999.999,99', 'Fittizia']);
     } finally {
       vi.useRealTimers();
     }

@@ -34,6 +34,12 @@ interface Summary {
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
+  readonly careerColumns = [
+    { key: 'person', label: 'Persona' },
+    { key: 'referenceOn', label: 'Ultimo incontro o assunzione' },
+    { key: 'dueAfter', label: 'Soglia superata dopo' },
+    { key: 'actions', label: 'Azioni' },
+  ] as const;
   private readonly api = inject(Api);
   readonly summary = signal<Summary | null>(null);
   readonly careers = signal<Page<CareerDue>>({

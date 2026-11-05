@@ -141,16 +141,21 @@ for (const width of [1440, 390]) {
         expect(new Set(positions).size).toBe(1);
         const leftPositions = await Promise.all(
           fields.map((field) =>
-            page.locator(`[data-field="${field}"]`)
+            page
+              .locator(`[data-field="${field}"]`)
               .evaluate((item) => item.getBoundingClientRect().left),
           ),
         );
         expect(leftPositions).toEqual([...leftPositions].sort((a, b) => a - b));
       }
-      for (const field of ['bornOn', 'education']) {
-        expect(await page.locator(`[data-field="${field}"]`)
-          .evaluate((item) => getComputedStyle(item).gridRowStart)).toBe('2');
-      }
+      await expect(page.locator('.detail-row').nth(1).locator('[data-field]')).toHaveCount(2);
+      expect(
+        await page
+          .locator('.detail-row')
+          .nth(1)
+          .locator('[data-field]')
+          .evaluateAll((fields) => fields.map((field) => field.getAttribute('data-field'))),
+      ).toEqual(['bornOn', 'education']);
     }
     const edit = page.getByRole('button', { name: 'Modifica', exact: true });
     const icon = edit.locator('svg[aria-hidden="true"]');
@@ -193,9 +198,7 @@ for (const width of [1440, 390]) {
     await frameworkSelect.click();
     const frameworkSearch = dialog.getByLabel('Cerca framework', { exact: true });
     expect(
-      await frameworkSearch.evaluate((input) =>
-        Boolean(input.closest('.framework-select-panel')),
-      ),
+      await frameworkSearch.evaluate((input) => Boolean(input.closest('.framework-select-panel'))),
     ).toBe(true);
     await frameworkSearch.fill('react');
     await expect(page.getByRole('option', { name: 'React', exact: true })).toBeVisible();
@@ -284,10 +287,7 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   await page.getByRole('option', { name: 'Laurea magistrale', exact: true }).click();
   const phone = dialog.getByLabel('Telefono', { exact: true });
   const countrySelector = dialog.locator('.iti__selected-country');
-  await expect(countrySelector).toHaveAttribute(
-    'aria-label',
-    /Italia|Italy/,
-  );
+  await expect(countrySelector).toHaveAttribute('aria-label', /Italia|Italy/);
   await countrySelector.click();
   const unitedStates = page.locator('.iti__country-list [data-iso2="us"]');
   await expect(unitedStates).toBeVisible();
@@ -419,10 +419,8 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
       return route.fulfill({ json: { id: '1', username: 'utente-fittizio' } });
     if (path === 'auth/csrf')
       return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
-    if (path === 'people')
-      return route.fulfill({ json: makePage([person]) });
-    if (path === 'people/9/salaries')
-      return route.fulfill({ json: makePage([salary]) });
+    if (path === 'people') return route.fulfill({ json: makePage([person]) });
+    if (path === 'people/9/salaries') return route.fulfill({ json: makePage([salary]) });
     if (path === 'raise-requests' && request.method() === 'POST') {
       const body = request.postDataJSON();
       requests.push(body);
@@ -444,9 +442,7 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
     await dialog.getByLabel('RAL base', { exact: true }).click();
     await page.getByRole('option', { name: /45\.000,00 -/ }).click();
     await dialog.getByLabel('Data richiesta', { exact: true }).fill('04/11/2026');
-    await dialog
-      .getByLabel('RAL annua target (non incremento)', { exact: true })
-      .fill(target);
+    await dialog.getByLabel('RAL annua target (non incremento)', { exact: true }).fill(target);
     await dialog.getByLabel('Motivazione', { exact: true }).fill('Richiesta fittizia');
     return dialog;
   }

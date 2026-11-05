@@ -66,12 +66,22 @@ describe('PersonPage', () => {
   it('shows both dates with elapsed time, seniority level and a separate MyPad ID', async () => {
     const fixture = await create();
     const element = fixture.nativeElement as HTMLElement;
-    const details = element.querySelector('dl')!;
+    const details = element.querySelector('.person-details')!;
     expect([...details.querySelectorAll('dt')].map((label) => label.textContent)).toEqual([
-      ...definitions.people.fields
-        .filter((field) => !['status', 'firstName', 'lastName', 'insideId', 'mypadId'].includes(field.key))
+      ...fixture.componentInstance.fieldRows
+        .flat()
         .map((field) => (field.key === 'frameworks' ? 'Framework conosciuti' : field.label)),
     ]);
+    expect(fixture.componentInstance.fieldRows.map((row) => row.map((field) => field.key))).toEqual(
+      [
+        ['rsnoAgresso', 'email', 'phone'],
+        ['bornOn', 'education'],
+        ['role', 'seniorityLevel', 'frameworks'],
+        ['hiredOn', 'careerStartedOn'],
+        ['hiringLocation', 'residence'],
+        ['notes'],
+      ],
+    );
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
     expect(element.querySelector('.person-title .badge')?.textContent?.trim()).toBe('Attiva');
     expect(details.textContent).not.toContain('Nome');
@@ -154,9 +164,9 @@ describe('PersonPage', () => {
       maxWidth: '95vw',
     });
     expect(fixture.componentInstance.person()).toEqual(updated);
-    expect((fixture.nativeElement as HTMLElement).querySelector('dl')?.textContent).toContain(
-      'Ruolo aggiornato',
-    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.person-details')?.textContent,
+    ).toContain('Ruolo aggiornato');
     expect(success).toHaveBeenCalledExactlyOnceWith('Salvataggio completato.');
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Dati salvati.');
     expect(fixture.componentInstance.editing()).toBe(false);
@@ -173,7 +183,7 @@ describe('PersonPage', () => {
   it('keeps archived people readable without offering editing', async () => {
     const fixture = await create({ ...person, archivedAt: '2026-11-04T10:00:00Z' });
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('dl')?.textContent).toContain('Archiviato');
+    expect(element.querySelector('.person-details')?.textContent).toContain('Archiviato');
     expect(
       [...element.querySelectorAll('button')].some(
         (button) => button.textContent?.trim() === 'Modifica',

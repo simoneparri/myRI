@@ -13,6 +13,11 @@ import { ButtonIcon } from '../../shared/button-icon/button-icon';
   templateUrl: './salary-trend.html',
 })
 export class SalaryTrend {
+  readonly columns = [
+    { key: 'effectiveOn', label: 'Decorrenza', type: 'date' },
+    { key: 'amount', label: 'RAL annua', type: 'money' },
+    { key: 'reason', label: 'Motivo', type: 'text' },
+  ] as const;
   readonly personId = input.required<string>();
   private readonly api = inject(Api);
   readonly timezone = inject(TIMEZONE);

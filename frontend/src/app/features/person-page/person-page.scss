@@ -6,10 +6,15 @@
 }
 .person-details {
   display: grid;
+  gap: 1rem;
+}
+.detail-row {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem 2rem;
+  margin: 0;
 }
-.person-details > div {
+.detail-row > div {
   min-width: 0;
 }
 .person-title {
@@ -21,50 +26,8 @@
 .person-title h1 {
   margin: 0;
 }
-.person-details [data-field='rsnoAgresso'] {
-  grid-area: 1 / 1;
-}
-.person-details [data-field='email'] {
-  grid-area: 1 / 2;
-}
-.person-details [data-field='phone'] {
-  grid-area: 1 / 3;
-}
-.person-details [data-field='role'] {
-  grid-area: 3 / 1;
-}
-.person-details [data-field='seniorityLevel'] {
-  grid-area: 3 / 2;
-}
-.person-details [data-field='frameworks'] {
-  grid-area: 3 / 3;
-}
-.person-details [data-field='hiredOn'] {
-  grid-area: 4 / 1;
-}
-.person-details [data-field='careerStartedOn'] {
-  grid-area: 4 / 2;
-}
-.person-details [data-field='bornOn'] {
-  grid-area: 2 / 1;
-}
-.person-details [data-field='hiringLocation'] {
-  grid-area: 5 / 1;
-}
-.person-details [data-field='residence'] {
-  grid-area: 5 / 2;
-}
-.person-details [data-field='notes'] {
-  grid-area: 6 / 1 / auto / -1;
-}
-.person-details [data-field='archivedAt'] {
-  grid-area: 7 / 1 / auto / -1;
-}
-.person-details [data-field='education'] {
-  grid-area: 2 / 2;
-}
-.person-details .full-width {
-  grid-column: 1 / -1;
+.detail-row:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr);
 }
 .person-details dt,
 .person-details dd {
@@ -77,15 +40,12 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 800px) {
-  .person-details {
+  .detail-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .person-details > [data-field] {
-    grid-area: auto;
   }
 }
 @media (max-width: 520px) {
-  .person-details {
+  .detail-row {
     grid-template-columns: minmax(0, 1fr);
   }
   .person-title {

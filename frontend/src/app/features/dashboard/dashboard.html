@@ -49,8 +49,8 @@
   </div>
   <h2>Persone senza career talk recente: {{ summary.peopleWithoutRecentTalk }}</h2>
   <p>
-    Soglia: oltre {{ summary.careerMonths }} mesi, solo persone attive non archiviate. Gli
-    incontri futuri non sostituiscono un incontro svolto.
+    Soglia: oltre {{ summary.careerMonths }} mesi, solo persone attive non archiviate. Gli incontri
+    futuri non sostituiscono un incontro svolto.
   </p>
   @if (careers().items.length === 0 && !loading() && !error()) {
     <p>Nessuna persona oltre soglia.</p>
@@ -62,21 +62,29 @@
       </caption>
       <thead>
         <tr>
-          <th>Persona</th>
-          <th>Ultimo incontro o assunzione</th>
-          <th>Soglia superata dopo</th>
-          <th>Azioni</th>
+          @for (column of careerColumns; track column.key) {
+            <th scope="col">{{ column.label }}</th>
+          }
         </tr>
       </thead>
       <tbody>
         @for (person of careers().items; track person.personId) {
           <tr>
-            <td>{{ person.firstName }} {{ person.lastName }}</td>
-            <td>{{ person.referenceOn | display: 'date' }}</td>
-            <td>{{ person.dueAfter | display: 'date' }}</td>
-            <td>
-              <a mat-button [routerLink]="['/people', person.personId]">Scheda persona</a>
-            </td>
+            @for (column of careerColumns; track column.key) {
+              <td>
+                @switch (column.key) {
+                  @case ('person') {
+                    {{ person.firstName }} {{ person.lastName }}
+                  }
+                  @case ('actions') {
+                    <a mat-button [routerLink]="['/people', person.personId]">Scheda persona</a>
+                  }
+                  @default {
+                    {{ person[column.key] | display: 'date' }}
+                  }
+                }
+              </td>
+            }
           </tr>
         }
       </tbody>
@@ -90,4 +98,3 @@
     aria-label="Paginazione career talk da pianificare"
   ></mat-paginator>
 }
-

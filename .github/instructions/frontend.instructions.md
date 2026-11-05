@@ -19,3 +19,7 @@ applyTo: "**/*.ts,**/*.html,**/*.scss"
   o token in localStorage. Seguire l'ADR autenticazione e la protezione CSRF.
 - Niente dati personali in console/telemetria. Non usare bypass HTML non fidato.
 - Test componenti/service e flussi e2e pertinenti con dati esclusivamente fittizi.
+- Composizione, ordine e raggruppamento dei dati definiti in array TypeScript:
+  righe come array di campi, colonne tabellari come array di descrittori tipizzati.
+  Gli HTML iterano con `@for`; SCSS solo per presentazione e responsive generici,
+  mai grid-area/order o selettori per campo per decidere la posizione dei dati.

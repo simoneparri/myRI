@@ -26,6 +26,8 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
   Transazioni nei service, errori coerenti, paginazione e filtri validati.
 - Angular ultima LTS da verificare allo Step 3, Material della stessa major,
   standalone components, TypeScript strict, signals dove sensato.
+- Ordine e righe dei dati UI in array TypeScript, renderizzati con `@for`;
+  SCSS solo presentazione/responsive, mai posizionamenti per singolo campo.
 - MySQL 8.x (almeno 8.0.16), InnoDB, `utf8mb4`, `utf8mb4_0900_ai_ci`.
   Tabelle/colonne snake_case minuscolo; stati VARCHAR con CHECK, testi lunghi TEXT,
   importi DECIMAL(12,2), indici espliciti su FK, scadenze task e date career talk.

@@ -9,26 +9,26 @@
       <h1>{{ displayName(person) }}</h1>
       <span class="badge">{{ person['status'] | display }}</span>
       <h3>
-
         @if (person['mypadId'] && mypadUrl(person); as url) {
-        <a
-          [href]="url"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Apri MyPad (nuova scheda)"
-        > MyPAD <svg appButtonIcon="external"></svg>
-        </a>
+          <a
+            [href]="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Apri MyPad (nuova scheda)"
+          >
+            MyPAD <svg appButtonIcon="external"></svg>
+          </a>
         }
       </h3>
       <h3>
-
         @if (person['insideId'] && insideUrl(person); as url) {
           <a
             [href]="url"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Apri Inside (nuova scheda)"
-          > Inside <svg appButtonIcon="external"></svg>
+          >
+            Inside <svg appButtonIcon="external"></svg>
           </a>
         }
       </h3>
@@ -39,44 +39,48 @@
       </button>
     }
   </div>
-  <dl class="person-details" aria-label="Informazioni persona">
-    @for (field of fields; track field.key) {
-      <div
-        [attr.data-field]="field.key"
-      >
-        <dt>{{ field.key === 'frameworks' ? 'Framework conosciuti' : field.label }}</dt>
-        <dd>
-           @if (field.key === 'frameworks' && frameworkList(person).length) {
-            <ul class="framework-list">
-              @for (framework of frameworkList(person); track framework) {
-                <li>
-                  <i aria-hidden="true" [class]="frameworkIconClass(framework)"></i>
-                  {{ framework }}
-                </li>
+  <section class="person-details" aria-label="Informazioni persona">
+    @for (row of fieldRows; track $index) {
+      <dl class="detail-row">
+        @for (field of row; track field.key) {
+          <div [attr.data-field]="field.key">
+            <dt>{{ field.key === 'frameworks' ? 'Framework conosciuti' : field.label }}</dt>
+            <dd>
+              @if (field.key === 'frameworks' && frameworkList(person).length) {
+                <ul class="framework-list">
+                  @for (framework of frameworkList(person); track framework) {
+                    <li>
+                      <i aria-hidden="true" [class]="frameworkIconClass(framework)"></i>
+                      {{ framework }}
+                    </li>
+                  }
+                </ul>
+              } @else {
+                {{ person[field.key] | display: field.type }}
               }
-            </ul>
-          } @else {
-            {{ person[field.key] | display: field.type }}
-          }
-          @if (field.key === 'hiredOn' && person['seniority']) {
-            ({{ person['seniority'] }})
-          }
-          @if (field.key === 'bornOn' && person['age'] !== null && person['age'] !== undefined) {
-            ({{ person['age'] }} {{ person['age'] === 1 ? 'anno' : 'anni' }})
-          }
-          @if (field.key === 'careerStartedOn' && person['careerDuration']) {
-            ({{ person['careerDuration'] }})
-          }
-        </dd>
-      </div>
+              @if (field.key === 'hiredOn' && person['seniority']) {
+                ({{ person['seniority'] }})
+              }
+              @if (
+                field.key === 'bornOn' && person['age'] !== null && person['age'] !== undefined
+              ) {
+                ({{ person['age'] }} {{ person['age'] === 1 ? 'anno' : 'anni' }})
+              }
+              @if (field.key === 'careerStartedOn' && person['careerDuration']) {
+                ({{ person['careerDuration'] }})
+              }
+            </dd>
+          </div>
+        }
+      </dl>
     }
     @if (person['archivedAt']) {
-      <div class="full-width" data-field="archivedAt">
+      <dl data-field="archivedAt">
         <dt>Archiviato</dt>
         <dd>{{ person['archivedAt'] | display: 'instant' }}</dd>
-      </div>
+      </dl>
     }
-  </dl>
+  </section>
   <mat-tab-group (selectedIndexChange)="$event === 0 && loadTimeline()">
     <mat-tab label="Timeline"
       ><ng-template matTabContent>
