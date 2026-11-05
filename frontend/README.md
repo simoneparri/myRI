@@ -83,8 +83,10 @@ un container root senza bind mount scrivibili sulla checkout.
   Educazione e un menu a scelta singola: Diploma, Laurea breve, Laurea magistrale,
   PhD. Tutti e tre obbligatori per i nuovi censimenti; restano sconosciuti sui
   record legacy fino alla compilazione e non sono svuotabili una volta assegnati.
-  Sono inclusi nella scheda e negli export JSON/CSV; la migrazione V11 non
-  inventa valori per i record esistenti.
+  RSNO Agresso e il primo campo della scheda, seguito da email e telefono;
+  Inside ID e MyPad ID non compaiono fra i dati della scheda, ma restano nei
+  form e negli export. Educazione e visibile nella scheda. La migrazione V11
+  non inventa valori per i record esistenti.
   La tab Contatti mostra la data di contatto (`gg/mm/aaaa`), obbligatoria per i
   nuovi inserimenti e non svuotabile dopo l'assegnazione. Le righe sono ordinate
   dal backend per data decrescente anche tra pagine; i contatti legacy senza data

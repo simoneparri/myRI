@@ -21,7 +21,7 @@
 .person-title h1 {
   margin: 0;
 }
-.person-details [data-field='mypadId'] {
+.person-details [data-field='rsnoAgresso'] {
   grid-area: 1 / 1;
 }
 .person-details [data-field='email'] {
@@ -55,19 +55,13 @@
   grid-area: 4 / 2;
 }
 .person-details [data-field='notes'] {
-  grid-area: 6 / 1 / auto / -1;
+  grid-area: 5 / 1 / auto / -1;
 }
 .person-details [data-field='archivedAt'] {
-  grid-area: 7 / 1 / auto / -1;
+  grid-area: 6 / 1 / auto / -1;
 }
 .person-details [data-field='education'] {
   grid-area: 4 / 3;
-}
-.person-details [data-field='rsnoAgresso'] {
-  grid-area: 5 / 1;
-}
-.person-details [data-field='insideId'] {
-  grid-area: 5 / 2;
 }
 .person-details .full-width {
   grid-column: 1 / -1;

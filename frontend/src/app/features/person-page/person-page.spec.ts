@@ -69,7 +69,7 @@ describe('PersonPage', () => {
     const details = element.querySelector('dl')!;
     expect([...details.querySelectorAll('dt')].map((label) => label.textContent)).toEqual([
       ...definitions.people.fields
-        .filter((field) => !['status', 'firstName', 'lastName'].includes(field.key))
+        .filter((field) => !['status', 'firstName', 'lastName', 'insideId', 'mypadId'].includes(field.key))
         .map((field) => (field.key === 'frameworks' ? 'Framework conosciuti' : field.label)),
     ]);
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
@@ -94,14 +94,15 @@ describe('PersonPage', () => {
       '02/01/2017',
       '9 anni e 10 mesi',
       'Senior',
-      'fictitious-123',
       '00011',
-      '00012',
       'Laurea magistrale',
     ]) {
       expect(details.textContent).toContain(value);
     }
     expect(details.textContent).not.toContain(person.id);
+    expect(details.querySelector('[data-field]')?.getAttribute('data-field')).toBe('rsnoAgresso');
+    expect(details.querySelector('[data-field="insideId"]')).toBeNull();
+    expect(details.querySelector('[data-field="mypadId"]')).toBeNull();
     expect(details.textContent).not.toContain('Manager interno');
     expect(details.textContent).not.toContain('Manager esterno');
     const link = element.querySelector<HTMLAnchorElement>('.person-title a')!;

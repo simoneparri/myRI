@@ -126,7 +126,7 @@ for (const width of [1440, 390]) {
     ).not.toBe('rgb(0, 0, 0)');
     if (width > 800) {
       for (const fields of [
-        ['mypadId', 'email', 'phone'],
+        ['rsnoAgresso', 'email', 'phone'],
         ['role', 'seniorityLevel', 'frameworks'],
         ['bornOn', 'hiredOn', 'careerStartedOn'],
       ]) {
@@ -320,7 +320,8 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('05/11/1990');
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('(36 anni)');
   await expect(page.locator('[data-field="rsnoAgresso"] dd')).toHaveText('00011');
-  await expect(page.locator('[data-field="insideId"] dd')).toHaveText('00012');
+  await expect(page.locator('[data-field="insideId"]')).toHaveCount(0);
+  await expect(page.locator('[data-field="mypadId"]')).toHaveCount(0);
   await expect(page.locator('[data-field="education"] dd')).toHaveText('Laurea magistrale');
   await expect(page.getByRole('definition').filter({ hasText: '02/01/2020' })).toContainText(
     '(6 anni e 10 mesi)',

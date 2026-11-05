@@ -45,7 +45,7 @@ export class PersonPage {
   private readonly toast = inject(Toast);
   private readonly frameworkIcons = inject(FrameworkIcons);
   readonly fields = definitions.people.fields.filter(
-    (field) => !['status', 'firstName', 'lastName'].includes(field.key),
+    (field) => !['status', 'firstName', 'lastName', 'insideId', 'mypadId'].includes(field.key),
   );
   readonly editable = canEdit;
   readonly editing = signal(false);
