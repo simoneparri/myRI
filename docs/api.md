@@ -115,6 +115,18 @@ nullable in anni compiuti calcolato con Clock e fuso applicativo; l'eta non e
 persistita. Il 29 febbraio completa l'anno il 1 marzo negli anni non bisestili.
 Entrambi i campi sono inclusi negli export JSON/CSV; nessun backfill inventato.
 
+`rsnoAgresso` e `insideId` sono identificativi testuali distinti da MyPad ID e
+dalla PK: 1-100 caratteri su una sola riga, senza valori vuoti o di soli spazi.
+Gli spazi esterni vengono rimossi e gli zeri iniziali preservati. Ogni codice e
+univoco anche tra persone archiviate, con confronto secondo la collation DB
+case-insensitive. Il lock del censimento/modifica e gli indici univoci proteggono
+anche le richieste concorrenti; i duplicati restituiscono 409.
+`education` ammette `diploma`, `bachelor` (Laurea breve), `master` (Laurea
+magistrale), `phd`. I tre campi sono obbligatori su POST, nullable su PUT soltanto
+finche non assegnati ai record legacy, correggibili ma non svuotabili dopo
+l'assegnazione. Valori non validi restituiscono 400. PersonView ed export
+JSON/CSV includono tutti e tre i campi; V11 li aggiunge senza backfill.
+
 `mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
 1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
 archiviate (confronto secondo la collation case-insensitive del DB).

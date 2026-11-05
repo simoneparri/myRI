@@ -193,6 +193,67 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void personIdentifiersAndEducationAreValidatedUniqueAndExported() throws Exception {
+        var input = personInput();
+        for (String field : List.of("rsnoAgresso", "insideId", "education")) {
+            var missing = new HashMap<>(input);
+            missing.remove(field);
+            send(post("/api/v1/people"), missing, 400);
+        }
+        for (String field : List.of("rsnoAgresso", "insideId")) {
+            for (String invalid : List.of("", " ", "a\nb", "x".repeat(101))) {
+                var invalidInput = new HashMap<>(input);
+                invalidInput.put(field, invalid);
+                send(post("/api/v1/people"), invalidInput, 400);
+            }
+        }
+        input.put("education", "invalid");
+        send(post("/api/v1/people"), input, 400);
+        input.put("education", "bachelor");
+        var person = send(post("/api/v1/people"), input, 201);
+        String path = "/api/v1/people/" + person.get("id").asText();
+        assertEquals(input.get("rsnoAgresso"), person.get("rsnoAgresso").asText());
+        assertEquals(input.get("insideId"), person.get("insideId").asText());
+        assertEquals("bachelor", person.get("education").asText());
+        for (String field : List.of("rsnoAgresso", "insideId")) {
+            var duplicate = personInput();
+            duplicate.put(field, input.get(field));
+            send(post("/api/v1/people"), duplicate, 409);
+            var other = send(post("/api/v1/people"), personInput(), 201);
+            var update = personInput();
+            update.put("version", other.get("version").asText());
+            update.put(field, input.get(field));
+            send(put("/api/v1/people/" + other.get("id").asText()), update, 409);
+        }
+        for (String field : List.of("rsnoAgresso", "insideId", "education")) {
+            var cleared = new HashMap<>(input);
+            cleared.remove(field);
+            cleared.put("version", person.get("version").asText());
+            send(put(path), cleared, 400);
+        }
+        input.put("version", person.get("version").asText());
+        input.put("education", "phd");
+        var updated = send(put(path), input, 200);
+        assertEquals("phd", updated.get("education").asText());
+        mvc.perform(get(path + "/export").session(session).param("format", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.person.rsnoAgresso").value(input.get("rsnoAgresso")))
+                .andExpect(jsonPath("$.person.insideId").value(input.get("insideId")))
+                .andExpect(jsonPath("$.person.education").value("phd"));
+        String csv = mvc.perform(get(path + "/export").session(session).param("format", "csv"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"rsnoAgresso\""));
+        assertTrue(csv.contains("\"insideId\""));
+        assertTrue(csv.contains("\"education\""));
+        send(post(path + "/archive"), Map.of("version", updated.get("version").asText()), 200);
+        for (String field : List.of("rsnoAgresso", "insideId")) {
+            var duplicate = personInput();
+            duplicate.put(field, input.get(field));
+            send(post("/api/v1/people"), duplicate, 409);
+        }
+    }
+
+    @Test
     void legacyPersonCanBeUpdatedWithoutInventingCareerLevelOrMypadIdentity() throws Exception {
         String suffix = UUID.randomUUID().toString();
         jdbc.update("INSERT INTO person(first_name,last_name,hired_on,status,version) VALUES('Fictitious',?,'2020-01-01','active',0)", suffix);
@@ -202,6 +263,9 @@ class DomainApiTest extends IntegrationTest {
         input.remove("careerStartedOn");
         input.remove("seniorityLevel");
         input.remove("bornOn");
+        input.remove("rsnoAgresso");
+        input.remove("insideId");
+        input.remove("education");
         input.put("version", "0");
         var updated = send(put("/api/v1/people/" + id), input, 200);
         assertTrue(updated.get("careerStartedOn").isNull());
@@ -210,6 +274,9 @@ class DomainApiTest extends IntegrationTest {
         assertTrue(updated.get("age").isNull());
         assertTrue(updated.get("seniorityLevel").isNull());
         assertTrue(updated.get("mypadId").isNull());
+        assertTrue(updated.get("rsnoAgresso").isNull());
+        assertTrue(updated.get("insideId").isNull());
+        assertTrue(updated.get("education").isNull());
         input.put("version", updated.get("version").asText());
         input.put("mypadId", "fictitious-" + suffix);
         var identified = send(put("/api/v1/people/" + id), input, 200);
@@ -587,6 +654,9 @@ class DomainApiTest extends IntegrationTest {
         input.put("lastName", UUID.randomUUID().toString());
         input.put("hiredOn", "2020-01-01");
         input.put("bornOn", "1990-01-01");
+        input.put("rsnoAgresso", "00-" + UUID.randomUUID());
+        input.put("insideId", "00-" + UUID.randomUUID());
+        input.put("education", "master");
         input.put("careerStartedOn", "2018-01-01");
         input.put("seniorityLevel", "medior");
         input.put("mypadId", UUID.randomUUID().toString());

@@ -63,6 +63,7 @@ public class PersonService {
         if (input.bornOn() == null) {
             throw ApiException.invalid("La data di nascita e obbligatoria per il censimento.");
         }
+        requireMetadata(input);
         validateManager(null, input);
         Person person = new Person();
         person.initialize(clock);
@@ -81,6 +82,11 @@ public class PersonService {
         if (person.bornOn != null && input.bornOn() == null) {
             throw ApiException.invalid("La data di nascita e obbligatoria per questa persona.");
         }
+        if ((person.rsnoAgresso != null && input.rsnoAgresso() == null)
+                || (person.insideId != null && input.insideId() == null)
+                || (person.education != null && input.education() == null)) {
+            throw ApiException.invalid("I codici e l'educazione gia assegnati non possono essere svuotati.");
+        }
         validateManager(id, input);
         PersonMapper.apply(person, input);
         person.touch(clock);
@@ -94,6 +100,7 @@ public class PersonService {
     }
 
     private void validateManager(Long id, PersonDtos.Input input) {
+        validateMetadata(id, input);
         validateFrameworks(input.frameworks());
         Dates.check(input.hiredOn());
         Dates.check(input.bornOn());
@@ -127,6 +134,33 @@ public class PersonService {
                 throw ApiException.conflict("Il rapporto gerarchico introdurrebbe un ciclo.");
             }
             cursor = get(cursor).managerId;
+        }
+    }
+
+    private static void requireMetadata(PersonDtos.Input input) {
+        if (input.rsnoAgresso() == null || input.rsnoAgresso().isBlank()
+                || input.insideId() == null || input.insideId().isBlank() || input.education() == null) {
+            throw ApiException.invalid("RSNO Agresso, Inside ID ed educazione obbligatori per il censimento.");
+        }
+    }
+
+    private void validateMetadata(Long id, PersonDtos.Input input) {
+        Queries.value(input.education(), Set.of("diploma", "bachelor", "master", "phd"));
+        String rsno = input.rsnoAgresso();
+        String inside = input.insideId();
+        for (String code : new String[] { rsno, inside }) {
+            if (code != null && (code.isBlank() || code.length() > 100
+                    || code.indexOf('\n') >= 0 || code.indexOf('\r') >= 0)) {
+                throw ApiException.invalid("I codici devono contenere da 1 a 100 caratteri su una sola riga.");
+            }
+        }
+        if (rsno != null && (id == null ? people.existsByRsnoAgresso(rsno.strip())
+                : people.existsByRsnoAgressoAndIdNot(rsno.strip(), id))) {
+            throw ApiException.conflict("RSNO Agresso gia assegnato a un'altra persona.");
+        }
+        if (inside != null && (id == null ? people.existsByInsideId(inside.strip())
+                : people.existsByInsideIdAndIdNot(inside.strip(), id))) {
+            throw ApiException.conflict("Inside ID gia assegnato a un'altra persona.");
         }
     }
 

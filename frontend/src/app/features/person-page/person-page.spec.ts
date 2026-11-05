@@ -33,6 +33,9 @@ describe('PersonPage', () => {
     careerDuration: '9 anni e 10 mesi',
     seniorityLevel: 'senior',
     mypadId: 'fictitious-123',
+    rsnoAgresso: '00011',
+    insideId: '00012',
+    education: 'master',
   };
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const get = vi.fn();
@@ -92,6 +95,9 @@ describe('PersonPage', () => {
       '9 anni e 10 mesi',
       'Senior',
       'fictitious-123',
+      '00011',
+      '00012',
+      'Laurea magistrale',
     ]) {
       expect(details.textContent).toContain(value);
     }

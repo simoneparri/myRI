@@ -13,7 +13,8 @@ public final class PersonMapper {
                 p.externalManager, p.notes, p.status, p.archivedAt, p.createdAt,
                 p.updatedAt, p.version, p.careerStartedOn, elapsed(p.careerStartedOn, today),
                 p.seniorityLevel, p.mypadId, p.frameworks == null ? List.of() : List.copyOf(p.frameworks),
-                p.bornOn, p.bornOn == null ? null : Period.between(p.bornOn, today).getYears());
+                p.bornOn, p.bornOn == null ? null : Period.between(p.bornOn, today).getYears(),
+                p.rsnoAgresso, p.insideId, p.education);
     }
 
     private static String elapsed(LocalDate start, LocalDate today) {
@@ -40,6 +41,9 @@ public final class PersonMapper {
         p.careerStartedOn = input.careerStartedOn();
         p.seniorityLevel = input.seniorityLevel();
         p.mypadId = input.mypadId();
+        p.rsnoAgresso = input.rsnoAgresso() == null ? null : input.rsnoAgresso().strip();
+        p.insideId = input.insideId() == null ? null : input.insideId().strip();
+        p.education = input.education();
         p.hiringLocation = input.hiringLocation();
         p.residence = input.residence();
         p.managerId = input.managerId();

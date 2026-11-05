@@ -273,6 +273,10 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
   expect(saved).toBeNull();
   await birthDate.fill('05/11/1990');
+  await dialog.getByLabel('RSNO Agresso', { exact: true }).fill('00011');
+  await dialog.getByLabel('Inside ID', { exact: true }).fill('00012');
+  await dialog.getByLabel('Educazione', { exact: true }).click();
+  await page.getByRole('option', { name: 'Laurea magistrale', exact: true }).click();
   const phone = dialog.getByLabel('Telefono', { exact: true });
   const countrySelector = dialog.locator('.iti__selected-country');
   await expect(countrySelector).toHaveAttribute(
@@ -303,6 +307,9 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
     expect.objectContaining({
       mypadId: 'fictitious-123',
       bornOn: '1990-11-05',
+      rsnoAgresso: '00011',
+      insideId: '00012',
+      education: 'master',
       phone: '+12025550123',
       hiredOn: '2020-01-02',
       careerStartedOn: '2017-01-02',
@@ -312,6 +319,9 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   await page.getByRole('link', { name: 'Scheda', exact: true }).click();
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('05/11/1990');
   await expect(page.locator('[data-field="bornOn"] dd')).toContainText('(36 anni)');
+  await expect(page.locator('[data-field="rsnoAgresso"] dd')).toHaveText('00011');
+  await expect(page.locator('[data-field="insideId"] dd')).toHaveText('00012');
+  await expect(page.locator('[data-field="education"] dd')).toHaveText('Laurea magistrale');
   await expect(page.getByRole('definition').filter({ hasText: '02/01/2020' })).toContainText(
     '(6 anni e 10 mesi)',
   );
@@ -426,7 +436,7 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
     await dialog.getByLabel('Persona', { exact: true }).click();
     await page.getByRole('option', { name: /Persona Fittizia/ }).click();
     await dialog.getByLabel('RAL base', { exact: true }).click();
-    await page.getByRole('option', { name: /45\.000,00 EUR/ }).click();
+    await page.getByRole('option', { name: /45\.000,00 -/ }).click();
     await dialog.getByLabel('Data richiesta', { exact: true }).fill('04/11/2026');
     await dialog
       .getByLabel('RAL annua target (non incremento)', { exact: true })

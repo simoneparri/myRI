@@ -27,7 +27,10 @@ public final class PersonDtos {
             @Pattern(regexp = "junior|medior|senior") String seniorityLevel,
             @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9_-]+") String mypadId,
             @Size(max = 50) List<@NotBlank @Size(max = 100) @Pattern(regexp = "[^\\r\\n]+") String> frameworks,
-            LocalDate bornOn) {}
+            LocalDate bornOn,
+            @Size(max = 100) @Pattern(regexp = "[^\\r\\n]*\\S[^\\r\\n]*") String rsnoAgresso,
+            @Size(max = 100) @Pattern(regexp = "[^\\r\\n]*\\S[^\\r\\n]*") String insideId,
+            @Pattern(regexp = "diploma|bachelor|master|phd") String education) {}
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "PersonView")
     public record View(Long id, String firstName, String lastName, String email,
@@ -36,5 +39,6 @@ public final class PersonDtos {
             Long managerId, String externalManager, String notes, String status,
             Instant archivedAt, Instant createdAt, Instant updatedAt, Long version,
             LocalDate careerStartedOn, String careerDuration, String seniorityLevel, String mypadId,
-            List<String> frameworks, LocalDate bornOn, Integer age) {}
+            List<String> frameworks, LocalDate bornOn, Integer age,
+            String rsnoAgresso, String insideId, String education) {}
 }

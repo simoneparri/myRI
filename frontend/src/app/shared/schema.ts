@@ -79,6 +79,32 @@ export const definitions: Record<Resource, Definition> = {
     fields: [
       { key: 'firstName', label: 'Nome', required: true, max: 100 },
       { key: 'lastName', label: 'Cognome', required: true, max: 100 },
+      {
+        key: 'rsnoAgresso',
+        label: 'RSNO Agresso',
+        requiredOnCreate: true,
+        max: 100,
+        pattern: '^[^\\r\\n]*\\S[^\\r\\n]*$',
+      },
+      {
+        key: 'insideId',
+        label: 'Inside ID',
+        requiredOnCreate: true,
+        max: 100,
+        pattern: '^[^\\r\\n]*\\S[^\\r\\n]*$',
+      },
+      {
+        key: 'education',
+        label: 'Educazione',
+        type: 'select',
+        requiredOnCreate: true,
+        options: [
+          { value: 'diploma', label: 'Diploma' },
+          { value: 'bachelor', label: 'Laurea breve' },
+          { value: 'master', label: 'Laurea magistrale' },
+          { value: 'phd', label: 'PhD' },
+        ],
+      },
       { key: 'bornOn', label: 'Data di nascita', type: 'date', requiredOnCreate: true },
       {
         key: 'mypadId',

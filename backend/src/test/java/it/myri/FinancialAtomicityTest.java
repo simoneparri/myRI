@@ -87,7 +87,8 @@ class FinancialAtomicityTest extends IntegrationTest {
         String mypadId = UUID.randomUUID().toString();
         var input = new PersonDtos.Input("Fictitious", "Concurrent census", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                LocalDate.of(2018, 1, 1), "medior", mypadId, null, LocalDate.of(1990, 1, 1));
+                LocalDate.of(2018, 1, 1), "medior", mypadId, null, LocalDate.of(1990, 1, 1),
+                UUID.randomUUID().toString(), UUID.randomUUID().toString(), "master");
         var outcomes = parallel(() -> asOwner(() -> {
             try {
                 people.create(input);
@@ -121,6 +122,30 @@ class FinancialAtomicityTest extends IntegrationTest {
     }
 
     @Test
+    void concurrentCensusesWithDuplicateExternalCodesCannotBothSucceed() throws Exception {
+        for (boolean sameAgresso : new boolean[] { true, false }) {
+            String code = UUID.randomUUID().toString();
+            var outcomes = parallel(() -> asOwner(() -> {
+                var input = new PersonDtos.Input("Fictitious", "Concurrent codes", null, null, null,
+                        LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                        null, null, UUID.randomUUID().toString(), null, LocalDate.of(1990, 1, 1),
+                        sameAgresso ? code : UUID.randomUUID().toString(),
+                        sameAgresso ? UUID.randomUUID().toString() : code, "master");
+                try {
+                    people.create(input);
+                    return true;
+                } catch (ApiException exception) {
+                    assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
+                    return false;
+                }
+            }));
+            assertNotEquals(outcomes.get(0), outcomes.get(1));
+            String column = sameAgresso ? "rsno_agresso" : "inside_id";
+            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM person WHERE " + column + " = ?", Integer.class, code));
+        }
+    }
+
+    @Test
     void concurrentTaskCompletionProducesOneSuccessor() throws Exception {
         var task = asOwner(() -> tasks.create(new TaskDtos.Input("Fictitious recurring task", null,
                 Instant.parse("2026-01-31T09:00:00Z"), "medium", "todo", null, null, null,
@@ -134,7 +159,8 @@ class FinancialAtomicityTest extends IntegrationTest {
         try {
             people.update(person.id(), new PersonDtos.Input(person.firstName(), person.lastName(), null,
                     null, null, person.hiredOn(), null, null, manager, null, null, "active", person.version(),
-                    person.careerStartedOn(), person.seniorityLevel(), person.mypadId(), null, person.bornOn()));
+                    person.careerStartedOn(), person.seniorityLevel(), person.mypadId(), null, person.bornOn(),
+                    person.rsnoAgresso(), person.insideId(), person.education()));
             return true;
         } catch (ApiException exception) {
             assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.status);
@@ -160,7 +186,8 @@ class FinancialAtomicityTest extends IntegrationTest {
     private PersonDtos.View person() {
         return people.create(new PersonDtos.Input("Fictitious", UUID.randomUUID().toString(), null, null,
                 null, LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, UUID.randomUUID().toString(), null, LocalDate.of(1990, 1, 1)));
+                null, null, UUID.randomUUID().toString(), null, LocalDate.of(1990, 1, 1),
+                UUID.randomUUID().toString(), UUID.randomUUID().toString(), "diploma"));
     }
 
     private <T> T asOwner(Supplier<T> operation) {

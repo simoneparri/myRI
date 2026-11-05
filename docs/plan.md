@@ -2,6 +2,13 @@
 
 ## Stato e autorizzazioni
 
+Estensione anagrafica autorizzata: RSNO Agresso e Inside ID testuali (massimo
+100 caratteri, zeri iniziali preservati), univoci anche fra persone archiviate;
+educazione a scelta singola Diploma/Laurea breve/Laurea magistrale/PhD.
+Tutti obbligatori per i nuovi censimenti e nullable per i record legacy senza
+backfill; dopo l'assegnazione correggibili ma non svuotabili, come gli altri
+campi required-on-create. Migrazione V11 additiva, API/export e UI allineate.
+
 Estensione anagrafica autorizzata: data di nascita obbligatoria per i nuovi
 censimenti, nullable per le persone esistenti senza backfill; dopo l'assegnazione
 correggibile ma non svuotabile. Migrazione V10 additiva, API/export e form con

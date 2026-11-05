@@ -44,6 +44,10 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
   await dialog.getByLabel('Email', { exact: true }).fill(`e2e-${suffix}@example.test`);
   await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-' + suffix);
+  await dialog.getByLabel('RSNO Agresso', { exact: true }).fill('00-agresso-' + suffix);
+  await dialog.getByLabel('Inside ID', { exact: true }).fill('00-inside-' + suffix);
+  await dialog.getByLabel('Educazione', { exact: true }).click();
+  await page.getByRole('option', { name: 'Laurea magistrale', exact: true }).click();
   await dialog.getByLabel('Data di nascita', { exact: true }).fill('01/01/1990');
   await dialog.getByLabel('Data di assunzione').fill('02/01/2026');
   await dialog.getByLabel('Data di inizio lavoro').fill('02/01/2020');
@@ -285,6 +289,10 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await dialog.getByLabel('Nome', { exact: true }).fill(firstName);
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
   await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-export-' + suffix);
+  await dialog.getByLabel('RSNO Agresso', { exact: true }).fill('00-agresso-export-' + suffix);
+  await dialog.getByLabel('Inside ID', { exact: true }).fill('00-inside-export-' + suffix);
+  await dialog.getByLabel('Educazione', { exact: true }).click();
+  await page.getByRole('option', { name: 'Diploma', exact: true }).click();
   await dialog.getByLabel('Data di nascita', { exact: true }).fill('01/01/1990');
   await dialog.getByLabel('Data di assunzione').fill('02/01/2020');
   await save(page);

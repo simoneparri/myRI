@@ -222,6 +222,9 @@ describe('Editor', () => {
       firstName: 'Persona',
       lastName: 'Fittizia',
       bornOn: '1990-01-01',
+      rsnoAgresso: '00011',
+      insideId: '00012',
+      education: 'master',
       hiredOn: '2020-01-01',
       careerStartedOn: '2021-01-01',
       seniorityLevel: 'medior',
@@ -266,6 +269,9 @@ describe('Editor', () => {
       firstName: 'Persona',
       lastName: 'Fittizia',
       mypadId: 'fictitious-birth',
+      rsnoAgresso: '00011',
+      insideId: '00012',
+      education: 'master',
       hiredOn: '2020-01-01',
     });
     expect(editor.form.controls['bornOn'].invalid).toBe(true);
@@ -288,6 +294,51 @@ describe('Editor', () => {
     });
     editor.form.controls['bornOn'].setValue('');
     expect(editor.form.controls['bornOn'].invalid).toBe(true);
+  });
+  it('requires identifiers and education at census and keeps leading zeros in the payload', async () => {
+    const editor = create({ resource: 'people', path: 'people' });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    for (const key of ['rsnoAgresso', 'insideId', 'education']) {
+      expect(editor.form.controls[key].invalid).toBe(true);
+    }
+    editor.form.patchValue({
+      firstName: 'Persona',
+      lastName: 'Fittizia',
+      mypadId: 'fictitious-metadata',
+      bornOn: '1990-01-01',
+      hiredOn: '2020-01-01',
+      rsnoAgresso: '00011',
+      insideId: '00012',
+      education: 'bachelor',
+    });
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenCalledWith(
+      'people',
+      expect.objectContaining({
+        rsnoAgresso: '00011',
+        insideId: '00012',
+        education: 'bachelor',
+      }),
+    );
+    expect(definitions.people.fields.find((field) => field.key === 'education')?.options).toEqual([
+      { value: 'diploma', label: 'Diploma' },
+      { value: 'bachelor', label: 'Laurea breve' },
+      { value: 'master', label: 'Laurea magistrale' },
+      { value: 'phd', label: 'PhD' },
+    ]);
+  });
+  it('does not require missing legacy metadata but preserves assigned fields', () => {
+    const editor = create({
+      resource: 'people',
+      path: 'people',
+      row: { id: '1', version: '0', rsnoAgresso: '00011', insideId: null, education: 'phd' },
+    });
+    expect(editor.form.controls['insideId'].valid).toBe(true);
+    editor.form.controls['rsnoAgresso'].setValue('');
+    editor.form.controls['education'].setValue('');
+    expect(editor.form.controls['rsnoAgresso'].invalid).toBe(true);
+    expect(editor.form.controls['education'].invalid).toBe(true);
   });
   it('requires keeping MyPad ID when editing an identified person', () => {
     const editor = create({

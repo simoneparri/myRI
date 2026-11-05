@@ -67,7 +67,7 @@ class SchemaMigrationTest {
                     """);
         }
         Flyway flyway = flyway();
-        assertEquals(9, flyway.migrate().migrationsExecuted);
+        assertEquals(10, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -100,6 +100,7 @@ class SchemaMigrationTest {
                 SELECT COUNT(*) FROM person WHERE id = 700000 AND hired_on = '2026-01-01'
                   AND career_started_on IS NULL AND seniority_level IS NULL AND mypad_id IS NULL
                   AND born_on IS NULL
+                  AND rsno_agresso IS NULL AND inside_id IS NULL AND education IS NULL
                   AND JSON_TYPE(frameworks) = 'ARRAY' AND JSON_LENGTH(frameworks) = 0
                 """));
         assertEquals(1, scalar("""
@@ -146,6 +147,28 @@ class SchemaMigrationTest {
         rejected("UPDATE person SET frameworks = '\"Java\"' WHERE id = ?", id);
         String tooMany = "[" + String.join(",", Collections.nCopies(51, "\"Framework\"")) + "]";
         rejected("UPDATE person SET frameworks = ? WHERE id = ?", tooMany, id);
+    }
+
+    @Test
+    void personIdentifiersAreUniqueIncludingArchivedRowsAndEducationIsConstrained() throws SQLException {
+        long first = person();
+        long second = person();
+        execute("UPDATE person SET rsno_agresso = '00011', inside_id = '00012', education = 'master' WHERE id = ?", first);
+        assertEquals(1, scalar("SELECT COUNT(*) FROM person WHERE id = ? AND rsno_agresso = '00011' AND inside_id = '00012'", first));
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE person SET rsno_agresso = '00011' WHERE id = ?", second));
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE person SET inside_id = '00012' WHERE id = ?", second));
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE person SET education = 'invalid' WHERE id = ?", second));
+        for (String education : List.of("diploma", "bachelor", "master", "phd")) {
+            execute("UPDATE person SET education = ? WHERE id = ?", education, second);
+        }
+        execute("UPDATE person SET archived_at = CURRENT_TIMESTAMP(6) WHERE id = ?", first);
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE person SET inside_id = '00012' WHERE id = ?", second));
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE person SET rsno_agresso = '00011' WHERE id = ?", second));
     }
 
     @Test

@@ -26,6 +26,12 @@ public class Person extends MutableEntity {
     public String seniorityLevel;
     @Column(length = 100)
     public String mypadId;
+    @Column(length = 100)
+    public String rsnoAgresso;
+    @Column(length = 100)
+    public String insideId;
+    @Column(length = 20)
+    public String education;
     @Column(length = 200)
     public String hiringLocation;
     @Column(length = 500)

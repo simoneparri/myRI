@@ -101,7 +101,8 @@ class PersonServiceTest {
         var valid = input(null, version);
         return new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
                 valid.hiredOn(), null, null, null, null, null, "active", version,
-                valid.careerStartedOn(), valid.seniorityLevel(), valid.mypadId(), null, date);
+                valid.careerStartedOn(), valid.seniorityLevel(), valid.mypadId(), null, date,
+                valid.rsnoAgresso(), valid.insideId(), valid.education());
     }
 
     @Test
@@ -111,13 +112,15 @@ class PersonServiceTest {
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var input = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, "test-fictitious", List.of(" Java ", "Spring Boot"), LocalDate.of(1990, 1, 1));
+                null, null, "test-fictitious", List.of(" Java ", "Spring Boot"), LocalDate.of(1990, 1, 1),
+                "00001", "00002", "master");
         var saved = service.create(input);
         assertEquals(List.of("Java", "Spring Boot"), saved.frameworks());
 
         var duplicate = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                null, null, "test-fictitious", List.of("Java", " java "), LocalDate.of(1990, 1, 1));
+                null, null, "test-fictitious", List.of("Java", " java "), LocalDate.of(1990, 1, 1),
+                "00001", "00002", "master");
         assertThrows(ApiException.class, () -> service.create(duplicate));
         verify(repository, times(1)).saveAndFlush(any());
     }
@@ -140,7 +143,8 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var valid = input(null, null);
         var missing = new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
-                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null, valid.bornOn());
+                valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null, valid.bornOn(),
+                valid.rsnoAgresso(), valid.insideId(), valid.education());
         assertThrows(ApiException.class, () -> service.create(missing));
         when(repository.existsByMypadId(valid.mypadId())).thenReturn(true);
         var duplicate = assertThrows(ApiException.class, () -> service.create(valid));
@@ -153,7 +157,8 @@ class PersonServiceTest {
         when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
         var invalid = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
-                LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null, LocalDate.of(1990, 1, 1));
+                LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null, LocalDate.of(1990, 1, 1),
+                "00001", "00002", "master");
         assertThrows(ApiException.class, () -> service.create(invalid));
         verify(repository, never()).saveAndFlush(any());
         Person person = person(1L);
@@ -171,9 +176,71 @@ class PersonServiceTest {
         return p;
     }
 
+    @Test
+    void metadataIsRequiredForCreationAndCodesPreserveLeadingZerosAfterTrimming() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        assertThrows(ApiException.class, () -> service.create(metadata(null, "0012", "diploma", null)));
+        assertThrows(ApiException.class, () -> service.create(metadata("0011", null, "diploma", null)));
+        assertThrows(ApiException.class, () -> service.create(metadata("0011", "0012", null, null)));
+        for (String invalid : List.of("", " ", "a\nb", "x".repeat(101))) {
+            assertThrows(ApiException.class, () -> service.create(metadata(invalid, "0012", "diploma", null)));
+            assertThrows(ApiException.class, () -> service.create(metadata("0011", invalid, "diploma", null)));
+        }
+        assertThrows(ApiException.class, () -> service.create(metadata("0011", "0012", "other", null)));
+        verify(repository, never()).saveAndFlush(any());
+        var saved = service.create(metadata(" 0011 ", " 0012 ", "bachelor", null));
+        assertEquals("0011", saved.rsnoAgresso());
+        assertEquals("0012", saved.insideId());
+        assertEquals("bachelor", saved.education());
+    }
+
+    @Test
+    void duplicateMetadataIsRejectedForCreationAndUpdate() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.existsByRsnoAgresso("0011")).thenReturn(true);
+        assertEquals(org.springframework.http.HttpStatus.CONFLICT,
+                assertThrows(ApiException.class, () -> service.create(metadata("0011", "0012", "phd", null))).status);
+        when(repository.existsByRsnoAgresso("0011")).thenReturn(false);
+        when(repository.existsByInsideId("0012")).thenReturn(true);
+        assertEquals(org.springframework.http.HttpStatus.CONFLICT,
+                assertThrows(ApiException.class, () -> service.create(metadata("0011", "0012", "phd", null))).status);
+        when(repository.findById(1L)).thenReturn(Optional.of(person(1L)));
+        when(repository.existsByRsnoAgressoAndIdNot("0011", 1L)).thenReturn(true);
+        assertThrows(ApiException.class, () -> service.update(1L, metadata("0011", "0012", "master", 0L)));
+        when(repository.existsByRsnoAgressoAndIdNot("0011", 1L)).thenReturn(false);
+        when(repository.existsByInsideIdAndIdNot("0012", 1L)).thenReturn(true);
+        assertThrows(ApiException.class, () -> service.update(1L, metadata("0011", "0012", "master", 0L)));
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void legacyMetadataRemainsUnknownUntilAssignedAndCannotThenBeCleared() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.findById(1L)).thenReturn(Optional.of(person(1L)));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var legacy = service.update(1L, metadata(null, null, null, 0L));
+        assertNull(legacy.rsnoAgresso());
+        assertNull(legacy.insideId());
+        assertNull(legacy.education());
+        service.update(1L, metadata("0011", "0012", "master", 0L));
+        assertThrows(ApiException.class, () -> service.update(1L, metadata(null, "0012", "master", 0L)));
+        assertThrows(ApiException.class, () -> service.update(1L, metadata("0011", null, "master", 0L)));
+        assertThrows(ApiException.class, () -> service.update(1L, metadata("0011", "0012", null, 0L)));
+        assertEquals("phd", service.update(1L, metadata("0013", "0014", "phd", 0L)).education());
+    }
+
+    private static PersonDtos.Input metadata(String rsno, String inside, String education, Long version) {
+        var valid = input(null, version);
+        return new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null, valid.hiredOn(),
+                null, null, null, null, null, "active", version, null, null, valid.mypadId(), null,
+                valid.bornOn(), rsno, inside, education);
+    }
+
     private static PersonDtos.Input input(Long manager, Long version) {
         return new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, manager, null, null, "active", version,
-                LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null, LocalDate.of(1990, 1, 1));
+                LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null, LocalDate.of(1990, 1, 1),
+                "00001", "00002", "master");
     }
 }
