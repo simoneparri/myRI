@@ -92,6 +92,22 @@ La lista contatti usa per default `sort=contactedOn,desc`: date piu recenti
 prima, valori null in fondo, ID crescente a parita di data, prima della
 paginazione. Il campo e incluso anche negli export JSON e CSV.
 
+SalaryInput e SalaryView includono `mealVouchers` e `companyCar` (booleani
+nullable) e `bonusLetterAmount` (stringa decimale nullable, 0-9999999999.99 EUR,
+massimo due decimali). Sono benefit facoltativi della singola voce storica,
+distinti dalla RAL annua; non concorrono al calcolo dell'aumento.
+La migrazione V12 lascia null i valori precedenti, senza riscrivere lo storico.
+Elenco, andamento ed export JSON/CSV riportano gli stessi campi.
+La chiave idempotenza di creazione confronta anche tutti i benefit.
+
+Il comando approve accetta `benefits` facoltativo: se omesso/null eredita i
+tre valori dalla RAL base. Se presente, l'oggetto `{mealVouchers,
+bonusLetterAmount,companyCar}` sostituisce l'intero gruppo sulla nuova RAL:
+campi omessi/null indicano non specificato, `false` indica No, `"0.00"` un bonus
+zero. Valido solo con `createSalary: true`; gli importi sono validati anche
+nell'oggetto annidato. I retry confrontano i benefit effettivi e rifiutano dati
+diversi con 409. Nessuna modifica alla RAL base o agli altri record storici.
+
 DTO completi, vincoli e codici risposta in OpenAPI. Input di creazione non accetta
 ID, timestamp tecnici, archivedAt o stato esito imposto dal client.
 I mapper espliciti sono in PersonMapper e nei metodi view/apply dei DTO degli altri

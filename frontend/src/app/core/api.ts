@@ -15,7 +15,7 @@ export interface Page<T> {
   totalElements: number;
   totalPages: number;
 }
-export type Payload = Record<string, Value>;
+export type Payload = { [key: string]: Value | Payload };
 
 @Injectable({ providedIn: 'root' })
 export class Api {

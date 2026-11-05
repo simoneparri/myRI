@@ -18,7 +18,10 @@ export class Detail {
       {
         key: field.key,
         label: field.label,
-        type: field.key === 'amount' || field.key === 'requestedSalary' ? 'money' : field.type,
+        group: field.group,
+        type: ['amount', 'requestedSalary', 'bonusLetterAmount'].includes(field.key)
+          ? 'money'
+          : field.type,
       },
     ]),
     [{ key: 'id', label: 'ID' }],

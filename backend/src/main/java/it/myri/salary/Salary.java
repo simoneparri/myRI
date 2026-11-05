@@ -26,4 +26,8 @@ public class Salary extends PersistentEntity {
     public String reason;
     public Long sourceRaiseRequestId;
     public String requestKey;
+    public Boolean mealVouchers;
+    @Column(precision = 12, scale = 2)
+    public BigDecimal bonusLetterAmount;
+    public Boolean companyCar;
 }

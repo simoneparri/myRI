@@ -4,6 +4,34 @@ import { definitions } from '../schema';
 import { Detail } from './detail';
 
 describe('Detail percentage formatting', () => {
+  it('groups benefits and shows false, null and a zero bonus distinctly', async () => {
+    TestBed.configureTestingModule({
+      imports: [Detail],
+      providers: [
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: {
+            row: { id: '1', mealVouchers: false, bonusLetterAmount: '0.00', companyCar: null },
+            definition: definitions.salaries,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(Detail);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('h3')?.textContent).toBe('Benefit');
+    const terms = [...element.querySelectorAll('dt')];
+    for (const [label, value] of [
+      ['Buoni pasto', 'No'],
+      ['Lettera di bonus', '0,00'],
+      ['Auto', '-'],
+    ]) {
+      expect(
+        terms.find((term) => term.textContent === label)?.nextElementSibling?.textContent?.trim(),
+      ).toBe(value);
+    }
+  });
   it('keeps metadata order, optional visibility, raw notes and reference prefixes', async () => {
     TestBed.configureTestingModule({
       imports: [Detail],

@@ -15,16 +15,29 @@ public final class SalaryDtos {
                     BigDecimal weeklyHours,
             @NotBlank @Size(max = 100) String classificationLevel,
             @NotBlank @Size(max = 10000) String reason,
-            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,100}") String requestKey) {}
+            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,100}") String requestKey,
+            Boolean mealVouchers,
+            @DecimalMin("0.00") @Digits(integer = 10, fraction = 2) BigDecimal bonusLetterAmount,
+            Boolean companyCar) {}
+
+    public record Benefits(Boolean mealVouchers,
+            @DecimalMin("0.00") @Digits(integer = 10, fraction = 2) BigDecimal bonusLetterAmount,
+            Boolean companyCar) {}
+
+    public static Benefits benefits(Salary salary) {
+        return new Benefits(salary.mealVouchers, salary.bonusLetterAmount, salary.companyCar);
+    }
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "SalaryView")
     public record View(Long id, Long personId, BigDecimal amount, String currency, LocalDate effectiveOn,
             String contractType, BigDecimal weeklyHours, String classificationLevel,
-            String reason, Long sourceRaiseRequestId, Instant createdAt) {}
+            String reason, Long sourceRaiseRequestId, Instant createdAt,
+            Boolean mealVouchers, BigDecimal bonusLetterAmount, Boolean companyCar) {}
 
     public static View view(Salary salary) {
         return new View(salary.id, salary.personId, salary.amount, salary.currency,
                 salary.effectiveOn, salary.contractType, salary.weeklyHours,
-                salary.classificationLevel, salary.reason, salary.sourceRaiseRequestId, salary.createdAt);
+                salary.classificationLevel, salary.reason, salary.sourceRaiseRequestId, salary.createdAt,
+                salary.mealVouchers, salary.bonusLetterAmount, salary.companyCar);
     }
 }

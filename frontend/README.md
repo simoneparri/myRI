@@ -54,6 +54,12 @@ un container root senza bind mount scrivibili sulla checkout.
 
 ## Funzioni e contratti
 
+- RAL: gruppo Benefit con Buoni pasto e Auto (Si/No/Non specificato) e Lettera
+  di bonus (importo EUR facoltativo, zero ammesso, massimo due decimali).
+  In approvazione con nuova RAL il gruppo parte dai valori della base ed e
+  modificabile; lasciarlo vuoto rimuove il valore solo dalla nuova voce.
+  Senza creazione RAL i benefit sono disabilitati e non inviati.
+  Ordine e gruppi del form restano dichiarati nei descrittori TypeScript.
 - Layout dati dichiarativo: righe della scheda e dei dettagli in array di array
   TypeScript, colonne delle tabelle in array di descrittori. Gli HTML usano `@for`;
   non aggiungere ordinamenti/posizioni per campo in SCSS. La scheda mantiene i

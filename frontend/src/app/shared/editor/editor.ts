@@ -24,7 +24,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Api, Payload, Row, errorMessage } from '../../core/api';
 import { DisplayPipe, TIMEZONE, calendarDate, moneyDisplay, personLabel } from '../format';
-import { Field, Option, Resource, definitions, newLabel } from '../schema';
+import { Field, Option, Resource, definitions, newLabel, salaryBenefitFields } from '../schema';
 import { ButtonIcon } from '../button-icon/button-icon';
 import { DateInput, dateInputDisplay, parseDateInput } from '../date-input/date-input';
 import {
@@ -69,6 +69,7 @@ export function validatorsFor(field: Field): ValidatorFn[] {
         ),
       ),
       (control) =>
+        !field.allowZero &&
         typeof control.value === 'string' &&
         /^\d+(?:\.\d+)?$/.test(control.value) &&
         BigInt(control.value.replace('.', '')) === 0n
@@ -81,6 +82,7 @@ export function validatorsFor(field: Field): ValidatorFn[] {
       );
   }
   if (field.type === 'date') rules.push(Validators.pattern(/^[1-9]\d{3}-\d{2}-\d{2}$/));
+  if (field.type === 'boolean') rules.push(Validators.pattern(/^(true|false)$/));
   if (field.type === 'date' || field.type === 'instant')
     rules.push((control) =>
       control.value &&
@@ -115,12 +117,14 @@ export function payloadFor(fields: Field[], values: Record<string, string>): Pay
             .map((entry) => entry.trim())
             .filter(Boolean)
         : value === ''
-        ? null
-        : field.type === 'integer'
-          ? Number(value)
-          : field.type === 'instant'
-            ? new Date(value + 'Z').toISOString()
-            : value;
+          ? null
+          : field.type === 'boolean'
+            ? value === 'true'
+            : field.type === 'integer'
+              ? Number(value)
+              : field.type === 'instant'
+                ? new Date(value + 'Z').toISOString()
+                : value;
   }
   return payload;
 }
@@ -207,6 +211,7 @@ export class Editor implements AfterViewInit, OnDestroy {
   private readonly frameworkIcons = inject(FrameworkIcons);
   private readonly display = new DisplayPipe();
   readonly fields: Field[];
+  readonly fieldGroups: { label?: string; fields: Field[] }[];
   readonly title: string;
   readonly form = new FormRecord<FormControl<string>>({});
   readonly error = signal('');
@@ -245,6 +250,15 @@ export class Editor implements AfterViewInit, OnDestroy {
       : this.data.row
         ? 'Modifica ' + definitions[this.data.resource].singular
         : newLabel(this.data.resource);
+    this.fieldGroups = [];
+    for (const field of this.fields) {
+      let group = this.fieldGroups.find((group) => group.label === field.group);
+      if (!group) {
+        group = { label: field.group, fields: [] };
+        this.fieldGroups.push(group);
+      }
+      group.fields.push(field);
+    }
     if (this.fields.some((field) => field.type === 'framework-multiselect'))
       this.frameworkIcons.load();
     for (const field of this.fields) {
@@ -272,6 +286,20 @@ export class Editor implements AfterViewInit, OnDestroy {
       );
     }
     this.phoneOriginalValue = String(this.data.row?.['phone'] ?? '');
+    if (this.data.command === 'approve') {
+      const updateBenefits = () => {
+        const enabled = this.form.controls['createSalary'].value === 'true';
+        for (const field of salaryBenefitFields) {
+          const control = this.form.controls[field.key];
+          if (enabled) control.enable({ emitEvent: false });
+          else control.disable({ emitEvent: false });
+        }
+      };
+      this.form.controls['createSalary'].valueChanges
+        .pipe(takeUntilDestroyed(this.destroy))
+        .subscribe(updateBenefits);
+      updateBenefits();
+    }
     this.setupRaisePercentage();
     this.form.controls['personId']?.valueChanges
       .pipe(takeUntilDestroyed(this.destroy))
@@ -408,6 +436,7 @@ export class Editor implements AfterViewInit, OnDestroy {
               label: 'Decorrenza RAL (solo se generata)',
               type: 'date' as const,
             },
+            ...salaryBenefitFields,
           ]
         : []),
     ];
@@ -420,6 +449,17 @@ export class Editor implements AfterViewInit, OnDestroy {
       const results: Record<string, Option[]> = {};
       const baseSalaryAmounts: Record<string, string> = {};
       const personId = this.form.controls['personId']?.value || this.data.personId;
+      if (this.data.command === 'approve' && this.data.row?.['baseSalaryId']) {
+        const salaries = await this.api.choices(`people/${this.data.row['personId']}/salaries`);
+        const base = salaries.find((salary) => salary.id === this.data.row?.['baseSalaryId']);
+        if (!base) throw new Error('RAL base non disponibile.');
+        if (generation === this.generation) {
+          for (const field of salaryBenefitFields) {
+            const value = base[field.key];
+            this.form.controls[field.key].setValue(value == null ? '' : String(value));
+          }
+        }
+      }
       await Promise.all(
         this.fields
           .filter((field) => field.reference)
@@ -516,7 +556,7 @@ export class Editor implements AfterViewInit, OnDestroy {
     this.form.controls[fieldKey]?.setValue([...new Set([...retained, ...added])].join('\n'));
   }
   async save(): Promise<void> {
-    if (this.saving() || this.loading()) return;
+    if (this.saving() || this.loading() || this.referencesFailed()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     this.error.set('');
@@ -618,8 +658,13 @@ export class Editor implements AfterViewInit, OnDestroy {
         payload['currency'] = 'EUR';
         payload['requestKey'] = this.requestKey;
       }
-      if (this.data.command === 'approve')
+      if (this.data.command === 'approve') {
         payload['createSalary'] = values['createSalary'] === 'true';
+        if (values['createSalary'] === 'true' && this.data.row?.['baseSalaryId']) {
+          payload['benefits'] = payloadFor(salaryBenefitFields, values);
+        }
+        for (const field of salaryBenefitFields) delete payload[field.key];
+      }
       if (this.data.command)
         await this.api.post(`${this.data.path}/${this.data.row?.id}/${this.data.command}`, payload);
       else if (this.data.row)

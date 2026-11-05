@@ -66,8 +66,12 @@ class SchemaMigrationTest {
                     VALUES (700000, 700000, 'reference', 'Fictitious upgrade contact')
                     """);
         }
+        Flyway previous = Flyway.configure()
+                .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
+                .locations("classpath:db/migration").target("11").cleanDisabled(true).load();
+        assertEquals(10, previous.migrate().migrationsExecuted);
         Flyway flyway = flyway();
-        assertEquals(10, flyway.migrate().migrationsExecuted);
+        assertEquals(1, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -111,6 +115,7 @@ class SchemaMigrationTest {
                 SELECT COUNT(*) FROM salary
                 WHERE id = 700000 AND contract_type IS NULL AND weekly_hours IS NULL
                   AND classification_level IS NULL
+                  AND meal_vouchers IS NULL AND bonus_letter_amount IS NULL AND company_car IS NULL
                 """));
         try (PreparedStatement statement = connection.prepareStatement(
                 "SELECT seniority FROM person WHERE id = 700000");
@@ -121,6 +126,27 @@ class SchemaMigrationTest {
 
         assertEquals(1644, rejected("UPDATE salary SET amount = 1 WHERE id = 700000").getErrorCode());
         assertEquals(1644, rejected("DELETE FROM salary WHERE id = 700000").getErrorCode());
+    }
+
+    @Test
+    void salaryBenefitsAllowNullFalseAndZeroButRejectInvalidValues() throws SQLException {
+        long owner = person();
+        execute("""
+                INSERT INTO salary (person_id,amount,currency,effective_on,reason,
+                    meal_vouchers,bonus_letter_amount,company_car)
+                VALUES (?,50000,'EUR','2026-01-01','Fictitious benefits',1,0,0)
+                """, owner);
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM salary WHERE person_id = ?
+                    AND meal_vouchers = 1 AND bonus_letter_amount = 0 AND company_car = 0
+                """, owner));
+        for (String values : List.of("2,0,0", "1,-0.01,0", "1,0,2")) {
+            rejected("""
+                    INSERT INTO salary (person_id,amount,currency,effective_on,reason,
+                        meal_vouchers,bonus_letter_amount,company_car)
+                    VALUES (?,50000,'EUR','2026-01-01','Invalid benefits',%s)
+                    """.formatted(values), owner);
+        }
     }
 
     @Test

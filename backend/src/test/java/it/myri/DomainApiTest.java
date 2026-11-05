@@ -378,6 +378,103 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void salaryBenefitsAreOptionalValidatedExportedAndPartOfIdempotency() throws Exception {
+        String person = person();
+        String path = "/api/v1/people/" + person + "/salaries";
+        var empty = send(post(path), salaryInput(), 201);
+        assertTrue(empty.get("mealVouchers").isNull());
+        assertTrue(empty.get("bonusLetterAmount").isNull());
+        assertTrue(empty.get("companyCar").isNull());
+        var body = salaryInput();
+        body.put("mealVouchers", true);
+        body.put("bonusLetterAmount", "1200.50");
+        body.put("companyCar", false);
+        var salary = send(post(path), body, 201);
+        assertTrue(salary.get("mealVouchers").asBoolean());
+        assertEquals("1200.50", salary.get("bonusLetterAmount").asText());
+        assertFalse(salary.get("companyCar").asBoolean());
+        body.put("bonusLetterAmount", "1200.5");
+        assertEquals(salary.get("id"), send(post(path), body, 201).get("id"));
+        for (String field : List.of("mealVouchers", "companyCar", "bonusLetterAmount")) {
+            var changed = new HashMap<>(body);
+            changed.put(field, field.equals("bonusLetterAmount") ? "0.00" : !((Boolean) body.get(field)));
+            send(post(path), changed, 409);
+        }
+        for (String invalid : List.of("-0.01", "1.001", "10000000000.00")) {
+            var bad = salaryInput();
+            bad.put("bonusLetterAmount", invalid);
+            send(post(path), bad, 400);
+        }
+        var zero = salaryInput();
+        zero.put("bonusLetterAmount", "0");
+        assertEquals(0, new java.math.BigDecimal(send(post(path), zero, 201)
+                .get("bonusLetterAmount").asText()).signum());
+        mvc.perform(get("/api/v1/people/" + person + "/export").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.salaries[1].mealVouchers").value(true))
+                .andExpect(jsonPath("$.salaries[1].bonusLetterAmount").value("1200.50"))
+                .andExpect(jsonPath("$.salaries[1].companyCar").value(false));
+        String csv = mvc.perform(get("/api/v1/people/" + person + "/export")
+                .session(session).param("format", "csv")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"bonusLetterAmount\""));
+        assertTrue(csv.contains("\"1200.50\""));
+        mvc.perform(get("/api/v1/people/" + person + "/salary-trend").session(session))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[1].mealVouchers").value(true));
+        assertThrows(org.springframework.dao.DataAccessException.class,
+                () -> jdbc.update("UPDATE salary SET company_car = 1 WHERE id = ?", salary.get("id").asLong()));
+        mvc.perform(get("/api/v1/audit").session(session).param("salaryId", salary.get("id").asText()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].changedFields").value(org.hamcrest.Matchers.containsString("bonusLetterAmount")))
+                .andExpect(jsonPath("$.items[0].bonusLetterAmount").doesNotExist());
+    }
+
+    @Test
+    void approvalCanInheritOverrideOrClearBenefitsWithoutChangingTheBase() throws Exception {
+        for (boolean override : new boolean[] { false, true }) {
+            String person = person();
+            String salariesPath = "/api/v1/people/" + person + "/salaries";
+            var salaryBody = salaryInput();
+            salaryBody.put("mealVouchers", true);
+            salaryBody.put("bonusLetterAmount", "1500.00");
+            salaryBody.put("companyCar", false);
+            var base = send(post(salariesPath), salaryBody, 201);
+            var request = send(post("/api/v1/raise-requests"), raiseInput(person, base.get("id").asText()), 201);
+            String path = "/api/v1/raise-requests/" + request.get("id").asText();
+            request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+            var command = new HashMap<String, Object>();
+            command.put("version", request.get("version").asText());
+            command.put("outcomeOn", "2026-02-01");
+            command.put("createSalary", true);
+            command.put("effectiveOn", "2026-03-01");
+            for (String invalid : List.of("-0.01", "1.001", "10000000000.00")) {
+                command.put("benefits", Map.of("bonusLetterAmount", invalid));
+                send(post(path + "/approve"), command, 400);
+            }
+            command.put("createSalary", false);
+            command.remove("effectiveOn");
+            command.put("benefits", Map.of("companyCar", true));
+            send(post(path + "/approve"), command, 400);
+            command.put("createSalary", true);
+            command.put("effectiveOn", "2026-03-01");
+            command.remove("benefits");
+            if (override) command.put("benefits", Map.of("mealVouchers", false, "companyCar", true));
+            var approved = send(post(path + "/approve"), command, 200);
+            assertEquals(approved.get("salaryId"), send(post(path + "/approve"), command, 200).get("salaryId"));
+            var rows = mvc.perform(get(salariesPath).session(session))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            var generated = json.readTree(rows).get("items").get(0);
+            assertEquals(!override, generated.get("mealVouchers").asBoolean());
+            assertEquals(override, generated.get("companyCar").asBoolean());
+            if (override) assertTrue(generated.get("bonusLetterAmount").isNull());
+            else assertEquals("1500.00", generated.get("bonusLetterAmount").asText());
+            assertEquals("1500.00", json.readTree(rows).get("items").get(1).get("bonusLetterAmount").asText());
+            command.put("benefits", Map.of("bonusLetterAmount", "0.00"));
+            send(post(path + "/approve"), command, 409);
+        }
+    }
+
+    @Test
     void salaryIsAppendOnlyIdempotentAndAuditedWithoutSensitiveSnapshots() throws Exception {
         String person = person();
         var body = salaryInput();

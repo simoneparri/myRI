@@ -13,121 +13,139 @@
     <p>L'approvazione e definitiva. La nuova RAL e facoltativa.</p>
   }
   <form id="entity-form" [formGroup]="form" (ngSubmit)="save()" class="editor-form">
-    @for (field of fields; track field.key) {
-      @if (field.type === 'date' || field.type === 'instant') {
-        <app-date-input
-          [formControlName]="field.key"
-          [label]="field.label"
-          [required]="!!field.required"
-          [instant]="field.type === 'instant'"
-        />
-      } @else if (field.type === 'framework-multiselect') {
-        <mat-form-field appearance="outline">
-          <mat-label>{{ field.label }}</mat-label>
-          <mat-select
-            [value]="selectedFrameworks(field.key)"
-            (selectionChange)="updateFrameworks(field.key, $event.value)"
-            [required]="!!field.required"
-            panelClass="framework-select-panel"
-            multiple
-          >
-            <div
-              class="framework-search-panel"
-              role="presentation"
-              (click)="$event.stopPropagation()"
-              (keydown)="$event.stopPropagation()"
+    @for (group of fieldGroups; track $index) {
+      <fieldset class="editor-field-group" [class.named-group]="!!group.label">
+        @if (group.label) {
+          <legend>{{ group.label }}</legend>
+          <p>Facoltativi. Lettera di bonus espressa come importo in euro.</p>
+          @if (data.command === 'approve') {
+            <p>I benefit sono ereditati dalla RAL base e modificabili solo per la nuova RAL.</p>
+          }
+        }
+        @for (field of group.fields; track field.key) {
+          @if (field.type === 'date' || field.type === 'instant') {
+            <app-date-input
+              [formControlName]="field.key"
+              [label]="field.label"
+              [required]="!!field.required"
+              [instant]="field.type === 'instant'"
+            />
+          } @else if (field.type === 'framework-multiselect') {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ field.label }}</mat-label>
+              <mat-select
+                [value]="selectedFrameworks(field.key)"
+                (selectionChange)="updateFrameworks(field.key, $event.value)"
+                [required]="!!field.required"
+                panelClass="framework-select-panel"
+                multiple
+              >
+                <div
+                  class="framework-search-panel"
+                  role="presentation"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <mat-form-field appearance="outline">
+                    <mat-label>Cerca framework</mat-label>
+                    <input
+                      matInput
+                      #frameworkSearchInput
+                      [value]="frameworkSearch"
+                      (input)="frameworkSearch = frameworkSearchInput.value"
+                      autocomplete="off"
+                      aria-label="Cerca framework"
+                    />
+                  </mat-form-field>
+                </div>
+                @for (framework of filteredFrameworks(field.key); track framework.value) {
+                  <mat-option [value]="framework.value">
+                    <i aria-hidden="true" [class]="framework.iconClass"></i>{{ framework.label }}
+                  </mat-option>
+                }
+              </mat-select>
+              @if (form.controls[field.key].hasError('frameworks')) {
+                <mat-error> Seleziona al massimo 50 framework senza duplicati. </mat-error>
+              }
+            </mat-form-field>
+          } @else {
+            <mat-form-field
+              appearance="outline"
+              [floatLabel]="field.key === 'phone' ? 'always' : 'auto'"
             >
-              <mat-form-field appearance="outline">
-                <mat-label>Cerca framework</mat-label>
+              <mat-label>{{ field.label }}</mat-label>
+              @if (field.type === 'boolean') {
+                <mat-select [formControlName]="field.key">
+                  <mat-option value="">Non specificato</mat-option>
+                  <mat-option value="true">Si</mat-option>
+                  <mat-option value="false">No</mat-option>
+                </mat-select>
+              } @else if (field.reference || field.type === 'select') {
+                <mat-select [formControlName]="field.key" [required]="!!field.required">
+                  @if (!field.required) {
+                    <mat-option value="">Nessuno</mat-option>
+                  }
+                  @for (option of options()[field.key] || field.options || []; track option.value) {
+                    <mat-option [value]="option.value">{{ option.label | display }}</mat-option>
+                  }
+                </mat-select>
+              } @else if (field.key === 'phone') {
                 <input
                   matInput
-                  #frameworkSearchInput
-                  [value]="frameworkSearch"
-                  (input)="frameworkSearch = frameworkSearchInput.value"
-                  autocomplete="off"
-                  aria-label="Cerca framework"
+                  #phoneInput
+                  id="phone-input"
+                  type="tel"
+                  autocomplete="tel"
+                  [formControlName]="field.key"
+                  [required]="!!field.required"
+                  [attr.maxlength]="field.max ?? null"
+                  (input)="phoneChanged()"
                 />
-              </mat-form-field>
-            </div>
-            @for (framework of filteredFrameworks(field.key); track framework.value) {
-              <mat-option [value]="framework.value">
-                <i aria-hidden="true" [class]="framework.iconClass"></i>{{ framework.label }}
-              </mat-option>
-            }
-          </mat-select>
-          @if (form.controls[field.key].hasError('frameworks')) {
-            <mat-error>
-              Seleziona al massimo 50 framework senza duplicati.
-            </mat-error>
-          }
-        </mat-form-field>
-      } @else {
-        <mat-form-field appearance="outline" [floatLabel]="field.key === 'phone' ? 'always' : 'auto'">
-          <mat-label>{{ field.label }}</mat-label>
-          @if (field.reference || field.type === 'select') {
-            <mat-select [formControlName]="field.key" [required]="!!field.required">
-              @if (!field.required) {
-                <mat-option value="">Nessuno</mat-option>
-              }
-              @for (option of options()[field.key] || field.options || []; track option.value) {
-                <mat-option [value]="option.value">{{ option.label | display }}</mat-option>
-              }
-            </mat-select>
-          } @else if (field.key === 'phone') {
-            <input
-              matInput
-              #phoneInput
-              id="phone-input"
-              type="tel"
-              autocomplete="tel"
-              [formControlName]="field.key"
-              [required]="!!field.required"
-              [attr.maxlength]="field.max ?? null"
-              (input)="phoneChanged()"
-            />
-            @if (phoneNotice()) {
-              <mat-hint>{{ phoneNotice() }}</mat-hint>
-            }
-          } @else if (field.type === 'textarea') {
-            <textarea
-              matInput
-              [formControlName]="field.key"
-              rows="3"
-              [required]="!!field.required"
-              [attr.maxlength]="field.max ?? null"
-            ></textarea>
-          } @else {
-            <input
-              matInput
-              [formControlName]="field.key"
-              [required]="!!field.required"
-              step="any"
-              [type]="field.type === 'email' ? 'email' : 'text'"
-              [attr.maxlength]="field.max ?? null"
-              [attr.inputmode]="
-                field.type === 'decimal' || field.type === 'integer' ? 'decimal' : null
-              "
-            />
-          }
-          @if (form.controls[field.key].invalid) {
-            <mat-error
-              >Valore richiesto o formato non valido{{
-                field.type === 'decimal' ? ' (usa il punto decimale)' : ''
-              }}.</mat-error
-            >
-          }
-          @if (field.key === 'requestedPercentage' && automaticPercentage()) {
-            <mat-hint>
-              @if (percentageMatchesTarget()) {
-                Calcolata automaticamente dalla RAL base e dalla RAL target.
+                @if (phoneNotice()) {
+                  <mat-hint>{{ phoneNotice() }}</mat-hint>
+                }
+              } @else if (field.type === 'textarea') {
+                <textarea
+                  matInput
+                  [formControlName]="field.key"
+                  rows="3"
+                  [required]="!!field.required"
+                  [attr.maxlength]="field.max ?? null"
+                ></textarea>
               } @else {
-                Percentuale arrotondata: il backend salvera solo la RAL target se i valori non
-                coincidono al centesimo.
+                <input
+                  matInput
+                  [formControlName]="field.key"
+                  [required]="!!field.required"
+                  step="any"
+                  [type]="field.type === 'email' ? 'email' : 'text'"
+                  [attr.maxlength]="field.max ?? null"
+                  [attr.inputmode]="
+                    field.type === 'decimal' || field.type === 'integer' ? 'decimal' : null
+                  "
+                />
               }
-            </mat-hint>
+              @if (form.controls[field.key].invalid) {
+                <mat-error
+                  >Valore richiesto o formato non valido{{
+                    field.type === 'decimal' ? ' (usa il punto decimale)' : ''
+                  }}.</mat-error
+                >
+              }
+              @if (field.key === 'requestedPercentage' && automaticPercentage()) {
+                <mat-hint>
+                  @if (percentageMatchesTarget()) {
+                    Calcolata automaticamente dalla RAL base e dalla RAL target.
+                  } @else {
+                    Percentuale arrotondata: il backend salvera solo la RAL target se i valori non
+                    coincidono al centesimo.
+                  }
+                </mat-hint>
+              }
+            </mat-form-field>
           }
-        </mat-form-field>
-      }
+        }
+      </fieldset>
     }
   </form>
 </mat-dialog-content>

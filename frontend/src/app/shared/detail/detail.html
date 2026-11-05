@@ -1,6 +1,9 @@
 <h2 mat-dialog-title>Dettaglio {{ data.definition.singular }}</h2>
 <mat-dialog-content>
   @for (row of fieldRows; track $index) {
+    @if (row[0]?.group && ($index === 0 || fieldRows[$index - 1][0]?.group !== row[0].group)) {
+      <h3>{{ row[0].group }}</h3>
+    }
     @if (row.length === 0) {
       <hr class="data-row-separator" />
     } @else {

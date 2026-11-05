@@ -2,6 +2,13 @@
 
 ## Stato e autorizzazioni
 
+Estensione RAL autorizzata: gruppo Benefit con buoni pasto e auto booleani
+nullable, lettera di bonus come importo EUR facoltativo non negativo (zero ammesso).
+Migrazione V12 additiva senza backfill; ogni voce RAL resta append-only.
+Le RAL generate da aumento ereditano i benefit dalla base, con possibilita di
+aggiungerli, modificarli o svuotarli solo sulla nuova voce prima dell'approvazione.
+API, export e UI mantengono distinti non specificato, No e zero.
+
 Estensione anagrafica autorizzata: RSNO Agresso e Inside ID testuali (massimo
 100 caratteri, zeri iniziali preservati), univoci anche fra persone archiviate;
 educazione a scelta singola Diploma/Laurea breve/Laurea magistrale/PhD.

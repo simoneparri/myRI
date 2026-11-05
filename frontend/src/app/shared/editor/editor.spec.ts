@@ -463,18 +463,106 @@ describe('Editor', () => {
       weeklyHours: '40.00',
       classificationLevel: 'Livello fittizio',
       reason: 'Fittizia',
+      mealVouchers: 'false',
+      bonusLetterAmount: '0.00',
+      companyCar: 'true',
     });
     post.mockRejectedValueOnce(new HttpErrorResponse({ status: 503 })).mockResolvedValueOnce({});
     await editor.save();
     expect(editor.fields.some((field) => field.key === 'currency')).toBe(false);
     expect(editor.form.controls['currency']).toBeUndefined();
     expect(post.mock.calls[0][1]['currency']).toBe('EUR');
+    expect(post.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        mealVouchers: false,
+        bonusLetterAmount: '0.00',
+        companyCar: true,
+      }),
+    );
     expect(editor.error()).not.toBe('');
     expect(close).not.toHaveBeenCalled();
     await editor.save();
     expect(post.mock.calls[1][1]['currency']).toBe('EUR');
     expect(post.mock.calls[0][1]['requestKey']).toBe(post.mock.calls[1][1]['requestKey']);
     expect(close).toHaveBeenCalledWith(true);
+  });
+  it('groups optional benefits, validates bonus money and preserves unspecified booleans', async () => {
+    const editor = create({ resource: 'salaries', path: 'people/1/salaries' });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    const group = editor.fieldGroups.find((group) => group.label === 'Benefit');
+    expect(group?.fields.map((field) => field.key)).toEqual([
+      'mealVouchers',
+      'bonusLetterAmount',
+      'companyCar',
+    ]);
+    expect(payloadFor(group!.fields, editor.form.getRawValue())).toEqual({
+      mealVouchers: null,
+      bonusLetterAmount: null,
+      companyCar: null,
+    });
+    const bonus = editor.form.controls['bonusLetterAmount'];
+    for (const value of ['', '0', '0.00', '9999999999.99']) {
+      bonus.setValue(value);
+      expect(bonus.valid).toBe(true);
+    }
+    for (const value of ['-1', '1.001', '10000000000']) {
+      bonus.setValue(value);
+      expect(bonus.invalid).toBe(true);
+    }
+    editor.form.controls['mealVouchers'].setValue('invalid');
+    expect(editor.form.controls['mealVouchers'].invalid).toBe(true);
+  });
+  it('inherits approval benefits from the base but sends editable overrides only for a generated salary', async () => {
+    const editor = create(
+      {
+        resource: 'raise-requests',
+        path: 'raise-requests',
+        command: 'approve',
+        row: { id: '2', version: '4', personId: '1', baseSalaryId: '3' },
+      },
+      [{ id: '3', mealVouchers: true, bonusLetterAmount: '1000.00', companyCar: false }],
+    );
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    expect(choices).toHaveBeenCalledWith('people/1/salaries');
+    expect(editor.form.getRawValue()).toEqual(
+      expect.objectContaining({
+        mealVouchers: 'true',
+        bonusLetterAmount: '1000.00',
+        companyCar: 'false',
+      }),
+    );
+    expect(editor.form.controls['bonusLetterAmount'].disabled).toBe(true);
+    editor.form.patchValue({
+      createSalary: 'true',
+      effectiveOn: '2026-12-01',
+      mealVouchers: 'false',
+      bonusLetterAmount: '',
+      companyCar: 'true',
+    });
+    expect(editor.form.controls['bonusLetterAmount'].enabled).toBe(true);
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenLastCalledWith(
+      'raise-requests/2/approve',
+      expect.objectContaining({
+        benefits: { mealVouchers: false, bonusLetterAmount: null, companyCar: true },
+      }),
+    );
+    editor.form.patchValue({ createSalary: 'false', effectiveOn: '', bonusLetterAmount: '-1' });
+    await editor.save();
+    expect(post.mock.lastCall?.[1]['benefits']).toBeUndefined();
+    expect(post.mock.lastCall?.[1]['mealVouchers']).toBeUndefined();
+  });
+  it('blocks approval when its base benefits cannot be loaded', async () => {
+    const editor = create({
+      resource: 'raise-requests',
+      path: 'raise-requests',
+      command: 'approve',
+      row: { id: '2', version: '4', personId: '1', baseSalaryId: '3' },
+    });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    expect(editor.referencesFailed()).toBe(true);
+    expect(editor.error()).not.toBe('');
   });
   it('requires explicit salary decision and consistent effective date on approval', async () => {
     const editor = create({

@@ -66,6 +66,12 @@ class FinancialAtomicityTest extends IntegrationTest {
                 "SELECT weekly_hours FROM salary WHERE source_raise_request_id = ?", BigDecimal.class, request.id()));
         assertEquals("Livello fittizio", jdbc.queryForObject(
                 "SELECT classification_level FROM salary WHERE source_raise_request_id = ?", String.class, request.id()));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT meal_vouchers FROM salary WHERE source_raise_request_id = ?", Integer.class, request.id()));
+        assertEquals(new BigDecimal("1000.00"), jdbc.queryForObject(
+                "SELECT bonus_letter_amount FROM salary WHERE source_raise_request_id = ?", BigDecimal.class, request.id()));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT company_car FROM salary WHERE source_raise_request_id = ?", Integer.class, request.id()));
         assertEquals(3, jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_event WHERE raise_request_id = ?", Long.class, request.id()));
     }
@@ -75,7 +81,7 @@ class FinancialAtomicityTest extends IntegrationTest {
         var person = asOwner(this::person);
         var input = new SalaryDtos.Input(new BigDecimal("50000"), "EUR",
                 LocalDate.of(2025, 1, 1), "Tempo indeterminato", new BigDecimal("40.00"),
-                "Livello fittizio", "Fictitious", UUID.randomUUID().toString());
+                "Livello fittizio", "Fictitious", UUID.randomUUID().toString(), null, null, null);
         var results = parallel(() -> asOwner(() -> salaries.create(person.id(), input)));
         assertEquals(results.get(0).id(), results.get(1).id());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM salary WHERE person_id = ?", Long.class, person.id()));
@@ -172,7 +178,8 @@ class FinancialAtomicityTest extends IntegrationTest {
         var person = person();
         var salary = salaries.create(person.id(), new SalaryDtos.Input(new BigDecimal("50000.00"),
                 "EUR", LocalDate.of(2025, 1, 1), "Tempo indeterminato", new BigDecimal("40.00"),
-                "Livello fittizio", "Fictitious", UUID.randomUUID().toString()));
+                "Livello fittizio", "Fictitious", UUID.randomUUID().toString(),
+                true, new BigDecimal("1000.00"), false));
         var request = raises.create(new RaiseDtos.Input(person.id(), salary.id(), LocalDate.of(2026, 1, 1),
                 new BigDecimal("55000.00"), new BigDecimal("10.0000"), "Fictitious", null));
         return raises.submit(request.id(), request.version());
@@ -180,7 +187,7 @@ class FinancialAtomicityTest extends IntegrationTest {
 
     private RaiseDtos.Outcome outcome(RaiseDtos.View request) {
         return new RaiseDtos.Outcome(request.version(), LocalDate.of(2026, 2, 1), "Fictitious",
-                true, LocalDate.of(2026, 3, 1));
+                true, LocalDate.of(2026, 3, 1), null);
     }
 
     private PersonDtos.View person() {

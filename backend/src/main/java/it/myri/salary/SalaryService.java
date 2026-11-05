@@ -58,6 +58,7 @@ public class SalaryService {
         users.lockSingleton().orElseThrow(ApiException::missing);
         people.requireUsable(personId);
         currency(input.currency());
+        var benefits = new SalaryDtos.Benefits(input.mealVouchers(), input.bonusLetterAmount(), input.companyCar());
         var existing = salaries.findByRequestKey(input.requestKey());
         if (existing.isPresent()) {
             Salary salary = existing.get();
@@ -66,7 +67,8 @@ public class SalaryService {
                     || !Objects.equals(salary.contractType, input.contractType().strip())
                     || !sameDecimal(salary.weeklyHours, input.weeklyHours())
                     || !Objects.equals(salary.classificationLevel, input.classificationLevel().strip())
-                    || !salary.reason.equals(input.reason())) {
+                    || !salary.reason.equals(input.reason())
+                    || !sameBenefits(salary, benefits)) {
                 throw ApiException.conflict("Chiave idempotenza gia usata con dati diversi.");
             }
             return SalaryDtos.view(salary);
@@ -74,16 +76,18 @@ public class SalaryService {
         Salary salary = build(personId, input.amount(), input.currency(), input.effectiveOn(),
                 input.contractType().strip(), input.weeklyHours(), input.classificationLevel().strip(), input.reason());
         salary.requestKey = input.requestKey();
+        applyBenefits(salary, benefits);
         return SalaryDtos.view(saveAndAudit(salary));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Salary generateApproved(Long personId, BigDecimal amount, String currency,
             LocalDate effectiveOn, String contractType, BigDecimal weeklyHours,
-            String classificationLevel, String reason, Long requestId) {
+            String classificationLevel, String reason, Long requestId, SalaryDtos.Benefits benefits) {
         Salary salary = build(personId, amount, currency, effectiveOn, contractType,
                 weeklyHours, classificationLevel, reason);
         salary.sourceRaiseRequestId = requestId;
+        applyBenefits(salary, benefits);
         return saveAndAudit(salary);
     }
 
@@ -114,11 +118,23 @@ public class SalaryService {
     private Salary saveAndAudit(Salary salary) {
         salaries.saveAndFlush(salary);
         audit.record(salary.personId, salary.id, null, "salary_created",
-                "amount,currency,effectiveOn,contractType,weeklyHours,classificationLevel,reason,sourceRaiseRequestId");
+                "amount,currency,effectiveOn,contractType,weeklyHours,classificationLevel,reason,sourceRaiseRequestId,mealVouchers,bonusLetterAmount,companyCar");
         return salary;
     }
 
     private static boolean sameDecimal(BigDecimal a, BigDecimal b) {
         return a == null ? b == null : b != null && a.compareTo(b) == 0;
+    }
+
+    public static boolean sameBenefits(Salary salary, SalaryDtos.Benefits benefits) {
+        return Objects.equals(salary.mealVouchers, benefits.mealVouchers())
+                && sameDecimal(salary.bonusLetterAmount, benefits.bonusLetterAmount())
+                && Objects.equals(salary.companyCar, benefits.companyCar());
+    }
+
+    private static void applyBenefits(Salary salary, SalaryDtos.Benefits benefits) {
+        salary.mealVouchers = benefits.mealVouchers();
+        salary.bonusLetterAmount = benefits.bonusLetterAmount();
+        salary.companyCar = benefits.companyCar();
     }
 }

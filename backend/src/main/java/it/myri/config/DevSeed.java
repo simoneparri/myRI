@@ -49,7 +49,8 @@ public class DevSeed {
                     contacts.create(person.id(), new ContactDtos.Input("reference", "Contatto fittizio", null, null, today));
                     var base = salaries.create(person.id(), new SalaryDtos.Input(new BigDecimal("50000.00"),
                             "EUR", today.minusYears(1), "Tempo indeterminato", new BigDecimal("40.00"),
-                            "Livello fittizio", "Dati fittizi di sviluppo", "dev-initial-salary"));
+                            "Livello fittizio", "Dati fittizi di sviluppo", "dev-initial-salary",
+                            true, new BigDecimal("1000.00"), false));
                     raises.create(new RaiseDtos.Input(person.id(), base.id(), today,
                             new BigDecimal("55000.00"), new BigDecimal("10.0000"),
                             "Richiesta fittizia", null));

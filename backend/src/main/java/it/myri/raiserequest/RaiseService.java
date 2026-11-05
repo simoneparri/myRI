@@ -115,13 +115,20 @@ public class RaiseService {
         if (command.createSalary() != (command.effectiveOn() != null)) {
             throw ApiException.invalid("Decorrenza richiesta solo se si crea una RAL.");
         }
+        if (!command.createSalary() && command.benefits() != null) {
+            throw ApiException.invalid("Benefit ammessi solo se si crea una RAL.");
+        }
+        Salary base = command.createSalary() ? salaryService.get(request.baseSalaryId) : null;
+        SalaryDtos.Benefits benefits = command.createSalary()
+                ? (command.benefits() == null ? SalaryDtos.benefits(base) : command.benefits()) : null;
         var existing = salaries.findBySourceRaiseRequestId(id);
         if (request.status.equals("approved")) {
             boolean matching = Objects.equals(request.outcomeOn, command.outcomeOn())
                     && Objects.equals(request.outcomeNotes, command.outcomeNotes())
                     && command.createSalary() == existing.isPresent()
                     && (!command.createSalary()
-                        || existing.get().effectiveOn.equals(command.effectiveOn()));
+                        || existing.get().effectiveOn.equals(command.effectiveOn())
+                            && SalaryService.sameBenefits(existing.get(), benefits));
             if (!matching) { throw ApiException.conflict("Approvazione gia registrata con dati diversi."); }
             return view(request);
         }
@@ -137,10 +144,9 @@ public class RaiseService {
         request.touch(clock);
         requests.saveAndFlush(request);
         if (command.createSalary()) {
-            Salary base = salaryService.get(request.baseSalaryId);
             salaryService.generateApproved(request.personId, target, request.currency,
                     command.effectiveOn(), base.contractType, base.weeklyHours,
-                    base.classificationLevel, "Approvazione richiesta " + request.id, request.id);
+                    base.classificationLevel, "Approvazione richiesta " + request.id, request.id, benefits);
         }
         record(request, "raise_updated", "status,outcomeOn,outcomeNotes");
         return view(request);

@@ -1,6 +1,8 @@
 package it.myri.raiserequest;
 
 import jakarta.validation.constraints.*;
+import jakarta.validation.Valid;
+import it.myri.salary.SalaryDtos;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,7 +18,8 @@ public final class RaiseDtos {
             @NotBlank @Size(max = 10000) String motivation, @PositiveOrZero Long version) {}
 
     public record Outcome(@NotNull @PositiveOrZero Long version, @NotNull LocalDate outcomeOn,
-            @Size(max = 10000) String outcomeNotes, @NotNull Boolean createSalary, LocalDate effectiveOn) {}
+            @Size(max = 10000) String outcomeNotes, @NotNull Boolean createSalary, LocalDate effectiveOn,
+            @Valid SalaryDtos.Benefits benefits) {}
 
     public record Decision(@NotNull @PositiveOrZero Long version, @NotNull LocalDate outcomeOn,
             @Size(max = 10000) String outcomeNotes) {}

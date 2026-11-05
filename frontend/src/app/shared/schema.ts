@@ -7,6 +7,8 @@ export interface Option {
 export interface Field {
   key: string;
   label: string;
+  group?: string;
+  allowZero?: boolean;
   type?:
     | 'text'
     | 'textarea'
@@ -17,6 +19,7 @@ export interface Field {
     | 'decimal'
     | 'integer'
     | 'select'
+    | 'boolean'
     | 'framework-multiselect';
   required?: boolean;
   requiredOnCreate?: boolean;
@@ -32,6 +35,7 @@ export interface Column {
   key: string;
   label: string;
   type?: string;
+  group?: string;
 }
 export type Resource =
   'people' | 'contacts' | 'projects' | 'salaries' | 'raise-requests' | 'career-talks' | 'tasks';
@@ -71,6 +75,18 @@ const choice = (key: string, label: string, values: string[], initial: string): 
   options: values.map((value) => ({ value, label: value })),
   initial,
 });
+export const salaryBenefitFields: Field[] = [
+  { key: 'mealVouchers', label: 'Buoni pasto', type: 'boolean', group: 'Benefit' },
+  {
+    key: 'bonusLetterAmount',
+    label: 'Lettera di bonus',
+    type: 'decimal',
+    fraction: 2,
+    allowZero: true,
+    group: 'Benefit',
+  },
+  { key: 'companyCar', label: 'Auto', type: 'boolean', group: 'Benefit' },
+];
 export const definitions: Record<Resource, Definition> = {
   people: {
     title: 'Persone',
@@ -200,6 +216,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal', required: true, fraction: 2 },
       { key: 'classificationLevel', label: 'Livello di inquadramento', required: true, max: 100 },
       text('reason', 'Motivo della variazione', true),
+      ...salaryBenefitFields,
     ],
     columns: [
       { key: 'amount', label: 'RAL annua', type: 'money' },
@@ -208,6 +225,9 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal' },
       { key: 'classificationLevel', label: 'Livello' },
       { key: 'reason', label: 'Motivo' },
+      { key: 'mealVouchers', label: 'Benefit: buoni pasto', type: 'boolean' },
+      { key: 'bonusLetterAmount', label: 'Benefit: lettera di bonus', type: 'money' },
+      { key: 'companyCar', label: 'Benefit: auto', type: 'boolean' },
     ],
   },
   'raise-requests': {
