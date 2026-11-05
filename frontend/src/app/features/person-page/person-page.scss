@@ -40,13 +40,13 @@
   grid-area: 2 / 3;
 }
 .person-details [data-field='hiredOn'] {
-  grid-area: 3 / 1;
-}
-.person-details [data-field='careerStartedOn'] {
   grid-area: 3 / 2;
 }
-.person-details [data-field='bornOn'] {
+.person-details [data-field='careerStartedOn'] {
   grid-area: 3 / 3;
+}
+.person-details [data-field='bornOn'] {
+  grid-area: 3 / 1;
 }
 .person-details [data-field='hiringLocation'] {
   grid-area: 4 / 1;

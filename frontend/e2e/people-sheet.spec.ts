@@ -128,7 +128,7 @@ for (const width of [1440, 390]) {
       for (const fields of [
         ['mypadId', 'email', 'phone'],
         ['role', 'seniorityLevel', 'frameworks'],
-        ['hiredOn', 'careerStartedOn'],
+        ['bornOn', 'hiredOn', 'careerStartedOn'],
       ]) {
         const positions = await Promise.all(
           fields.map((field) =>
@@ -138,6 +138,13 @@ for (const width of [1440, 390]) {
           ),
         );
         expect(new Set(positions).size).toBe(1);
+        const leftPositions = await Promise.all(
+          fields.map((field) =>
+            page.locator(`[data-field="${field}"]`)
+              .evaluate((item) => item.getBoundingClientRect().left),
+          ),
+        );
+        expect(leftPositions).toEqual([...leftPositions].sort((a, b) => a - b));
       }
     }
     const edit = page.getByRole('button', { name: 'Modifica', exact: true });

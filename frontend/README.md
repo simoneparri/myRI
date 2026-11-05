@@ -68,6 +68,8 @@ un container root senza bind mount scrivibili sulla checkout.
   data in `gg/mm/aaaa` con l'eta in anni compiuti tra parentesi, calcolata nel
   fuso applicativo e non salvata come valore statico. Per il 29 febbraio,
   negli anni non bisestili l'anno si completa il 1 marzo.
+  Su desktop la riga delle date mostra nascita, assunzione e inizio lavoro,
+  in questo ordine da sinistra a destra.
   La tab Contatti mostra la data di contatto (`gg/mm/aaaa`), obbligatoria per i
   nuovi inserimenti e non svuotabile dopo l'assegnazione. Le righe sono ordinate
   dal backend per data decrescente anche tra pagine; i contatti legacy senza data
