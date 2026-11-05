@@ -5,6 +5,9 @@ applyTo: "**/*.ts,**/*.html,**/*.scss"
 
 - Angular LTS verificata all'avvio dello Step 3, Material della stessa major.
   Standalone components, TypeScript strict, separazione feature/core/shared.
+- Ogni componente vive in una cartella dedicata con `.ts`, `.html`, eventuale
+  `.scss` e test pertinenti affiancati. Template e stili stanno in file esterni
+  collegati con `templateUrl` e `styleUrl`; mai usare HTML o CSS inline nei `.ts`.
 - Signals per stato sincrono locale e derivato; RxJS per flussi asincroni.
   Non duplicare lo stato e gestire cancellazione e cleanup delle subscription.
 - API tipizzate, niente any o entity backend replicate senza contratto.

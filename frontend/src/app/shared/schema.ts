@@ -8,7 +8,16 @@ export interface Field {
   key: string;
   label: string;
   type?:
-    'text' | 'textarea' | 'email' | 'date' | 'instant' | 'id' | 'decimal' | 'integer' | 'select';
+    | 'text'
+    | 'textarea'
+    | 'email'
+    | 'date'
+    | 'instant'
+    | 'id'
+    | 'decimal'
+    | 'integer'
+    | 'select'
+    | 'framework-multiselect';
   required?: boolean;
   requiredOnCreate?: boolean;
   pattern?: string;
@@ -82,8 +91,8 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'role', label: 'Ruolo', max: 150 },
       {
         key: 'frameworks',
-        label: 'Framework conosciuti (uno per riga)',
-        type: 'textarea',
+        label: 'Framework conosciuti',
+        type: 'framework-multiselect',
         max: 5049,
       },
       { key: 'hiredOn', label: 'Data di assunzione', type: 'date', required: true },
@@ -116,11 +125,13 @@ export const definitions: Record<Resource, Definition> = {
     title: 'Contatti',
     singular: 'contatto',
     fields: [
+      { key: 'contactedOn', label: 'Data di contatto', type: 'date', requiredOnCreate: true },
       { key: 'type', label: 'Tipo', required: true, max: 50 },
       { key: 'value', label: 'Recapito o riferimento', required: true, max: 500 },
       text('notes', 'Note'),
     ],
     columns: [
+      { key: 'contactedOn', label: 'Data di contatto', type: 'date' },
       { key: 'type', label: 'Tipo' },
       { key: 'value', label: 'Recapito' },
       { key: 'notes', label: 'Note' },

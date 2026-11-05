@@ -1,0 +1,267 @@
+<section>
+  <div class="section-heading">
+    <h2>{{ definition().title }}</h2>
+    <button mat-flat-button (click)="edit()" [disabled]="busy() || loading()">
+      <svg appButtonIcon="add"></svg>
+      {{ newLabel(resource()) }}
+    </button>
+  </div>
+  <form class="filters" (ngSubmit)="search()">
+    @if (resource() === 'tasks') {
+      <mat-form-field appearance="outline"
+        ><mat-label>Vista task</mat-label>
+        <mat-select name="view" [(ngModel)]="todoView" (selectionChange)="search()">
+          <mat-option value="">Gestione completa</mat-option>
+          <mat-option value="all">Tutti aperti</mat-option>
+          <mat-option value="today">Oggi</mat-option>
+          <mat-option value="overdue">Scaduti</mat-option>
+          <mat-option value="next7">Prossimi 7 giorni</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+    @if (!todoView) {
+      <mat-form-field appearance="outline"
+        ><mat-label>Cerca</mat-label>
+        <input matInput name="q" [(ngModel)]="q" maxlength="200" />
+      </mat-form-field>
+      @if (definition().statuses) {
+        <mat-form-field appearance="outline"
+          ><mat-label>Stato</mat-label>
+          <mat-select name="status" [(ngModel)]="status">
+            <mat-option value="">Tutti</mat-option>
+            @for (value of definition().statuses; track value) {
+              <mat-option [value]="value">{{ value | display }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    }
+    @if (!personId() && resource() !== 'people' && resource() !== 'projects') {
+      <mat-form-field appearance="outline"
+        ><mat-label>Persona</mat-label>
+        <mat-select name="person" [(ngModel)]="personFilter">
+          <mat-option value="">Tutte</mat-option>
+          @for (person of people(); track person.id) {
+            <mat-option [value]="person.id">{{ name(person) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    @if (resource() === 'tasks' && !todoView) {
+      <mat-form-field appearance="outline"
+        ><mat-label>Priorita</mat-label>
+        <mat-select name="priority" [(ngModel)]="priority"
+          ><mat-option value="">Tutte</mat-option>
+          @for (value of ['low', 'medium', 'high']; track value) {
+            <mat-option [value]="value">{{ value | display }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    @if (resource() === 'projects') {
+      <mat-form-field appearance="outline">
+        <mat-label>Periodo</mat-label>
+        <mat-select name="period" [(ngModel)]="projectPeriod">
+          <mat-option value="">Tutti i progetti</mat-option>
+          <mat-option value="current">Attivi ora</mat-option>
+          <mat-option value="past">Passati</mat-option>
+          <mat-option value="upcoming">Futuri</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+    @if (resource() === 'contacts' || resource() === 'salaries') {
+      <mat-form-field appearance="outline"
+        ><mat-label>{{ resource() === 'contacts' ? 'Tipo contatto' : 'Valuta ISO' }}</mat-label>
+        <input
+          matInput
+          name="category"
+          [(ngModel)]="category"
+          [attr.maxlength]="resource() === 'contacts' ? 50 : 3"
+        />
+      </mat-form-field>
+    }
+    @if (
+      (resource() === 'tasks' && !todoView) ||
+      resource() === 'career-talks' ||
+      resource() === 'salaries'
+    ) {
+      <app-date-input
+        name="from"
+        [(ngModel)]="from"
+        [label]="resource() === 'salaries' ? 'Dal' : 'Dal (UTC)'"
+        [instant]="resource() !== 'salaries'"
+      />
+      <app-date-input
+        name="to"
+        [(ngModel)]="to"
+        [label]="resource() === 'salaries' ? 'Al (escluso)' : 'Al (escluso) (UTC)'"
+        [instant]="resource() !== 'salaries'"
+      />
+    }
+    @if (resource() !== 'salaries' && !todoView) {
+      <mat-checkbox name="archived" [(ngModel)]="includeArchived"
+        >Includi archiviati</mat-checkbox
+      >
+    }
+    <button mat-stroked-button type="submit" [disabled]="loading()">
+      <svg appButtonIcon="filter"></svg>Applica filtri
+    </button>
+    <button mat-button type="button" (click)="reload()" [disabled]="loading()">
+      <svg appButtonIcon="refresh"></svg>Ricarica
+    </button>
+  </form>
+  @if (todoView) {
+    <p>
+      Solo task aperti non archiviati. Oggi e scaduti possono sovrapporsi; i prossimi 7 giorni
+      iniziano domani. Task senza scadenza solo in Tutti aperti.
+    </p>
+  }
+  @if (resource() === 'projects') {
+    <p>Le date sono facoltative: una data assente indica un periodo aperto.
+      Il giorno di fine e incluso. I progetti attivi ora sono evidenziati.</p>
+  }
+  @if (error()) {
+    <p role="alert" class="error">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p role="status">Caricamento...</p>
+  } @else if (page().items.length === 0 && !error()) {
+    <p>Nessun risultato.</p>
+  }
+  @if (page().items.length > 0) {
+    <div class="table-scroll" [attr.aria-busy]="loading()">
+      <table>
+        <caption class="sr-only">
+          {{
+            definition().title
+          }}
+        </caption>
+        <thead>
+          <tr>
+            @for (column of definition().columns; track column.key) {
+              <th scope="col">{{ column.label }}</th>
+            }
+            <th scope="col">Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of page().items; track row.id) {
+            <tr
+              [class.archived]="row['archivedAt']"
+              [class.current-project]="resource() === 'projects' && row['status'] === 'current'"
+            >
+              @for (column of definition().columns; track column.key) {
+                <td>
+                  {{
+                    column.key === 'personId'
+                      ? personName(row[column.key])
+                      : (row[column.key] | display: column.type)
+                  }}
+                  @if ($first && row['archivedAt']) {
+                    <span class="badge">Archiviato</span>
+                  }
+                  @if ($first && resource() === 'projects' && row['status'] === 'current') {
+                    <strong class="badge">Attivo ora</strong>
+                  }
+                </td>
+              }
+              <td class="actions">
+                @if (resource() === 'people') {
+                  <a mat-button [routerLink]="['/people', row.id]">
+                    <svg appButtonIcon="person"></svg>Scheda
+                  </a>
+                } @else {
+                  <button mat-button (click)="details(row)">
+                    <svg appButtonIcon="detail"></svg>Dettagli
+                  </button>
+                }
+                @if (resource() !== 'people' && editable(resource(), row)) {
+                  <button mat-button (click)="edit(row)" [disabled]="busy() || loading()">
+                    <svg appButtonIcon="edit"></svg>Modifica
+                  </button>
+                }
+                @if (!row['archivedAt'] && resource() !== 'salaries') {
+                  @if (resource() === 'raise-requests') {
+                    @if (row['status'] === 'draft') {
+                      <button
+                        mat-button
+                        (click)="command(row, 'submit')"
+                        [disabled]="busy() || loading()"
+                      >
+                        <svg appButtonIcon="send"></svg>Invia
+                      </button>
+                    }
+                    @if (row['status'] === 'postponed') {
+                      <button
+                        mat-button
+                        (click)="command(row, 'reopen')"
+                        [disabled]="busy() || loading()"
+                      >
+                        <svg appButtonIcon="refresh"></svg>Riapri
+                      </button>
+                    }
+                    @if (row['status'] === 'submitted') {
+                      <button
+                        mat-button
+                        (click)="decision(row, 'approve')"
+                        [disabled]="busy() || loading()"
+                      >
+                        <svg appButtonIcon="check"></svg>Approva
+                      </button>
+                      <button
+                        mat-button
+                        (click)="decision(row, 'reject')"
+                        [disabled]="busy() || loading()"
+                      >
+                        <svg appButtonIcon="close"></svg>Rifiuta
+                      </button>
+                      <button
+                        mat-button
+                        (click)="decision(row, 'postpone')"
+                        [disabled]="busy() || loading()"
+                      >
+                        <svg appButtonIcon="clock"></svg>Rimanda
+                      </button>
+                    }
+                  }
+                  @if (resource() === 'tasks' && editable(resource(), row)) {
+                    <button
+                      mat-button
+                      (click)="command(row, 'complete')"
+                      [disabled]="busy() || loading()"
+                    >
+                      <svg appButtonIcon="check"></svg>Completa
+                    </button>
+                    <button
+                      mat-button
+                      (click)="command(row, 'cancel')"
+                      [disabled]="busy() || loading()"
+                    >
+                      <svg appButtonIcon="close"></svg>Annulla task
+                    </button>
+                  }
+                  <button
+                    mat-button
+                    (click)="command(row, 'archive')"
+                    [disabled]="busy() || loading()"
+                  >
+                    <svg appButtonIcon="archive"></svg>Archivia
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <mat-paginator
+    [length]="page().totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="size"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    (page)="paginate($event)"
+    aria-label="Paginazione"
+  ></mat-paginator>
+</section>
+

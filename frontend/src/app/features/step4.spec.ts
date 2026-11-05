@@ -3,9 +3,9 @@ import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Api } from '../core/api';
 import { TIMEZONE } from '../shared/format';
-import { Dashboard } from './dashboard';
-import { Notifications } from './notifications';
-import { SalaryTrend } from './salary-trend';
+import { Dashboard } from './dashboard/dashboard';
+import { Notifications } from './notifications/notifications';
+import { SalaryTrend } from './salary-trend/salary-trend';
 
 describe('Step 4 views', () => {
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };

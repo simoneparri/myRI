@@ -27,6 +27,31 @@ contro lo stack completo usare la build nginx, senza aggiungere porte DB/API.
 Il file `public/config.json` configura il fuso del solo dev server.
 In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
 
+### Permessi degli asset generati
+
+Gli hook npm generano il catalogo `src/app/shared/framework-catalog-data.json`
+e gli asset Devicon/intl-tel-input in `public/assets/devicon/`. Eseguire npm e
+Node con l'utente proprietario della checkout, mai con `sudo`.
+Il generatore rifiuta l'esecuzione come root su una checkout di un altro utente,
+prima di scrivere file. La build Docker resta compatibile: lavora su copie
+interne all'immagine, senza scrivere nella checkout host.
+
+Per usare Node in un container con bind mount, passare sempre UID/GID locali
+e una HOME scrivibile, anche per installazioni, test e Playwright:
+
+```sh
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  --mount "type=bind,src=$(pwd),dst=/workspace" -w /workspace \
+  node:24-bookworm-slim npm run build
+```
+
+Il comando presuppone di trovarsi in `frontend/` con dipendenze gia installate.
+Per file precedentemente creati da root, correggere una sola volta la proprieta
+dei soli percorsi coinvolti, senza usare `chmod 777` o cambiare ricorsivamente
+l'intero repository. I test del generatore si eseguono con
+`node --test scripts/generate-framework-catalog.spec.mjs`; il caso root richiede
+un container root senza bind mount scrivibili sulla checkout.
+
 ## Funzioni e contratti
 
 - Login, logout e sessione server HttpOnly; token CSRF solo in memoria.
@@ -37,8 +62,17 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   sede di assunzione e residenza; timeline, contatti e RAL append-only con tipo
   contratto, ore settimanali e livello storicizzati per ogni voce; richieste con
   transizioni esplicite, career talk e task con riferimenti/ricorrenza.
-  I framework conosciuti sono un elenco libero, inserito uno per riga e mostrato
-  accanto al ruolo nella lista persone e nella scheda.
+  La tab Contatti mostra la data di contatto (`gg/mm/aaaa`), obbligatoria per i
+  nuovi inserimenti e non svuotabile dopo l'assegnazione. Le righe sono ordinate
+  dal backend per data decrescente anche tra pagine; i contatti legacy senza data
+  restano modificabili e sono mostrati in fondo, senza date inventate.
+  I framework conosciuti si selezionano da un catalogo Devicon multiplo e
+  ricercabile nel pannello; i valori storici fuori catalogo restano selezionati.
+  Le icone Devicon bianche sono rese nere, mentre gli altri colori restano
+  invariati. Sono mostrati accanto al ruolo nella lista persone e nella scheda.
+  Il campo telefono offre selezione paese con Italia predefinita e salva i
+  numeri validi in E.164; numeri legacy non validi restano invariati durante
+  la modifica finche non viene inserito un numero valido.
   Manager interno/esterno non sono piu mostrati o modificabili; gli eventuali
   valori legacy sono preservati durante le modifiche della persona.
   La nuova tab Progetti gestisce cliente, date da/a facoltative, BM di riferimento,
@@ -90,6 +124,12 @@ In Docker viene generato da `APP_TIMEZONE`, condiviso con il backend.
   vengono convertite in UTC tramite il fuso locale.
   Gli importi sono visualizzati come `45.000,00`, sempre con due decimali e
   senza conversioni floating point; percentuali e ore mantengono la precisione.
+  Nelle richieste di aumento la percentuale viene derivata dalla RAL base e
+  dalla RAL target, arrotondata per eccesso al decimo di punto percentuale;
+  lasciando vuota la RAL target e possibile inserirla manualmente, lasciando
+  al backend il calcolo della RAL target. Se il valore arrotondato non coincide
+  al centesimo con la RAL inserita, viene inviato solo il target: l'API rifiuta
+  una coppia target/percentuale incoerente.
 - I selettori riferimenti caricano tutte le pagine, senza troncare le persone
   alla prima pagina. I dati archiviati restano consultabili.
 - La scadenza della sessione rimanda al login e chiude i dialog con dati
@@ -123,10 +163,12 @@ lockfile (attualmente `mcr.microsoft.com/playwright:v1.64.1-noble`), montando
 questa directory e raggiungendo il frontend. Non sono salvati trace, screenshot
 o video che potrebbero contenere dati; credenziali obbligatorie dall'ambiente.
 Gli unit/component test usano Vitest e jsdom, senza MySQL o browser installati.
-`e2e/people-sheet.spec.ts` e `e2e/projects.spec.ts` usano soltanto API simulate con dati fittizi e verificano
-lista, scheda, modifica, icone e calendario su desktop/mobile, oltre ai filtri
-data/ora, payload UTC, creazione/modifica progetti e filtri dei periodi: si possono eseguire senza database
-o credenziali con `E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts e2e/projects.spec.ts`
+`e2e/people-sheet.spec.ts` e `e2e/projects.spec.ts` usano soltanto API simulate
+con dati fittizi e verificano lista, scheda, modifica, icone e calendario su
+desktop/mobile, oltre ai filtri data/ora, payload UTC, creazione/modifica
+progetti, percentuale aumento automatica/manuale e telefono internazionale:
+si possono eseguire senza database o credenziali con
+`E2E_BASE_URL=http://127.0.0.1:4200 npx playwright test e2e/people-sheet.spec.ts e2e/projects.spec.ts`
 contro il dev server.
 
 ## Consegna e limiti

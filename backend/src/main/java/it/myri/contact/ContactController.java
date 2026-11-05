@@ -16,7 +16,7 @@ public class ContactController {
             @RequestParam(required = false) String q, @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "false") boolean includeArchived,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id,asc") String sort) {
+            @RequestParam(defaultValue = "contactedOn,desc") String sort) {
         return service.list(personId, q, type, includeArchived, page, size, sort);
     }
 

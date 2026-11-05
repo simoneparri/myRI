@@ -1,0 +1,6 @@
+.current-project {
+  background: var(--mat-sys-secondary-container, #e8f5e9);
+}
+.current-project td:first-child {
+  border-inline-start: 4px solid var(--mat-sys-primary, #256342);
+}

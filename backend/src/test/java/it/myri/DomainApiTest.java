@@ -201,13 +201,60 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void contactsRequireDatesAndPageNewestFirstWithLegacyContactsLast() throws Exception {
+        String person = person();
+        String path = "/api/v1/people/" + person + "/contacts";
+        send(post(path), Map.of("type", "reference", "value", "Fictitious"), 400);
+        send(post(path), Map.of("type", "reference", "value", "Fictitious",
+                "contactedOn", "2026-02-30"), 400);
+        send(post(path), Map.of("type", "reference", "value", "Fictitious",
+                "contactedOn", "0999-01-01"), 400);
+        jdbc.update("INSERT INTO contact (person_id,type,value) VALUES (?,'reference','Legacy fictitious')", person);
+        String legacy = jdbc.queryForObject("SELECT id FROM contact WHERE person_id = ?", String.class, person);
+        send(put("/api/v1/contacts/" + legacy),
+                Map.of("type", "reference", "value", "Legacy edited", "version", "0"), 200);
+        var old = send(post(path), Map.of("type", "reference", "value", "Old fictitious",
+                "contactedOn", "2025-01-01"), 201);
+        var recent = send(post(path), Map.of("type", "reference", "value", "Recent fictitious",
+                "contactedOn", "2026-11-05"), 201);
+        var sameDay = send(post(path), Map.of("type", "reference", "value", "Same day fictitious",
+                "contactedOn", "2026-11-05"), 201);
+        mvc.perform(get(path).session(session).param("size", "2"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(4))
+                .andExpect(jsonPath("$.items[0].id").value(recent.get("id").asText()))
+                .andExpect(jsonPath("$.items[1].id").value(sameDay.get("id").asText()));
+        mvc.perform(get(path).session(session).param("size", "2").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(old.get("id").asText()))
+                .andExpect(jsonPath("$.items[1].id").value(legacy))
+                .andExpect(jsonPath("$.items[1].contactedOn").isEmpty());
+        send(put("/api/v1/contacts/" + recent.get("id").asText()),
+                Map.of("type", "reference", "value", "Fictitious", "version", "0"), 400);
+        var changed = send(put("/api/v1/contacts/" + old.get("id").asText()),
+                Map.of("type", "reference", "value", "Updated fictitious", "version", "0",
+                        "contactedOn", "2026-12-01"), 200);
+        assertEquals("2026-12-01", changed.get("contactedOn").asText());
+        mvc.perform(get(path).session(session).param("q", "Updated"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].contactedOn").value("2026-12-01"));
+        mvc.perform(get("/api/v1/people/" + person + "/export").session(session).param("format", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contacts[?(@.contactedOn == '2026-12-01')]").isNotEmpty());
+        String csv = mvc.perform(get("/api/v1/people/" + person + "/export")
+                .session(session).param("format", "csv")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"contactedOn\""));
+        assertTrue(csv.contains("\"2026-12-01\""));
+    }
+
+    @Test
     void contactAndCareerTalkCrudAreVersionedAndCannotMovePersons() throws Exception {
         String person = person();
         var contact = send(post("/api/v1/people/" + person + "/contacts"),
-                Map.of("type", "reference", "value", "fiction"), 201);
+                Map.of("type", "reference", "value", "fiction", "contactedOn", "2026-11-05"), 201);
         String path = "/api/v1/contacts/" + contact.get("id").asText();
         var changed = send(put(path), Map.of("type", "email", "value", "fiction@example.invalid",
-                "version", contact.get("version").asText()), 200);
+                "version", contact.get("version").asText(), "contactedOn", "2026-11-05"), 200);
         send(post(path + "/archive"), Map.of("version", changed.get("version").asText()), 200);
         mvc.perform(get("/api/v1/people/" + person + "/contacts").session(session))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));

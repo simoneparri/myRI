@@ -1,0 +1,71 @@
+<h1>Notifiche</h1>
+<p>
+  Promemoria storici: completare un task o registrare un incontro non elimina notifiche
+  precedenti. I reminder vengono generati periodicamente, non occorre tenere aperta questa
+  pagina.
+</p>
+<form class="filters" (ngSubmit)="search()">
+  <mat-form-field
+    ><mat-label>Tipo notifica</mat-label
+    ><mat-select name="kind" [(ngModel)]="kind">
+      <mat-option value="">Tutti</mat-option
+      ><mat-option value="task_due">Scadenza task</mat-option>
+      <mat-option value="career_talk_due">Career talk da pianificare</mat-option>
+    </mat-select></mat-form-field
+  >
+  <mat-checkbox name="unread" [(ngModel)]="unread">Solo non lette</mat-checkbox>
+  <mat-checkbox name="archived" [(ngModel)]="archived">Includi archiviati</mat-checkbox>
+  <button mat-stroked-button [disabled]="loading() || busy()">Aggiorna notifiche</button>
+</form>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Caricamento notifiche...</p>
+} @else if (data().items.length === 0 && !error()) {
+  <p>Nessuna notifica.</p>
+}
+<ul class="timeline">
+  @for (item of data().items; track item.id) {
+    <li>
+      <strong>{{
+        item['kind'] === 'task_due'
+          ? 'Task in scadenza #' + item['taskId']
+          : 'Career talk da pianificare'
+      }}</strong>
+      <span> · {{ item['triggeredAt'] | display: 'instant' }}</span>
+      @if (item['readAt']) {
+        <span class="badge">Letta</span>
+      }
+      @if (item['archivedAt']) {
+        <span class="badge">Archiviata</span>
+      }
+      @if (item['personId']) {
+        <a mat-button [routerLink]="['/people', item['personId']]"
+          >Scheda persona #{{ item['personId'] }}</a
+        >
+      }
+      @if (item['taskId']) {
+        <button mat-button (click)="openTask(item)" [disabled]="busy()">Apri task</button>
+      }
+      @if (!item['readAt'] && !item['archivedAt']) {
+        <button mat-button (click)="mark(item, 'read')" [disabled]="busy() || loading()">
+          Segna letta
+        </button>
+      }
+      @if (!item['archivedAt']) {
+        <button mat-button (click)="mark(item, 'archive')" [disabled]="busy() || loading()">
+          Archivia notifica
+        </button>
+      }
+    </li>
+  }
+</ul>
+<mat-paginator
+  [length]="data().totalElements"
+  [pageIndex]="pageIndex"
+  [pageSize]="20"
+  (page)="paginate($event)"
+  aria-label="Paginazione notifiche"
+></mat-paginator>
+

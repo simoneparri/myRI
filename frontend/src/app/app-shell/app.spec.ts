@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { App } from './app';
-import { Auth } from './core/auth';
+import { Auth } from '../core/auth';
 
 describe('App', () => {
   it('shows navigation only for an authenticated user', async () => {

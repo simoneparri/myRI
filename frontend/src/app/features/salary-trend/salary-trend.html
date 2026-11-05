@@ -1,0 +1,54 @@
+<h2>Andamento RAL</h2>
+<p>
+  Ordine crescente per decorrenza e ID. Le decorrenze future sono indicate; nessuna conversione
+  tra valute.
+</p>
+<button mat-button (click)="load()" [disabled]="loading()">
+  <svg appButtonIcon="refresh"></svg>Aggiorna andamento
+</button>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+@if (loading()) {
+  <p role="status">Caricamento andamento...</p>
+} @else if (data().items.length === 0 && !error()) {
+  <p>Nessuna variazione RAL.</p>
+}
+<div class="table-scroll">
+  <table>
+    <caption class="sr-only">
+      Andamento cronologico della RAL
+    </caption>
+    <thead>
+      <tr>
+        <th>Decorrenza</th>
+        <th>RAL annua</th>
+        <th>Valuta</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of data().items; track item.id) {
+        <tr>
+          <td>
+            {{ item['effectiveOn'] | display: 'date' }}
+            @if (future(item)) {
+              <span class="badge">Futura</span>
+            }
+          </td>
+          <td>{{ item['amount'] | display: 'money' }}</td>
+          <td>{{ item['currency'] }}</td>
+          <td>{{ item['reason'] }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<mat-paginator
+  [length]="data().totalElements"
+  [pageIndex]="pageIndex"
+  [pageSize]="20"
+  (page)="paginate($event)"
+  aria-label="Paginazione andamento RAL"
+></mat-paginator>
+

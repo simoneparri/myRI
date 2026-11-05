@@ -33,7 +33,7 @@ const paths = {
     focusable: 'false',
     style: 'vertical-align: middle; margin-right: 6px; flex-shrink: 0',
   },
-  template: `<svg:path [attr.d]="paths[icon()]" />`,
+  templateUrl: './button-icon.html',
 })
 export class ButtonIcon {
   readonly icon = input.required<keyof typeof paths>({ alias: 'appButtonIcon' });

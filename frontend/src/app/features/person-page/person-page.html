@@ -1,0 +1,150 @@
+<a mat-button routerLink="/people"> <svg appButtonIcon="back"></svg>Torna alle persone </a>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+  <button mat-button (click)="load()"><svg appButtonIcon="refresh"></svg>Riprova</button>
+}
+@if (person(); as person) {
+  <div class="section-heading">
+    <div class="person-title">
+      <h1>{{ displayName(person) }}</h1>
+      <span class="badge">{{ person['status'] | display }}</span>
+      <h3>
+
+        @if (person['mypadId'] && mypadUrl(person); as url) {
+        <a
+          [href]="url"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Apri MyPad (nuova scheda)"
+        > MyPAD
+          {{ person['mypadId'] }} <svg appButtonIcon="external"></svg>
+        </a>
+        }
+      </h3>
+    </div>
+    @if (editable('people', person)) {
+      <button mat-stroked-button (click)="edit()" [disabled]="editing()">
+        <svg appButtonIcon="edit"></svg>Modifica
+      </button>
+    }
+  </div>
+  <dl class="person-details" aria-label="Informazioni persona">
+    @for (field of fields; track field.key) {
+      <div
+        [attr.data-field]="field.key"
+      >
+        <dt>{{ field.key === 'frameworks' ? 'Framework conosciuti' : field.label }}</dt>
+        <dd>
+           @if (field.key === 'frameworks' && frameworkList(person).length) {
+            <ul class="framework-list">
+              @for (framework of frameworkList(person); track framework) {
+                <li>
+                  <i aria-hidden="true" [class]="frameworkIconClass(framework)"></i>
+                  {{ framework }}
+                </li>
+              }
+            </ul>
+          } @else {
+            {{ person[field.key] | display: field.type }}
+          }
+          @if (field.key === 'hiredOn' && person['seniority']) {
+            ({{ person['seniority'] }})
+          }
+          @if (field.key === 'careerStartedOn' && person['careerDuration']) {
+            ({{ person['careerDuration'] }})
+          }
+        </dd>
+      </div>
+    }
+    @if (person['archivedAt']) {
+      <div class="full-width" data-field="archivedAt">
+        <dt>Archiviato</dt>
+        <dd>{{ person['archivedAt'] | display: 'instant' }}</dd>
+      </div>
+    }
+  </dl>
+  <mat-tab-group (selectedIndexChange)="$event === 0 && loadTimeline()">
+    <mat-tab label="Timeline"
+      ><ng-template matTabContent>
+        <form class="filters" (ngSubmit)="filterTimeline()">
+          <mat-form-field appearance="outline"
+            ><mat-label>Tipo evento</mat-label>
+            <mat-select name="kind" [(ngModel)]="kind">
+              <mat-option value="">Tutti</mat-option>
+              @for (value of ['salary', 'raise_request', 'career_talk', 'task']; track value) {
+                <mat-option [value]="value">{{ value | display }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox name="archived" [(ngModel)]="includeArchived"
+            >Includi archiviati</mat-checkbox
+          >
+          <button mat-stroked-button><svg appButtonIcon="filter"></svg>Applica filtri</button>
+        </form>
+        @if (timelineError()) {
+          <p role="alert" class="error">{{ timelineError() }}</p>
+        }
+        @if (loading()) {
+          <p role="status">Caricamento timeline...</p>
+        } @else if (timeline().items.length === 0 && !timelineError()) {
+          <p>Nessun evento.</p>
+        }
+        <ol class="timeline">
+          @for (event of timeline().items; track event['kind'] + ':' + event.id) {
+            <li>
+              <strong>{{ event['title'] }}</strong>
+              <span>
+                ·
+                {{
+                  event['eventDate'] || event['sortAt']
+                    | display: (event['eventDate'] ? 'date' : 'instant')
+                }}</span
+              >
+              @if (event['amount']) {
+                <span> · {{ event['amount'] | display: 'money' }} {{ event['currency'] }}</span>
+              }
+              @if (event['status']) {
+                <span> · {{ event['status'] | display }}</span>
+              }
+              @if (event['archived']) {
+                <span class="badge">Archiviato</span>
+              }
+              <span class="muted"> · {{ event['kind'] | display }} #{{ event.id }}</span>
+            </li>
+          }
+        </ol>
+        <mat-paginator
+          [length]="timeline().totalElements"
+          [pageIndex]="pageIndex"
+          [pageSize]="20"
+          (page)="paginate($event)"
+          aria-label="Paginazione timeline"
+        ></mat-paginator> </ng-template
+    ></mat-tab>
+    @for (tab of tabs; track tab.resource) {
+      <mat-tab [label]="tab.label"
+        ><ng-template matTabContent>
+          <app-resource-page [resource]="tab.resource" [personId]="id()" /> </ng-template
+      ></mat-tab>
+    }
+    <mat-tab label="Andamento RAL"
+      ><ng-template matTabContent> <app-salary-trend [personId]="id()" /> </ng-template
+    ></mat-tab>
+  </mat-tab-group>
+  <div class="export-actions">
+    <button mat-stroked-button (click)="download('json')" [disabled]="exporting()">
+      <svg appButtonIcon="download"></svg>Esporta JSON
+    </button>
+    <button mat-stroked-button (click)="download('csv')" [disabled]="exporting()">
+      <svg appButtonIcon="download"></svg>Esporta CSV
+    </button>
+  </div>
+  @if (exportError()) {
+    <p role="alert" class="error">{{ exportError() }}</p>
+  }
+  @if (exporting()) {
+    <p role="status">Preparazione export...</p>
+  }
+} @else if (!error()) {
+  <p role="status">Caricamento persona...</p>
+}

@@ -2,6 +2,13 @@
 
 ## Stato e autorizzazioni
 
+Estensione contatti autorizzata: data civile di contatto obbligatoria per i nuovi
+inserimenti, nullable per i contatti legacy senza backfill; dopo l'assegnazione
+non svuotabile. Migrazione V9 additiva e indice persona/data, DTO/API/export,
+campo data nel form e nella tab Contatti. Ordinamento server-side per data
+decrescente con null in fondo e ID crescente a parita di data, prima della
+paginazione.
+
 - Step 0 completato e approvato dall'utente, commit f8ba44d.
 - Step 1 completato e approvato dall'utente, commit 3f2a102.
 - Step 2 completato: backend con API e sicurezza.
@@ -35,11 +42,13 @@ fino alla compilazione; link MyPad in una nuova scheda, nessuna sincronizzazione
 esterna. Migrazione V6 additiva, senza riempire i nuovi campi con valori inventati
 o modificare date esistenti. Inclusi contratti API, export e UI.
 
-Su richiesta esplicita, la persona include anche un elenco libero di framework
-conosciuti vicino al ruolo. Massimo 50 nomi, massimo 100 caratteri ciascuno,
-normalizzati senza spazi esterni e senza duplicati case-insensitive; nessun
-catalogo predefinito. Migrazione V7 con array JSON vuoto per i record esistenti.
-La UI consente un framework per riga; API JSON mantiene l'array e CSV lo presenta
+Su richiesta esplicita, la persona include framework conosciuti vicino al ruolo.
+La UI usa il catalogo ufficiale Devicon v2.18.0 con selezione multipla ricercabile
+e icone; le voci gia presenti fuori catalogo restano visibili e selezionate in
+modifica, con icone quando Devicon offre una corrispondenza (Spring Boot usa
+l'icona Spring). Massimo 50 nomi, massimo 100 caratteri ciascuno, normalizzati
+senza spazi esterni e senza duplicati case-insensitive. Migrazione V7 con array
+JSON vuoto per i record esistenti. API JSON mantiene l'array e CSV lo presenta
 in una cella. Nessuna integrazione o sincronizzazione esterna.
 
 Estensione progetti autorizzata: rimuovere dalla UI manager interno/esterno e
@@ -332,3 +341,54 @@ Ogni incarico elenca file posseduti, dipendenze e condizione di stop.
 Backend e DB non scrivono contemporaneamente migrazioni/manifest.
 Un solo integratore verifica diff, test, assenza segreti e crea i commit.
 Non aggiungere release, cloud deployment o Keycloak completo allo scope iniziale.
+
+## Richiesta frontend - percentuale aumento, framework e telefono
+
+Scope richiesto: inserire la ricerca dentro il pannello della select multipla
+Framework conosciuti; rendere nere solo le icone Devicon bianche; integrare
+intl-tel-input nel campo Telefono; calcolare la percentuale di aumento in
+automatico arrotondandola per eccesso al decimo di punto percentuale.
+
+Dipendenze: per il calcolo servono la RAL base selezionata e la RAL target,
+gia disponibili nel flusso della richiesta; conservare importi/percentuali come
+stringhe decimali e non usare floating point. intl-tel-input deve essere
+integrato con risorse locali e senza geolocalizzazione o servizi esterni; non
+cambiare DTO/API o schema salvo diversa approvazione.
+
+File previsti: `frontend/package.json` e lockfile; `frontend/src/app/shared/editor/`
+(TS, HTML, eventuale SCSS e test); `frontend/src/app/shared/schema.ts`;
+`frontend/src/app/shared/framework-catalog.ts`,
+`frontend/src/app/shared/framework-catalog-data.json` e
+`frontend/scripts/generate-framework-catalog.mjs`; `frontend/src/styles.scss`;
+`frontend/e2e/people-sheet.spec.ts`; questa documentazione.
+
+Decisioni confermate dall'utente il 2026-11-04:
+- Percentuale derivata automaticamente da RAL target e RAL base selezionata,
+  arrotondata per eccesso al decimo di punto percentuale. Se la RAL target e
+  vuota, resta possibile inserire manualmente la percentuale e il backend
+  continua a calcolare la RAL target secondo il comportamento esistente.
+- intl-tel-input con Italia come paese iniziale, selettore degli altri paesi e
+  persistenza in formato internazionale E.164 per numeri validi. I valori legacy
+  non validi si mantengono in modifica finche l'utente non inserisce un numero
+  valido; nessuna geolocalizzazione o richiesta a servizi esterni.
+
+Test e criteri verificabili: ricerca accessibile dentro il pannello, filtra il
+catalogo senza perdere selezioni; icone bianche visibili in nero e le altre
+mantengono il colore; telefono con selettore paese/formattazione/validazione,
+E.164 nel payload per valori validi e preservazione legacy non validi;
+percentuale coerente con base/target e sempre arrotondata matematicamente verso
+l'alto a un decimale, incluse soglie esatte e importi decimali. Unit test,
+E2E fittizi e build frontend.
+
+Commit previsto: `feat(frontend): improve framework, phone and raise inputs`.
+Autorizzazione: implementazione frontend autorizzata dopo la conferma utente;
+nessun aggiornamento backend, schema o rilascio incluso.
+
+Esito comunicato dal frontend-dev: implementati i tre comportamenti, test unitari
+e browser mock mirati e build production riferiti superati. Vincolo rilevato:
+il backend rifiuta RAL target e percentuale arrotondata insieme quando la
+percentuale al decimo non ricostruisce la target al centesimo. Per non alterare
+la RAL scelta, il frontend invia in quel caso solo la target (percentuale null)
+e mostra l'avviso; la percentuale automatica non viene quindi persistita.
+Estendere la regola di coerenza API richiede decisione e incarico separati,
+non compresi nell'autorizzazione frontend corrente.

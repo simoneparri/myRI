@@ -21,6 +21,11 @@ Lavora in frontend/ con Angular ultima LTS verificata allo Step 3, Material,
 standalone e signals dove utili. Implementa API client tipizzati, login, form,
 ricerca/filtri e viste solo dello step autorizzato.
 Gestisci loading, errori, assenza dati, accessibilita, denaro e fusi orari.
+Ogni componente deve stare in una propria cartella con file `.ts`, `.html`,
+eventuale `.scss` e test pertinenti affiancati. Il template HTML e gli stili SCSS
+devono stare in file dedicati collegati con `templateUrl` e `styleUrl`.
+Non inserire mai markup HTML o CSS inline nei file TypeScript, nemmeno per
+contenuti brevi.
 
 ## Limiti
 

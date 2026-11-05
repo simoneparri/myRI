@@ -13,6 +13,7 @@ for (const width of [1440, 390]) {
       email: 'persona@example.test',
       phone: 'Recapito fittizio',
       role: 'Ruolo fittizio',
+      frameworks: ['Java', 'Spring Boot', 'Angular'],
       hiredOn: '2020-01-02',
       hiringLocation: 'Sede fittizia',
       residence: 'Residenza fittizia',
@@ -28,6 +29,7 @@ for (const width of [1440, 390]) {
     };
     const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
     const unexpected: string[] = [];
+    let phoneUpdates = 0;
     await page.route('**/api/v1/**', async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname.replace('/api/v1/', '');
@@ -41,8 +43,16 @@ for (const width of [1440, 390]) {
         });
       if (path === `people/${person.id}`) {
         if (request.method() === 'PUT') {
-          expect(request.postDataJSON().version).toBe('4');
-          person = { ...person, ...request.postDataJSON(), version: '5' };
+          const body = request.postDataJSON();
+          expect(body.version).toBe(person.version);
+          expect(body.phone).toBe(phoneUpdates === 0 ? 'Recapito fittizio' : '+390212345678');
+          expect(body.frameworks).toEqual(['Java', 'Spring Boot', 'Angular', 'React']);
+          phoneUpdates++;
+          person = {
+            ...person,
+            ...body,
+            version: String(Number(person.version) + 1),
+          };
         }
 
         return route.fulfill({ json: person });
@@ -56,10 +66,17 @@ for (const width of [1440, 390]) {
     const personRow = page.getByRole('row').filter({ hasText: 'persona@example.test' });
     await expect(personRow.getByRole('button', { name: 'Dettagli', exact: true })).toHaveCount(0);
     await expect(personRow.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
+    const deviconStylesheet = page.waitForResponse((response) =>
+      response.url().endsWith('/assets/devicon/devicon.min.css'),
+    );
     await personRow.getByRole('link', { name: 'Scheda', exact: true }).click();
+    expect((await deviconStylesheet).ok()).toBe(true);
     await expect(
-      page.getByRole('heading', { name: 'Persona Fittizia', exact: true }),
+      page.getByRole('heading', { name: 'Persona FITTIZIA', exact: true }),
     ).toBeVisible();
+    await expect(page.locator('.person-details dt', { hasText: /^Nome$/ })).toHaveCount(0);
+    await expect(page.locator('.person-details dt', { hasText: /^Cognome$/ })).toHaveCount(0);
+    await expect(page.locator('.person-title .badge')).toHaveText('Attiva');
     await expect(page.getByText('Orari visualizzati in Europe/Rome.')).toHaveCount(0);
     await expect(page.getByText(/Export completo della persona/)).toHaveCount(0);
     expect(
@@ -80,6 +97,46 @@ for (const width of [1440, 390]) {
       'Note fittizie',
     ]) {
       await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();
+    }
+    const frameworks = page.locator('[data-field="frameworks"]');
+    await expect(frameworks.locator('li')).toHaveText(['Java', 'Spring Boot', 'Angular']);
+    await expect(frameworks.locator('li .devicon-java-plain')).toBeVisible();
+    await expect(frameworks.locator('li .devicon-spring-original')).toBeVisible();
+    await expect(frameworks.locator('li .devicon-angular-plain')).toBeVisible();
+    await expect
+      .poll(() =>
+        frameworks
+          .locator('li .devicon-java-plain')
+          .evaluate((icon) => getComputedStyle(icon).fontFamily),
+      )
+      .toContain('devicon');
+    await expect
+      .poll(() =>
+        frameworks
+          .locator('li .devicon-angular-plain')
+          .evaluate((icon) => getComputedStyle(icon).color),
+      )
+      .toBe('rgb(0, 0, 0)');
+    expect(
+      await frameworks
+        .locator('li .devicon-java-plain')
+        .evaluate((icon) => getComputedStyle(icon).color),
+    ).not.toBe('rgb(0, 0, 0)');
+    if (width > 800) {
+      for (const fields of [
+        ['mypadId', 'email', 'phone'],
+        ['role', 'seniorityLevel', 'frameworks'],
+        ['hiredOn', 'careerStartedOn'],
+      ]) {
+        const positions = await Promise.all(
+          fields.map((field) =>
+            page
+              .locator(`[data-field="${field}"]`)
+              .evaluate((item) => item.getBoundingClientRect().top),
+          ),
+        );
+        expect(new Set(positions).size).toBe(1);
+      }
     }
     const edit = page.getByRole('button', { name: 'Modifica', exact: true });
     const icon = edit.locator('svg[aria-hidden="true"]');
@@ -115,6 +172,22 @@ for (const width of [1440, 390]) {
     );
     await dialog.getByLabel('Ruolo', { exact: true }).fill('Ruolo aggiornato');
     await dialog.getByLabel('Note', { exact: true }).fill('Note aggiornate');
+    const frameworkSelect = dialog.getByRole('combobox', {
+      name: 'Framework conosciuti',
+      exact: true,
+    });
+    await frameworkSelect.click();
+    const frameworkSearch = dialog.getByLabel('Cerca framework', { exact: true });
+    expect(
+      await frameworkSearch.evaluate((input) =>
+        Boolean(input.closest('.framework-select-panel')),
+      ),
+    ).toBe(true);
+    await frameworkSearch.fill('react');
+    await expect(page.getByRole('option', { name: 'React', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Docker', exact: true })).toHaveCount(0);
+    await page.getByRole('option', { name: 'React', exact: true }).click();
+    await frameworkSelect.press('Escape');
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
     await expect(dialog).not.toBeVisible();
     const toast = page.locator('mat-snack-bar-container');
@@ -125,10 +198,22 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByRole('definition').filter({ hasText: 'Ruolo aggiornato' }),
     ).toBeVisible();
+    await expect(page.locator('[data-field="frameworks"] li')).toHaveText([
+      'Java',
+      'Spring Boot',
+      'Angular',
+      'React',
+    ]);
     await expect(page.getByRole('definition').filter({ hasText: 'Note aggiornate' })).toBeVisible();
     await expect(page.getByRole('definition').filter({ hasText: '03/01/2020' })).toBeVisible();
     await page.getByRole('link', { name: 'Torna alle persone', exact: true }).click();
     await expect(personRow).toContainText('Ruolo aggiornato');
+    await personRow.getByRole('link', { name: 'Scheda', exact: true }).click();
+    await page.getByRole('button', { name: 'Modifica', exact: true }).click();
+    const phoneEditor = page.getByRole('dialog');
+    await phoneEditor.getByLabel('Telefono', { exact: true }).fill('02 12345678');
+    await phoneEditor.getByRole('button', { name: 'Salva', exact: true }).click();
+    await expect(phoneEditor).not.toBeVisible();
     expect(unexpected).toEqual([]);
   });
 }
@@ -172,6 +257,17 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill('Persona');
   await dialog.getByLabel('Cognome', { exact: true }).fill('Fittizia');
+  const phone = dialog.getByLabel('Telefono', { exact: true });
+  const countrySelector = dialog.locator('.iti__selected-country');
+  await expect(countrySelector).toHaveAttribute(
+    'aria-label',
+    /Italia|Italy/,
+  );
+  await countrySelector.click();
+  const unitedStates = page.locator('.iti__country-list [data-iso2="us"]');
+  await expect(unitedStates).toBeVisible();
+  await unitedStates.click();
+  await phone.fill('123');
   await dialog.getByLabel('Data di assunzione', { exact: true }).fill('02/01/2020');
   await dialog.getByLabel('Data di inizio lavoro', { exact: true }).fill('02/01/2017');
   await dialog.getByLabel('Livello di seniority', { exact: true }).click();
@@ -181,10 +277,16 @@ test('new census requires MyPad ID and saves distinct career dates and manual se
   expect(saved).toBeNull();
   await dialog.getByLabel('MyPad ID', { exact: true }).fill('fictitious-123');
   await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('alert')).toContainText('numero di telefono valido');
+  expect(saved).toBeNull();
+  await phone.fill('2025550123');
+  await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(saved).toEqual(
     expect.objectContaining({
       mypadId: 'fictitious-123',
+      phone: '+12025550123',
       hiredOn: '2020-01-02',
       careerStartedOn: '2017-01-02',
       seniorityLevel: 'senior',
@@ -249,4 +351,91 @@ test('date/time filters and editor preserve UTC when typing or choosing a date',
   await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(savedDueAt).toBe('2026-11-05T23:30:00.000Z');
+});
+
+test('raise editor calculates upward-rounded percentage and keeps manual percentage without target', async ({
+  page,
+}) => {
+  const person = {
+    id: '9',
+    version: '1',
+    firstName: 'Persona',
+    lastName: 'Fittizia',
+    status: 'active',
+  };
+  const salary = {
+    id: '11',
+    amount: '45000.00',
+    currency: 'EUR',
+    effectiveOn: '2026-01-01',
+  };
+  const requests: Record<string, unknown>[] = [];
+  const makePage = (items: unknown[]) => ({
+    items,
+    page: 0,
+    size: 20,
+    totalElements: items.length,
+    totalPages: items.length ? 1 : 0,
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.replace('/api/v1/', '');
+    if (path === 'auth/me')
+      return route.fulfill({ json: { id: '1', username: 'utente-fittizio' } });
+    if (path === 'auth/csrf')
+      return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
+    if (path === 'people')
+      return route.fulfill({ json: makePage([person]) });
+    if (path === 'people/9/salaries')
+      return route.fulfill({ json: makePage([salary]) });
+    if (path === 'raise-requests' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      requests.push(body);
+      return route.fulfill({
+        status: 201,
+        json: { id: String(100 + requests.length), version: '0', status: 'draft', ...body },
+      });
+    }
+    if (path === 'raise-requests') return route.fulfill({ json: makePage(requests) });
+    return route.fulfill({ json: makePage([]) });
+  });
+
+  await page.goto('/raise-requests');
+  async function fillRequiredFields(target: string) {
+    await page.getByRole('button', { name: 'Nuova richiesta', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Persona', { exact: true }).click();
+    await page.getByRole('option', { name: /Persona Fittizia/ }).click();
+    await dialog.getByLabel('RAL base', { exact: true }).click();
+    await page.getByRole('option', { name: /45\.000,00 EUR/ }).click();
+    await dialog.getByLabel('Data richiesta', { exact: true }).fill('04/11/2026');
+    await dialog
+      .getByLabel('RAL annua target (non incremento)', { exact: true })
+      .fill(target);
+    await dialog.getByLabel('Motivazione', { exact: true }).fill('Richiesta fittizia');
+    return dialog;
+  }
+
+  const automaticDialog = await fillRequiredFields('45250.00');
+  const automaticPercentage = automaticDialog.getByLabel('Percentuale aumento', {
+    exact: true,
+  });
+  await expect(automaticPercentage).toHaveValue('0.6');
+  await expect(automaticPercentage).toBeDisabled();
+  await expect(automaticDialog.getByText(/backend salvera solo la RAL target/)).toBeVisible();
+  await automaticDialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(automaticDialog).not.toBeVisible();
+  expect(requests[0]).toEqual(
+    expect.objectContaining({ requestedSalary: '45250.00', requestedPercentage: null }),
+  );
+
+  const manualDialog = await fillRequiredFields('');
+  const manualPercentage = manualDialog.getByLabel('Percentuale aumento', { exact: true });
+  await expect(manualPercentage).toBeEnabled();
+  await manualPercentage.fill('5.25');
+  await manualDialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(manualDialog).not.toBeVisible();
+  expect(requests[1]).toEqual(
+    expect.objectContaining({ requestedSalary: null, requestedPercentage: '5.25' }),
+  );
 });

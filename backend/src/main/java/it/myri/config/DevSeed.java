@@ -45,7 +45,7 @@ public class DevSeed {
                             "Manager fittizio", "Persona completamente fittizia.", "active", null,
                             today.minusYears(5), "medior", "dev-fictitious-ada",
                             java.util.List.of("Java", "Spring Boot")));
-                    contacts.create(person.id(), new ContactDtos.Input("reference", "Contatto fittizio", null, null));
+                    contacts.create(person.id(), new ContactDtos.Input("reference", "Contatto fittizio", null, null, today));
                     var base = salaries.create(person.id(), new SalaryDtos.Input(new BigDecimal("50000.00"),
                             "EUR", today.minusYears(1), "Tempo indeterminato", new BigDecimal("40.00"),
                             "Livello fittizio", "Dati fittizi di sviluppo", "dev-initial-salary"));

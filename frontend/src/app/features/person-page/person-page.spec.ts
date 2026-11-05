@@ -3,11 +3,11 @@ import { provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of } from 'rxjs';
-import { Api, Row } from '../core/api';
-import { Editor } from '../shared/editor';
-import { definitions } from '../shared/schema';
+import { Api, Row } from '../../core/api';
+import { Editor } from '../../shared/editor/editor';
+import { definitions } from '../../shared/schema';
 import { PersonPage } from './person-page';
-import { Toast } from '../shared/toast';
+import { Toast } from '../../shared/toast';
 
 describe('PersonPage', () => {
   const person: Row = {
@@ -63,17 +63,32 @@ describe('PersonPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     const details = element.querySelector('dl')!;
     expect([...details.querySelectorAll('dt')].map((label) => label.textContent)).toEqual([
-      ...definitions.people.fields.map((field) => field.label),
+      ...definitions.people.fields
+        .filter((field) => !['status', 'firstName', 'lastName'].includes(field.key))
+        .map((field) =>
+          field.key === 'frameworks' ? 'Framework conosciuti' : field.label,
+        ),
     ]);
+    expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
+    expect(element.querySelector('.person-title .badge')?.textContent?.trim()).toBe('Attiva');
+    expect(details.textContent).not.toContain('Nome');
+    expect(details.textContent).not.toContain('Cognome');
+    expect(
+      [...details.querySelectorAll('.framework-list li')].map((item) =>
+        item.textContent?.trim(),
+      ),
+    ).toEqual(['Java', 'Spring Boot']);
+    expect(details.querySelector('.framework-list .devicon-java-plain')).not.toBeNull();
+    expect(details.querySelector('.framework-list .devicon-spring-original')).not.toBeNull();
     for (const value of [
       'persona@example.test',
       'Recapito fittizio',
-      'Java, Spring Boot',
+      'Java',
+      'Spring Boot',
       '02/01/2020',
       'Sede fittizia',
       'Residenza fittizia',
       'Note fittizie\nSeconda riga',
-      'Attiva',
       '6 anni',
       '02/01/2017',
       '9 anni e 10 mesi',
@@ -85,7 +100,7 @@ describe('PersonPage', () => {
     expect(details.textContent).not.toContain(person.id);
     expect(details.textContent).not.toContain('Manager interno');
     expect(details.textContent).not.toContain('Manager esterno');
-    const link = details.querySelector('a')!;
+    const link = element.querySelector<HTMLAnchorElement>('.person-title a')!;
     expect(link.href).toBe('https://mypad.altengroup.com/employees/fictitious-123');
     expect(link.target).toBe('_blank');
     expect(link.rel).toBe('noopener noreferrer');

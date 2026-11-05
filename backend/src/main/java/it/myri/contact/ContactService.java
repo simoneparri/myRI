@@ -27,7 +27,7 @@ public class ContactService {
         return PageResponse.of(contacts.findAll(Queries.<Contact>visible(includeArchived)
                 .and(Queries.equal("personId", personId)).and(Queries.equal("type", type))
                 .and(Queries.text(q, "type", "value")),
-                Queries.page(page, size, sort, Set.of("id", "type", "createdAt"))), ContactDtos::view);
+                Queries.page(page, size, sort, Set.of("id", "type", "createdAt", "contactedOn"))), ContactDtos::view);
     }
 
     @Transactional(readOnly = true)
@@ -35,6 +35,9 @@ public class ContactService {
 
     public ContactDtos.View create(Long personId, ContactDtos.Input input) {
         people.requireUsable(personId);
+        if (input.contactedOn() == null) {
+            throw ApiException.invalid("La data di contatto e obbligatoria.");
+        }
         Contact contact = new Contact();
         contact.personId = personId;
         contact.initialize(clock);
@@ -47,6 +50,9 @@ public class ContactService {
         people.requireUsable(contact.personId);
         Queries.editable(contact);
         Queries.version(contact, input.version());
+        if (contact.contactedOn != null && input.contactedOn() == null) {
+            throw ApiException.invalid("La data di contatto e obbligatoria.");
+        }
         ContactDtos.apply(contact, input);
         contact.touch(clock);
         return ContactDtos.view(contacts.saveAndFlush(contact));

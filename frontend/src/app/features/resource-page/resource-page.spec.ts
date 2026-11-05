@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Api, Page, Row } from '../core/api';
+import { Api, Page, Row } from '../../core/api';
 import { ResourcePage } from './resource-page';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
-import { Toast } from '../shared/toast';
+import { Toast } from '../../shared/toast';
 
 describe('ResourcePage', () => {
   const empty: Page<Row> = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
@@ -60,6 +60,39 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('requests contacts by descending contact date on every server-side page and displays dates', async () => {
+    const fixture = await create();
+    get.mockResolvedValue({
+      ...empty,
+      totalElements: 3,
+      items: [
+        { id: '2', type: 'reference', value: 'Recent', contactedOn: '2026-11-05' },
+        { id: '1', type: 'reference', value: 'Old', contactedOn: '2025-01-01' },
+        { id: '3', type: 'reference', value: 'Legacy', contactedOn: null },
+      ],
+    });
+    fixture.componentRef.setInput('resource', 'contacts');
+    fixture.componentRef.setInput('personId', '9');
+    await fixture.whenStable();
+    expect(get).toHaveBeenLastCalledWith(
+      'people/9/contacts',
+      expect.objectContaining({ sort: 'contactedOn,desc', page: 0 }),
+    );
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Data di contatto');
+    expect(element.querySelector('tbody tr')?.textContent).toContain('05/11/2026');
+    fixture.componentInstance.q = 'reference';
+    await fixture.componentInstance.search();
+    expect(get).toHaveBeenLastCalledWith(
+      'people/9/contacts',
+      expect.objectContaining({ sort: 'contactedOn,desc', q: 'reference' }),
+    );
+    fixture.componentInstance.paginate({ pageIndex: 1, pageSize: 2, length: 3 });
+    expect(get).toHaveBeenLastCalledWith(
+      'people/9/contacts',
+      expect.objectContaining({ sort: 'contactedOn,desc', page: 1, size: 2 }),
+    );
+  });
   it('rejects invalid date filters instead of sending a normalized or malformed date', async () => {
     const fixture = await create();
     get.mockClear();
@@ -110,7 +143,8 @@ describe('ResourcePage', () => {
   it('highlights current projects, displays past projects and sends period filters to the person endpoint', async () => {
     const fixture = await create();
     get.mockResolvedValue({
-      ...empty, totalElements: 2,
+      ...empty,
+      totalElements: 2,
       items: [
         { id: '1', client: 'Cliente attuale', status: 'current', workMode: 'hybrid' },
         { id: '2', client: 'Cliente passato', status: 'past', workMode: 'remote' },
@@ -127,7 +161,10 @@ describe('ResourcePage', () => {
     expect(element.textContent).toContain('Ibrido');
     fixture.componentInstance.projectPeriod = 'past';
     await fixture.componentInstance.search();
-    expect(get).toHaveBeenLastCalledWith('people/9/projects', expect.objectContaining({ period: 'past' }));
+    expect(get).toHaveBeenLastCalledWith(
+      'people/9/projects',
+      expect.objectContaining({ period: 'past' }),
+    );
   });
   it('shows a toast only after a saved editor and not after cancellation', async () => {
     const fixture = await create();

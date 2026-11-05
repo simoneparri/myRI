@@ -61,9 +61,13 @@ class SchemaMigrationTest {
                     INSERT INTO salary (id, person_id, amount, currency, effective_on, reason)
                     VALUES (700000, 700000, 40000.12, 'EUR', '2026-01-01', 'Fictitious upgrade fixture')
                     """);
+            statement.executeUpdate("""
+                    INSERT INTO contact (id, person_id, type, value)
+                    VALUES (700000, 700000, 'reference', 'Fictitious upgrade contact')
+                    """);
         }
         Flyway flyway = flyway();
-        assertEquals(7, flyway.migrate().migrationsExecuted);
+        assertEquals(8, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -88,6 +92,10 @@ class SchemaMigrationTest {
 
     @Test
     void historyCreatedBeforeUpgradeIsPreservedAndProtected() throws SQLException {
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM contact WHERE id = 700000 AND person_id = 700000
+                  AND value = 'Fictitious upgrade contact' AND contacted_on IS NULL
+                """));
         assertEquals(1, scalar("""
                 SELECT COUNT(*) FROM person WHERE id = 700000 AND hired_on = '2026-01-01'
                   AND career_started_on IS NULL AND seniority_level IS NULL AND mypad_id IS NULL

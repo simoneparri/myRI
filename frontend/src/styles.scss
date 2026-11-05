@@ -25,6 +25,66 @@ body {
   color: #172d40;
   background: #f5f8fc;
 }
+.framework-icon {
+  margin-right: 0.4rem;
+  font-size: 1.15em;
+  vertical-align: middle;
+}
+.framework-icon.colored:is(
+    .devicon-almalinux-plain,
+    .devicon-almalinux-plain-wordmark,
+    .devicon-angular-plain,
+    .devicon-angular-plain-wordmark,
+    .devicon-datatables-original,
+    .devicon-datatables-plain,
+    .devicon-datatables-line,
+    .devicon-icinga-original-wordmark,
+    .devicon-icinga-original,
+    .devicon-jwt-plain,
+    .devicon-jwt-plain-wordmark,
+    .devicon-linear-plain,
+    .devicon-linear-plain-wordmark,
+    .devicon-love2d-plain,
+    .devicon-love2d-line,
+    .devicon-notion-plain,
+    .devicon-notion-line,
+    .devicon-odin-plain,
+    .devicon-odin-plain-wordmark,
+    .devicon-railway-original,
+    .devicon-railway-original-wordmark,
+    .devicon-railway-line,
+    .devicon-railway-line-wordmark,
+    .devicon-railway-plain,
+    .devicon-railway-plain-wordmark,
+    .devicon-svgo-plain,
+    .devicon-svgo-plain-wordmark,
+    .devicon-svgo-line,
+    .devicon-svgo-line-wordmark,
+    .devicon-terramate-original,
+    .devicon-terramate-original-wordmark,
+    .devicon-terramate-plain,
+    .devicon-terramate-plain-wordmark,
+    .devicon-typer-plain,
+    .devicon-typer-plain-wordmark,
+    .devicon-typer-line,
+    .devicon-typer-line-wordmark,
+    .devicon-yunohost-plain
+  ) {
+  color: #000;
+}
+.iti {
+  width: 100%;
+}
+.framework-search-panel {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: 0.5rem 1rem 0;
+  background: white;
+}
+.framework-search-panel mat-form-field {
+  width: 100%;
+}
 header {
   display: flex;
   align-items: center;

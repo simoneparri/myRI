@@ -13,6 +13,9 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 - Non dichiarare eseguiti comandi non eseguiti; segnalare blocchi e verifiche mancanti.
 - Non sovrascrivere modifiche altrui, fare push o azioni distruttive senza permesso.
 - Nessun commit automatico da subagent: un solo responsabile integra e committa.
+- Generazione file e comandi di sviluppo su bind mount Docker sempre con UID/GID
+  del proprietario della checkout (`--user "$(id -u):$(id -g)"`), mai come root.
+  Le build Docker su copie interne all'immagine non richiedono questa opzione.
 
 ## Stack e convenzioni
 

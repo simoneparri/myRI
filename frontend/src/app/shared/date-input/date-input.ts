@@ -60,57 +60,8 @@ export function dateInputDisplay(value: string): string {
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateInput), multi: true },
     { provide: NG_VALIDATORS, useExisting: forwardRef(() => DateInput), multi: true },
   ],
-  template: `
-    <mat-form-field appearance="outline">
-      <mat-label>{{ label() }}</mat-label>
-      <input
-        matInput
-        #manual
-        [value]="text"
-        [placeholder]="instant() ? 'gg/mm/aaaa HH:mm' : 'gg/mm/aaaa'"
-        [disabled]="disabled"
-        [required]="required()"
-        [attr.aria-invalid]="invalid"
-        [attr.aria-describedby]="invalid ? errorId : null"
-        (input)="change(manual.value)"
-        (blur)="touch()"
-      />
-      <input
-        class="sr-only"
-        tabindex="-1"
-        aria-hidden="true"
-        [matDatepicker]="picker"
-        [value]="calendarValue"
-        [disabled]="disabled"
-        (dateChange)="choose($event.value)"
-      />
-      <mat-datepicker-toggle matSuffix [for]="picker" [disabled]="disabled">
-      </mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
-    @if (invalid) {
-      <p class="date-error" role="alert" [id]="errorId">
-        {{
-          instant()
-            ? 'Data e ora non valide. Usa gg/mm/aaaa HH:mm (UTC).'
-            : 'Data non valida. Usa gg/mm/aaaa.'
-        }}
-      </p>
-    }
-  `,
-  styles: `
-    :host {
-      display: block;
-    }
-    mat-form-field {
-      width: 100%;
-    }
-    .date-error {
-      margin: 0 0 1rem;
-      color: #861919;
-      font-size: 0.85rem;
-    }
-  `,
+  templateUrl: './date-input.html',
+  styleUrl: './date-input.scss',
 })
 export class DateInput implements ControlValueAccessor, Validator {
   private static nextId = 0;

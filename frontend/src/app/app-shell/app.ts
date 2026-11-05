@@ -2,8 +2,8 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { Auth } from './core/auth';
-import { errorMessage } from './core/api';
+import { Auth } from '../core/auth';
+import { errorMessage } from '../core/api';
 
 @Component({
   selector: 'app-root',

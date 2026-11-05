@@ -84,6 +84,14 @@ Keycloak/OIDC rimane un'opzione futura, non un provider fittizio gia attivo.
 | people/{id}/salary-trend | GET | page/size, decorrenza ascendente, poi ID |
 | people/{id}/export | GET | format=json/csv (default json), attachment no-store |
 
+I DTO dei contatti includono `contactedOn`, data civile `YYYY-MM-DD` negli anni
+1000-9999, distinta dai timestamp tecnici. Obbligatoria in creazione e non
+svuotabile una volta assegnata; i contatti legacy senza data restano modificabili
+con `contactedOn: null`. Nessun backfill con date inventate.
+La lista contatti usa per default `sort=contactedOn,desc`: date piu recenti
+prima, valori null in fondo, ID crescente a parita di data, prima della
+paginazione. Il campo e incluso anche negli export JSON e CSV.
+
 DTO completi, vincoli e codici risposta in OpenAPI. Input di creazione non accetta
 ID, timestamp tecnici, archivedAt o stato esito imposto dal client.
 I mapper espliciti sono in PersonMapper e nei metodi view/apply dei DTO degli altri
