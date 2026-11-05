@@ -73,6 +73,9 @@ un container root senza bind mount scrivibili sulla checkout.
   Il campo telefono offre selezione paese con Italia predefinita e salva i
   numeri validi in E.164; numeri legacy non validi restano invariati durante
   la modifica finche non viene inserito un numero valido.
+  Nei dialog l'etichetta del telefono resta sopra il campo, separata dal
+  selettore paese; lo spazio superiore del form preserva l'etichetta del primo
+  input anche quando riceve automaticamente il focus.
   Manager interno/esterno non sono piu mostrati o modificabili; gli eventuali
   valori legacy sono preservati durante le modifiche della persona.
   La nuova tab Progetti gestisce cliente, date da/a facoltative, BM di riferimento,

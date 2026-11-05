@@ -62,7 +62,7 @@
           }
         </mat-form-field>
       } @else {
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" [floatLabel]="field.key === 'phone' ? 'always' : 'auto'">
           <mat-label>{{ field.label }}</mat-label>
           @if (field.reference || field.type === 'select') {
             <mat-select [formControlName]="field.key" [required]="!!field.required">
