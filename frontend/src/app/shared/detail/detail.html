@@ -4,13 +4,15 @@
     @for (field of data.definition.fields; track field.key) {
       <dt>{{ field.label }}</dt>
       <dd>
-        {{
-          data.row[field.key]
-            | display
-              : (field.key === 'amount' || field.key === 'requestedSalary'
-                  ? 'money'
-                  : field.type)
-        }}
+        @if (field.key === 'requestedPercentage') {
+          {{ data.row[field.key] | percentage: 'points' }}
+        } @else {
+          {{
+            data.row[field.key]
+              | display
+                : (field.key === 'amount' || field.key === 'requestedSalary' ? 'money' : field.type)
+          }}
+        }
       </dd>
     }
     <dt>ID</dt>
@@ -52,4 +54,3 @@
 <mat-dialog-actions>
   <button mat-button mat-dialog-close><svg appButtonIcon="close"></svg>Chiudi</button>
 </mat-dialog-actions>
-

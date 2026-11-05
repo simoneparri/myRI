@@ -18,6 +18,7 @@ import { italianPaginator } from '../../shared/paginator';
 import { ButtonIcon } from '../../shared/button-icon/button-icon';
 import { DateInput, dateInputDisplay, parseDateInput } from '../../shared/date-input/date-input';
 import { Toast } from '../../shared/toast';
+import { PercentagePipe } from '../../shared/percentage';
 
 @Component({
   selector: 'app-resource-page',
@@ -31,6 +32,7 @@ import { Toast } from '../../shared/toast';
     MatPaginatorModule,
     MatSelectModule,
     DisplayPipe,
+    PercentagePipe,
     ButtonIcon,
     DateInput,
   ],

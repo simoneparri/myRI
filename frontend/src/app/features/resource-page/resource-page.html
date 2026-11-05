@@ -155,7 +155,9 @@
                   {{
                     column.key === 'personId'
                       ? personName(row[column.key])
-                      : (row[column.key] | display: column.type)
+                      : column.type === 'percentage'
+                        ? (row[column.key] | percentage: 'points')
+                        : (row[column.key] | display: column.type)
                   }}
                   @if ($first && row['archivedAt']) {
                     <span class="badge">Archiviato</span>
@@ -264,4 +266,3 @@
     aria-label="Paginazione"
   ></mat-paginator>
 </section>
-

@@ -60,6 +60,18 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('formats raise percentages in points without changing salary formatting', async () => {
+    const fixture = await create();
+    get.mockResolvedValue({
+      ...empty,
+      items: [{ id: '1', requestedPercentage: '5.8', requestedSalary: '45000.50' }],
+    });
+    fixture.componentRef.setInput('resource', 'raise-requests');
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('tbody')?.textContent).toContain('5,80%');
+    expect(element.querySelector('tbody')?.textContent).toContain('45.000,50');
+  });
   it('requests contacts by descending contact date on every server-side page and displays dates', async () => {
     const fixture = await create();
     get.mockResolvedValue({

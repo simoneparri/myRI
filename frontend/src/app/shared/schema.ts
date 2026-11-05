@@ -214,7 +214,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'personId', label: 'Persona' },
       { key: 'requestedOn', label: 'Richiesta', type: 'date' },
       { key: 'requestedSalary', label: 'RAL target', type: 'money' },
-      { key: 'requestedPercentage', label: '%', type: 'decimal' },
+      { key: 'requestedPercentage', label: '%', type: 'percentage' },
       { key: 'currency', label: 'Valuta' },
       { key: 'status', label: 'Stato' },
     ],

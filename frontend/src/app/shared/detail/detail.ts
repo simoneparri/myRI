@@ -5,9 +5,10 @@ import { Row } from '../../core/api';
 import { DisplayPipe } from '../format';
 import { Definition } from '../schema';
 import { ButtonIcon } from '../button-icon/button-icon';
+import { PercentagePipe } from '../percentage';
 
 @Component({
-  imports: [MatDialogModule, MatButtonModule, DisplayPipe, ButtonIcon],
+  imports: [MatDialogModule, MatButtonModule, DisplayPipe, PercentagePipe, ButtonIcon],
   templateUrl: './detail.html',
 })
 export class Detail {

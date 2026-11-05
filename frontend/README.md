@@ -54,6 +54,10 @@ un container root senza bind mount scrivibili sulla checkout.
 
 ## Funzioni e contratti
 
+- Pipe `percentage` per formato italiano con due decimali: frazione `0.058`
+  visualizzata come `5,80%`. Liste e dettagli degli aumenti usano esplicitamente
+  la modalita `points`: DB/API e form conservano `5.8` per indicare `5,80%`,
+  senza conversioni dei dati persistiti o modifiche ai calcoli.
 - Login, logout e sessione server HttpOnly; token CSRF solo in memoria.
   Nessun token o dato personale in localStorage/sessionStorage, log o telemetria.
 - Persone e scheda con data di assunzione e data di inizio carriera distinte,
