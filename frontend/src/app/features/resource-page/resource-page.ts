@@ -1,6 +1,5 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,13 +18,14 @@ import { ButtonIcon } from '../../shared/button-icon/button-icon';
 import { DateInput, dateInputDisplay, parseDateInput } from '../../shared/date-input/date-input';
 import { Toast } from '../../shared/toast';
 import { PercentagePipe } from '../../shared/percentage';
+import { BenefitIcons } from '../../shared/benefit-icons/benefit-icons';
+import { RowActions, RowAction } from '../../shared/row-actions/row-actions';
 
 @Component({
   selector: 'app-resource-page',
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   imports: [
     FormsModule,
-    RouterLink,
     MatButtonModule,
     MatCheckboxModule,
     MatInputModule,
@@ -35,6 +35,8 @@ import { PercentagePipe } from '../../shared/percentage';
     PercentagePipe,
     ButtonIcon,
     DateInput,
+    BenefitIcons,
+    RowActions,
   ],
   templateUrl: './resource-page.html',
   styleUrl: './resource-page.scss',
@@ -193,6 +195,40 @@ export class ResourcePage {
       width: '680px',
       maxWidth: '95vw',
     });
+  }
+  actionsFor(row: Row): RowAction[] {
+    const actions: RowAction[] =
+      this.resource() === 'people'
+        ? [{ key: 'sheet', label: 'Scheda', icon: 'person', link: ['/people', row.id] }]
+        : [{ key: 'detail', label: 'Dettagli', icon: 'detail' }];
+    if (this.resource() !== 'people' && this.editable(this.resource(), row))
+      actions.push({ key: 'edit', label: 'Modifica', icon: 'edit' });
+    if (row['archivedAt'] || this.resource() === 'salaries') return actions;
+    if (this.resource() === 'raise-requests') {
+      if (row['status'] === 'draft') actions.push({ key: 'submit', label: 'Invia', icon: 'send' });
+      if (row['status'] === 'postponed')
+        actions.push({ key: 'reopen', label: 'Riapri', icon: 'refresh' });
+      if (row['status'] === 'submitted')
+        actions.push(
+          { key: 'approve', label: 'Approva', icon: 'check' },
+          { key: 'reject', label: 'Rifiuta', icon: 'close' },
+          { key: 'postpone', label: 'Rimanda', icon: 'clock' },
+        );
+    }
+    if (this.resource() === 'tasks' && this.editable(this.resource(), row))
+      actions.push(
+        { key: 'complete', label: 'Completa', icon: 'check' },
+        { key: 'cancel', label: 'Annulla task', icon: 'close' },
+      );
+    actions.push({ key: 'archive', label: 'Archivia', icon: 'archive' });
+    return actions;
+  }
+  runAction(row: Row, action: string): void {
+    if (action === 'detail') this.details(row);
+    else if (action === 'edit') void this.edit(row);
+    else if (action === 'approve' || action === 'reject' || action === 'postpone')
+      void this.decision(row, action);
+    else void this.command(row, action);
   }
   async edit(row?: Row): Promise<void> {
     const data: EditorData = {

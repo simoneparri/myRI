@@ -56,7 +56,8 @@ for (const width of [1440, 390]) {
     await expect(dialog).not.toBeVisible();
     const row = page.getByRole('row').filter({ hasText: 'Nuovo cliente fittizio' });
     await expect(row).toHaveClass(/current-project/);
-    await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+    await row.getByRole('button', { name: 'Azioni', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Modifica', exact: true }).click();
     await dialog.getByLabel('Cliente', { exact: true }).fill('Cliente aggiornato');
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
     await expect(dialog).not.toBeVisible();

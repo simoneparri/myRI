@@ -4,10 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { Auth } from '../core/auth';
 import { errorMessage } from '../core/api';
+import { NotificationBell } from '../shared/notification-bell/notification-bell';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, NotificationBell],
   templateUrl: './app.html',
 })
 export class App {

@@ -15,7 +15,8 @@ public final class RaiseDtos {
             @NotNull LocalDate requestedOn,
             @DecimalMin("0.01") @Digits(integer = 10, fraction = 2) BigDecimal requestedSalary,
             @DecimalMin("0.0001") @Digits(integer = 5, fraction = 4) BigDecimal requestedPercentage,
-            @NotBlank @Size(max = 10000) String motivation, @PositiveOrZero Long version) {}
+            @NotBlank @Size(max = 10000) String motivation, @PositiveOrZero Long version,
+            @Valid SalaryDtos.Benefits benefits) {}
 
     public record Outcome(@NotNull @PositiveOrZero Long version, @NotNull LocalDate outcomeOn,
             @Size(max = 10000) String outcomeNotes, @NotNull Boolean createSalary, LocalDate effectiveOn,
@@ -28,12 +29,24 @@ public final class RaiseDtos {
     public record View(Long id, Long personId, Long baseSalaryId, String currency, LocalDate requestedOn,
             BigDecimal requestedSalary, BigDecimal requestedPercentage, String motivation, String status,
             LocalDate outcomeOn, String outcomeNotes, Long salaryId, Instant archivedAt,
-            Instant createdAt, Instant updatedAt, Long version) {}
+            Instant createdAt, Instant updatedAt, Long version, SalaryDtos.Benefits benefits) {}
 
     public static View view(RaiseRequest r, Long salaryId) {
         return new View(r.id, r.personId, r.baseSalaryId, r.currency, r.requestedOn, r.requestedSalary,
                 r.requestedPercentage, r.motivation, r.status, r.outcomeOn, r.outcomeNotes, salaryId,
-                r.archivedAt, r.createdAt, r.updatedAt, r.version);
+                r.archivedAt, r.createdAt, r.updatedAt, r.version, benefits(r));
+    }
+
+    public static SalaryDtos.Benefits benefits(RaiseRequest r) {
+        return r.benefitsSpecified
+                ? new SalaryDtos.Benefits(r.mealVouchers, r.bonusLetterAmount, r.companyCar) : null;
+    }
+
+    public static void applyBenefits(RaiseRequest r, SalaryDtos.Benefits benefits) {
+        r.benefitsSpecified = true;
+        r.mealVouchers = benefits.mealVouchers();
+        r.bonusLetterAmount = benefits.bonusLetterAmount();
+        r.companyCar = benefits.companyCar();
     }
 
     public static void apply(RaiseRequest r, Input input) {
@@ -43,5 +56,6 @@ public final class RaiseDtos {
         r.requestedSalary = input.requestedSalary();
         r.requestedPercentage = input.requestedPercentage();
         r.motivation = input.motivation();
+        if (input.benefits() != null) applyBenefits(r, input.benefits());
     }
 }

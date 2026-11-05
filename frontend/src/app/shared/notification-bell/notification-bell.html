@@ -1,0 +1,41 @@
+<button
+  mat-icon-button
+  [matMenuTriggerFor]="notifications"
+  (menuOpened)="inbox.refresh()"
+  [attr.aria-label]="
+    inbox.error()
+      ? 'Notifiche non disponibili'
+      : 'Notifiche non lette: ' + (inbox.count() ?? 'caricamento')
+  "
+  [matBadge]="inbox.error() ? '!' : inbox.count()"
+  [matBadgeHidden]="!inbox.error() && !inbox.count()"
+>
+  <svg appButtonIcon="bell"></svg>
+</button>
+<mat-menu #notifications="matMenu" class="notification-menu" aria-label="Notifiche non lette">
+  <span class="notification-menu-heading">Notifiche non lette</span>
+  @if (inbox.loading()) {
+    <p role="status">Caricamento notifiche...</p>
+  }
+  @if (inbox.error()) {
+    <p role="alert" class="error">{{ inbox.error() }}</p>
+    <button mat-menu-item (click)="$event.stopPropagation(); inbox.refresh()">
+      <svg appButtonIcon="refresh"></svg>Riprova
+    </button>
+  } @else if (inbox.count() === 0) {
+    <p>Nessuna notifica non letta.</p>
+  }
+  @for (item of inbox.items(); track item.id) {
+    <a mat-menu-item routerLink="/notifications" [queryParams]="{ unread: true }">
+      <svg appButtonIcon="bell"></svg>{{ title(item) }} ·
+      {{ item['triggeredAt'] | display: 'instant' }}
+    </a>
+  }
+  @if ((inbox.count() ?? 0) > inbox.items().length) {
+    <p>Mostrate {{ inbox.items().length }} di {{ inbox.count() }} notifiche non lette.</p>
+  }
+  <a mat-menu-item routerLink="/notifications" [queryParams]="{ unread: true }"
+    >Vedi tutte le non lette</a
+  >
+  <a mat-menu-item routerLink="/notifications">Tutte le notifiche</a>
+</mat-menu>

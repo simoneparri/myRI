@@ -28,6 +28,10 @@ async function confirm(page: Page) {
   await page.getByRole('dialog').getByRole('button', { name: 'Conferma', exact: true }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
 }
+async function rowAction(row: Locator, label: string) {
+  await row.getByRole('button', { name: 'Azioni', exact: true }).click();
+  await row.page().getByRole('menuitem', { name: label, exact: true }).click();
+}
 
 test('real session, CRUD, immutable salary, raise approval, recurrence, timeline and logout', async ({
   page,
@@ -61,7 +65,7 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await expect(row).toBeVisible();
   await expect(row.getByRole('button', { name: 'Dettagli', exact: true })).toHaveCount(0);
   await expect(row.getByRole('button', { name: 'Modifica', exact: true })).toHaveCount(0);
-  await row.getByRole('link', { name: 'Scheda', exact: true }).click();
+  await rowAction(row, 'Scheda');
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
@@ -89,14 +93,14 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Recapito o riferimento').fill('fittizio.test');
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'fittizio.test' });
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rowAction(row, 'Modifica');
   await page.getByRole('dialog').getByLabel('Note', { exact: true }).fill('Nota fittizia');
   await save(page);
   await expect(row).toContainText('Nota fittizia');
-  await row.getByRole('button', { name: 'Dettagli', exact: true }).click();
+  await rowAction(row, 'Dettagli');
   await expect(page.getByRole('dialog')).toContainText('Nota fittizia');
   await page.getByRole('dialog').getByRole('button', { name: 'Chiudi', exact: true }).click();
-  await row.getByRole('button', { name: 'Archivia', exact: true }).click();
+  await rowAction(row, 'Archivia');
   await confirm(page);
   await expect(row).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
@@ -131,17 +135,17 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Motivazione', { exact: true }).fill('Percorso fittizio');
   await save(page);
   row = page.getByRole('row').filter({ hasText: '48.000,00' });
-  await row.getByRole('button', { name: 'Invia', exact: true }).click();
+  await rowAction(row, 'Invia');
   await confirm(page);
   await expect(row).toContainText('Inviata');
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rowAction(row, 'Modifica');
   await page
     .getByRole('dialog')
     .getByLabel('Motivazione', { exact: true })
     .fill('Trattativa fittizia aggiornata');
   await save(page);
   await expect(row).toContainText('Inviata');
-  await row.getByRole('button', { name: 'Approva', exact: true }).click();
+  await rowAction(row, 'Approva');
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Data esito', { exact: true }).fill('02/11/2026');
   await choose(dialog, 'Generare nuova RAL?', 'Si');
@@ -163,7 +167,7 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await dialog.getByLabel('Argomenti', { exact: true }).fill('Crescita fittizia');
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'Crescita fittizia' });
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rowAction(row, 'Modifica');
   await page.getByRole('dialog').getByLabel('Prossimi passi').fill('Prossimi passi fittizi');
   await save(page);
   await expect(row).toContainText('15/10/2026');
@@ -178,21 +182,21 @@ test('real session, CRUD, immutable salary, raise approval, recurrence, timeline
   await choose(dialog, 'Career talk collegato', /15\/10\/2026/);
   await save(page);
   row = page.getByRole('row').filter({ hasText: 'Follow-up ' + suffix });
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rowAction(row, 'Modifica');
   await page
     .getByRole('dialog')
     .getByLabel('Descrizione', { exact: true })
     .fill('Azione fittizia aggiornata');
   await save(page);
-  await row.getByRole('button', { name: 'Completa', exact: true }).click();
+  await rowAction(row, 'Completa');
   await confirm(page);
   await expect(page.getByRole('row').filter({ hasText: 'Follow-up ' + suffix })).toHaveCount(2);
   await expect(page.getByRole('row').filter({ hasText: 'Completato' })).toHaveCount(1);
   const successor = page
     .getByRole('row')
     .filter({ hasText: 'Follow-up ' + suffix })
-    .filter({ has: page.getByRole('button', { name: 'Annulla task', exact: true }) });
-  await successor.getByRole('button', { name: 'Annulla task', exact: true }).click();
+    .filter({ hasNotText: 'Completato' });
+  await rowAction(successor, 'Annulla task');
   await confirm(page);
   await expect(page.getByRole('row').filter({ hasText: 'Annullato' })).toHaveCount(1);
 
@@ -255,7 +259,7 @@ test('conflicts stay visible without replaying or discarding form values', async
   await dialog.getByLabel('Titolo', { exact: true }).fill(title);
   await save(page);
   const row = page.getByRole('row').filter({ hasText: title });
-  await row.getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rowAction(row, 'Modifica');
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Descrizione', { exact: true }).fill('Modifica locale non persa');
   let requests = 0;
@@ -298,11 +302,7 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await save(page);
   await page.getByLabel('Cerca', { exact: true }).fill(firstName);
   await page.getByRole('button', { name: 'Applica filtri', exact: true }).click();
-  await page
-    .getByRole('row')
-    .filter({ hasText: firstName })
-    .getByRole('link', { name: 'Scheda', exact: true })
-    .click();
+  await rowAction(page.getByRole('row').filter({ hasText: firstName }), 'Scheda');
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
@@ -368,21 +368,21 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await expect(page.getByLabel('Cerca', { exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: 'Notifiche', exact: true }).click();
   const notification = page
-    .locator('li')
-    .filter({ has: page.locator(`a[href="${personPath}"]`) })
+    .locator('.timeline > li')
+    .filter({ hasText: new RegExp(`Persona #${personPath.split('/').at(-1)}\\b`) })
     .filter({ hasText: 'Career talk da pianificare' });
   await expect(async () => {
     await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
     await expect(notification).toBeVisible();
   }).toPass({ timeout: 20000, intervals: [1000] });
-  await notification.getByRole('button', { name: 'Segna letta', exact: true }).click();
+  await rowAction(notification, 'Segna letta');
   await expect(notification).toContainText('Letta');
-  await notification.getByRole('button', { name: 'Archivia notifica', exact: true }).click();
+  await rowAction(notification, 'Archivia notifica');
   await expect(notification).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
   await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
   await expect(notification).toContainText('Archiviata');
   const taskNotification = page.locator('li').filter({ hasText: 'Task in scadenza #' }).first();
-  await taskNotification.getByRole('button', { name: 'Apri task', exact: true }).click();
+  await rowAction(taskNotification, 'Apri task');
   await expect(page.getByRole('dialog')).toBeVisible();
 });

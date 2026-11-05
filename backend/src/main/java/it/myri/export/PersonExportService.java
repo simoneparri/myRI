@@ -93,6 +93,7 @@ public class PersonExportService {
         return csv.toString();
     }
     private static String csvValue(JsonNode value) {
+        if (value.isObject()) return value.toString();
         if (!value.isArray()) return value.asText();
         StringJoiner items = new StringJoiner(", ");
         value.forEach(item -> items.add(item.asText()));

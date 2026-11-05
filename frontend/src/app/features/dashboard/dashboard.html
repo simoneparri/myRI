@@ -11,15 +11,7 @@
   <div class="dashboard-grid">
     <mat-card
       ><mat-card-content
-        ><h2>Task oggi: {{ summary.todayTasks }}</h2>
-        <a mat-button routerLink="/tasks" [queryParams]="{ view: 'today' }"
-          >Vedi oggi</a
-        ></mat-card-content
-      ></mat-card
-    >
-    <mat-card
-      ><mat-card-content
-        ><h2>Scaduti: {{ summary.overdueTasks }}</h2>
+        ><h2><svg appButtonIcon="warning"></svg>Scaduti: {{ summary.overdueTasks }}</h2>
         <a mat-button routerLink="/tasks" [queryParams]="{ view: 'overdue' }"
           >Vedi scaduti</a
         ></mat-card-content
@@ -27,7 +19,16 @@
     >
     <mat-card
       ><mat-card-content
-        ><h2>Prossimi 7 giorni: {{ summary.nextSevenTasks }}</h2>
+        ><h2><svg appButtonIcon="calendar"></svg>Task oggi: {{ summary.todayTasks }}</h2>
+        <a mat-button routerLink="/tasks" [queryParams]="{ view: 'today' }"
+          >Vedi oggi</a
+        ></mat-card-content
+      ></mat-card
+    >
+
+    <mat-card
+      ><mat-card-content
+        ><h2><svg appButtonIcon="clock"></svg>Prossimi 7 giorni: {{ summary.nextSevenTasks }}</h2>
         <a mat-button routerLink="/tasks" [queryParams]="{ view: 'next7' }"
           >Vedi prossimi 7 giorni</a
         ></mat-card-content
@@ -35,15 +36,19 @@
     >
     <mat-card
       ><mat-card-content
-        ><h2>Aumenti aperti: {{ summary.openRaiseRequests }}</h2>
+        ><h2><svg appButtonIcon="trend"></svg>Aumenti aperti: {{ summary.openRaiseRequests }}</h2>
         <p>Bozze, inviate e rimandate non archiviate.</p>
         <a mat-button routerLink="/raise-requests">Vedi aumenti</a></mat-card-content
       ></mat-card
     >
     <mat-card
       ><mat-card-content
-        ><h2>Notifiche non lette: {{ summary.unreadNotifications }}</h2>
-        <a mat-button routerLink="/notifications">Vedi notifiche</a></mat-card-content
+        ><h2>
+          <svg appButtonIcon="bell"></svg>Notifiche non lette: {{ summary.unreadNotifications }}
+        </h2>
+        <a mat-button routerLink="/notifications" [queryParams]="{ unread: true }"
+          >Vedi notifiche</a
+        ></mat-card-content
       ></mat-card
     >
   </div>

@@ -18,4 +18,8 @@ public class RaiseRequest extends MutableEntity {
     public String status;
     public LocalDate outcomeOn;
     @Column(columnDefinition = "text") public String outcomeNotes;
+    public boolean benefitsSpecified;
+    public Boolean mealVouchers;
+    @Column(precision = 12, scale = 2) public BigDecimal bonusLetterAmount;
+    public Boolean companyCar;
 }

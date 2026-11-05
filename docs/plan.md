@@ -2,10 +2,19 @@
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: proposte Benefit persistite sulle richieste di aumento
+in bozza/inviate, inizializzate dalla RAL base e applicate alla nuova RAL in
+approvazione, con override esplicito e senza modificare lo storico. V13 mantiene
+distinte le richieste legacy senza proposta e il gruppo intenzionalmente vuoto.
+Rifiniture UI autorizzate: una colonna Benefit a icone (anche No e zero), menu
+per righe con piu azioni, icone sulle card dashboard e campanella nell'header
+con contatore e pannello delle non lette, senza lettura implicita. Scaduti resta
+la prima card, senza blocchi duplicati. Nessun deploy o riavvio implicito.
+
 Estensione RAL autorizzata: gruppo Benefit con buoni pasto e auto booleani
 nullable, lettera di bonus come importo EUR facoltativo non negativo (zero ammesso).
 Migrazione V12 additiva senza backfill; ogni voce RAL resta append-only.
-Le RAL generate da aumento ereditano i benefit dalla base, con possibilita di
+Le RAL generate da aumento applicano la proposta (la base solo per legacy), con possibilita di
 aggiungerli, modificarli o svuotarli solo sulla nuova voce prima dell'approvazione.
 API, export e UI mantengono distinti non specificato, No e zero.
 

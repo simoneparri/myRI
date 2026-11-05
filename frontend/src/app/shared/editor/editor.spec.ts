@@ -564,6 +564,98 @@ describe('Editor', () => {
     expect(editor.referencesFailed()).toBe(true);
     expect(editor.error()).not.toBe('');
   });
+  it('prefills new proposals on base changes and saves one nested benefit object', async () => {
+    const editor = create({ resource: 'raise-requests', path: 'raise-requests', personId: '1' }, [
+      {
+        id: '3',
+        personId: '1',
+        amount: '50000',
+        mealVouchers: true,
+        bonusLetterAmount: '1000.00',
+        companyCar: false,
+      },
+      {
+        id: '4',
+        personId: '1',
+        amount: '50000',
+        mealVouchers: false,
+        bonusLetterAmount: '0.00',
+        companyCar: true,
+      },
+    ]);
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    editor.form.controls['baseSalaryId'].setValue('3');
+    expect(editor.form.controls['bonusLetterAmount'].value).toBe('1000.00');
+    expect(editor.form.controls['companyCar'].value).toBe('false');
+    editor.form.controls['baseSalaryId'].setValue('4');
+    expect(editor.form.controls['bonusLetterAmount'].value).toBe('0.00');
+    expect(editor.form.controls['mealVouchers'].value).toBe('false');
+    editor.form.patchValue({
+      requestedOn: '2026-01-01',
+      requestedSalary: '55000.00',
+      motivation: 'Fittizia',
+      mealVouchers: '',
+      companyCar: '',
+    });
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenLastCalledWith(
+      'raise-requests',
+      expect.objectContaining({
+        benefits: { mealVouchers: null, bonusLetterAmount: '0.00', companyCar: null },
+      }),
+    );
+    expect(post.mock.lastCall?.[1]['mealVouchers']).toBeUndefined();
+  });
+  it('preserves an explicitly cleared saved proposal rather than replacing it with base benefits', async () => {
+    const editor = create(
+      {
+        resource: 'raise-requests',
+        path: 'raise-requests',
+        command: 'approve',
+        row: {
+          id: '2',
+          version: '4',
+          personId: '1',
+          baseSalaryId: '3',
+          benefits: { mealVouchers: null, bonusLetterAmount: null, companyCar: null },
+        },
+      },
+      [{ id: '3', mealVouchers: true, bonusLetterAmount: '1000.00', companyCar: true }],
+    );
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    expect(choices).not.toHaveBeenCalled();
+    expect(editor.form.controls['mealVouchers'].value).toBe('');
+    expect(editor.form.controls['bonusLetterAmount'].value).toBe('');
+    editor.form.patchValue({ createSalary: 'true', effectiveOn: '2026-12-01' });
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenLastCalledWith(
+      'raise-requests/2/approve',
+      expect.objectContaining({
+        benefits: { mealVouchers: null, bonusLetterAmount: null, companyCar: null },
+      }),
+    );
+  });
+  it('does not load benefit controls for a legacy rejection', async () => {
+    const editor = create({
+      resource: 'raise-requests',
+      path: 'raise-requests',
+      command: 'reject',
+      row: { id: '2', version: '4', personId: '1', baseSalaryId: '3' },
+    });
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    expect(editor.error()).toBe('');
+    expect(choices).not.toHaveBeenCalled();
+    post.mockResolvedValue({});
+    await editor.save();
+    expect(post).toHaveBeenLastCalledWith(
+      'raise-requests/2/reject',
+      expect.not.objectContaining({
+        benefits: expect.anything(),
+      }),
+    );
+  });
   it('requires explicit salary decision and consistent effective date on approval', async () => {
     const editor = create({
       resource: 'raise-requests',

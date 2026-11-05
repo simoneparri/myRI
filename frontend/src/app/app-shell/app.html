@@ -11,6 +11,9 @@
       <a mat-button routerLink="/notifications" routerLinkActive="selected">Notifiche</a>
     </nav>
     <span class="user">{{ auth.user()?.username }}</span>
+    @defer (on immediate) {
+      <app-notification-bell />
+    }
     <button mat-button (click)="logout()" [disabled]="busy()">Esci</button>
   }
 </header>

@@ -1,0 +1,11 @@
+:host {
+  display: inline-flex;
+  gap: 0.75rem;
+}
+span[role='img'] {
+  display: inline-flex;
+  align-items: center;
+}
+.negative {
+  color: var(--mat-sys-error);
+}

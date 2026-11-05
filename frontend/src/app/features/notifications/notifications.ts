@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -11,16 +12,18 @@ import { italianPaginator } from '../../shared/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { Detail } from '../../shared/detail/detail';
 import { definitions } from '../../shared/schema';
+import { NotificationInbox, notificationTitle } from '../../core/notification-inbox';
+import { RowActions, RowAction } from '../../shared/row-actions/row-actions';
 
 @Component({
   imports: [
     FormsModule,
-    RouterLink,
     MatButtonModule,
     MatCheckboxModule,
     MatPaginatorModule,
     MatSelectModule,
     DisplayPipe,
+    RowActions,
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   templateUrl: './notifications.html',
@@ -28,6 +31,8 @@ import { definitions } from '../../shared/schema';
 export class Notifications {
   private readonly api = inject(Api);
   private readonly dialogs = inject(MatDialog);
+  private readonly inbox = inject(NotificationInbox);
+  readonly title = notificationTitle;
   readonly data = signal<Page<Row>>({
     items: [],
     page: 0,
@@ -45,7 +50,32 @@ export class Notifications {
   private query: Record<string, string | boolean> = {};
   private generation = 0;
   constructor() {
-    void this.load();
+    inject(ActivatedRoute)
+      .queryParamMap.pipe(takeUntilDestroyed())
+      .subscribe((params) => {
+        this.unread = params.get('unread') === 'true';
+        this.search();
+      });
+  }
+  actionsFor(item: Row): RowAction[] {
+    const actions: RowAction[] = [];
+    if (item['personId'])
+      actions.push({
+        key: 'person',
+        label: `Scheda persona #${item['personId']}`,
+        icon: 'person',
+        link: ['/people', String(item['personId'])],
+      });
+    if (item['taskId']) actions.push({ key: 'task', label: 'Apri task', icon: 'detail' });
+    if (!item['readAt'] && !item['archivedAt'])
+      actions.push({ key: 'read', label: 'Segna letta', icon: 'check' });
+    if (!item['archivedAt'])
+      actions.push({ key: 'archive', label: 'Archivia notifica', icon: 'archive' });
+    return actions;
+  }
+  runAction(item: Row, action: string): void {
+    if (action === 'task') void this.openTask(item);
+    else if (action === 'read' || action === 'archive') void this.mark(item, action);
   }
   async openTask(item: Row): Promise<void> {
     this.busy.set(true);
@@ -106,6 +136,7 @@ export class Notifications {
     this.error.set('');
     try {
       await this.api.post(`notifications/${item.id}/${command}`, { version: item.version ?? null });
+      void this.inbox.refresh();
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

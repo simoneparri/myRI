@@ -22,7 +22,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Api, Payload, Row, errorMessage } from '../../core/api';
+import { Api, BenefitValues, Payload, Row, errorMessage } from '../../core/api';
 import { DisplayPipe, TIMEZONE, calendarDate, moneyDisplay, personLabel } from '../format';
 import { Field, Option, Resource, definitions, newLabel, salaryBenefitFields } from '../schema';
 import { ButtonIcon } from '../button-icon/button-icon';
@@ -223,6 +223,8 @@ export class Editor implements AfterViewInit, OnDestroy {
   readonly referencesFailed = signal(false);
   readonly options = signal<Record<string, Option[]>>({});
   readonly baseSalaryAmounts = signal<Record<string, string>>({});
+  private readonly baseSalaries = signal<Record<string, Row>>({});
+  private readonly hasProposal = !!this.data.row?.['benefits'];
   readonly frameworkOptions = deviconFrameworkOptions;
   frameworkSearch = '';
   @ViewChild('phoneInput') private phoneInputElement?: ElementRef<HTMLInputElement>;
@@ -262,7 +264,10 @@ export class Editor implements AfterViewInit, OnDestroy {
     if (this.fields.some((field) => field.type === 'framework-multiselect'))
       this.frameworkIcons.load();
     for (const field of this.fields) {
-      const current = this.data.row?.[field.key];
+      const current =
+        field.group === 'Benefit' && this.hasProposal
+          ? this.proposedBenefits()?.[field.key as keyof BenefitValues]
+          : this.data.row?.[field.key];
       let value =
         field.key === 'frameworks' && Array.isArray(current)
           ? current.join('\n')
@@ -301,6 +306,11 @@ export class Editor implements AfterViewInit, OnDestroy {
       updateBenefits();
     }
     this.setupRaisePercentage();
+    if (this.data.resource === 'raise-requests' && !this.data.command && !this.data.row) {
+      this.form.controls['baseSalaryId'].valueChanges
+        .pipe(takeUntilDestroyed(this.destroy))
+        .subscribe(() => this.inheritBenefits());
+    }
     this.form.controls['personId']?.valueChanges
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe(() => {
@@ -448,8 +458,14 @@ export class Editor implements AfterViewInit, OnDestroy {
     try {
       const results: Record<string, Option[]> = {};
       const baseSalaryAmounts: Record<string, string> = {};
+      const baseSalaries: Record<string, Row> = {};
       const personId = this.form.controls['personId']?.value || this.data.personId;
-      if (this.data.command === 'approve' && this.data.row?.['baseSalaryId']) {
+      if (
+        this.data.resource === 'raise-requests' &&
+        (!this.data.command || this.data.command === 'approve') &&
+        this.data.row?.['baseSalaryId'] &&
+        !this.hasProposal
+      ) {
         const salaries = await this.api.choices(`people/${this.data.row['personId']}/salaries`);
         const base = salaries.find((salary) => salary.id === this.data.row?.['baseSalaryId']);
         if (!base) throw new Error('RAL base non disponibile.');
@@ -482,8 +498,10 @@ export class Editor implements AfterViewInit, OnDestroy {
             );
             if (field.reference === 'salaries') {
               for (const row of rows)
-                if (typeof row['amount'] === 'string')
+                if (typeof row['amount'] === 'string') {
                   baseSalaryAmounts[row.id] = String(row['amount']);
+                  baseSalaries[row.id] = row;
+                }
             }
             results[field.key] = rows
               .map((row) => ({
@@ -499,6 +517,8 @@ export class Editor implements AfterViewInit, OnDestroy {
       );
       if (generation === this.generation) {
         this.baseSalaryAmounts.set(baseSalaryAmounts);
+        this.baseSalaries.set(baseSalaries);
+        if (this.data.resource === 'raise-requests' && !this.data.row) this.inheritBenefits();
         this.options.set(results);
         this.updateRaisePercentage();
       }
@@ -509,6 +529,17 @@ export class Editor implements AfterViewInit, OnDestroy {
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
+    }
+  }
+  private proposedBenefits(): BenefitValues | null {
+    const value = this.data.row?.['benefits'];
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  }
+  private inheritBenefits(): void {
+    const base = this.baseSalaries()[this.form.controls['baseSalaryId']?.value];
+    for (const field of salaryBenefitFields) {
+      const value = base?.[field.key];
+      this.form.controls[field.key]?.setValue(value == null ? '' : String(value));
     }
   }
   close(): void {
@@ -660,9 +691,12 @@ export class Editor implements AfterViewInit, OnDestroy {
       }
       if (this.data.command === 'approve') {
         payload['createSalary'] = values['createSalary'] === 'true';
-        if (values['createSalary'] === 'true' && this.data.row?.['baseSalaryId']) {
+        if (values['createSalary'] === 'true') {
           payload['benefits'] = payloadFor(salaryBenefitFields, values);
         }
+        for (const field of salaryBenefitFields) delete payload[field.key];
+      } else if (this.data.resource === 'raise-requests' && !this.data.command) {
+        payload['benefits'] = payloadFor(salaryBenefitFields, values);
         for (const field of salaryBenefitFields) delete payload[field.key];
       }
       if (this.data.command)

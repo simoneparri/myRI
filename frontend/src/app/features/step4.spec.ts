@@ -6,6 +6,7 @@ import { TIMEZONE } from '../shared/format';
 import { Dashboard } from './dashboard/dashboard';
 import { Notifications } from './notifications/notifications';
 import { SalaryTrend } from './salary-trend/salary-trend';
+import { NotificationInbox } from '../core/notification-inbox';
 
 describe('Step 4 views', () => {
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
@@ -47,6 +48,7 @@ describe('Step 4 views', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Task oggi: 2');
     expect(element.querySelector('a[href="/tasks?view=next7"]')).not.toBeNull();
+    expect(element.querySelectorAll('mat-card h2 svg[aria-hidden="true"]')).toHaveLength(5);
     expect([...element.querySelectorAll('th')].map((cell) => cell.textContent?.trim())).toEqual(
       fixture.componentInstance.careerColumns.map((column) => column.label),
     );
@@ -70,9 +72,14 @@ describe('Step 4 views', () => {
     };
     const get = vi.fn().mockResolvedValue({ ...empty, items: [item], totalElements: 1 });
     const post = vi.fn().mockResolvedValue(item);
+    const refresh = vi.fn();
     TestBed.configureTestingModule({
       imports: [Notifications],
-      providers: [provideRouter([]), { provide: Api, useValue: { get, post } }],
+      providers: [
+        provideRouter([]),
+        { provide: Api, useValue: { get, post } },
+        { provide: NotificationInbox, useValue: { refresh } },
+      ],
     });
     const fixture = TestBed.createComponent(Notifications);
     await fixture.whenStable();
@@ -89,9 +96,11 @@ describe('Step 4 views', () => {
     });
     await fixture.componentInstance.mark(item, 'read');
     expect(post).toHaveBeenLastCalledWith(`notifications/${item.id}/read`, { version: '4' });
+    expect(refresh).toHaveBeenCalledOnce();
     post.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
     await fixture.componentInstance.mark(item, 'archive');
     expect(fixture.componentInstance.error()).toContain('Conflitto');
+    expect(refresh).toHaveBeenCalledOnce();
   });
   it('uses the configured calendar for future salary badges without rounding money', async () => {
     vi.useFakeTimers();

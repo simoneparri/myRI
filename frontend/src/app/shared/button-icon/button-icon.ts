@@ -16,8 +16,17 @@ const paths = {
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',
   save: 'M4 3h13l3 3v15H4ZM8 3v6h8V3M8 21v-8h8v8',
   external: 'M14 3h7v7M21 3 10 14M10 3H3v18h18v-7',
+  menu: 'M5 12h.01M12 12h.01M19 12h.01',
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
+  meal: 'M4 3v7m4-7v7M4 7h4M6 10v11M18 3c-3 3-3 8 0 8h2V3h-2Zm2 8v10',
+  bonus: 'M4 3h12l4 4v14H4ZM15 3v5h5M9 12h6m-6 4h6',
+  car: 'M4 11l2-7h12l2 7M3 11h18v7H3Zm2 7v3m14-3v3M6 14h2m8 0h2',
+  calendar: 'M4 5h16v16H4ZM8 3v4m8-4v4M4 10h16',
+  warning: 'm12 3 10 18H2ZM12 9v5m0 3h.01',
+  trend: 'm3 17 6-6 4 4 8-10M15 5h6v6',
 };
 
+export type IconName = keyof typeof paths;
 @Component({
   selector: 'svg[appButtonIcon]',
   host: {
@@ -36,6 +45,6 @@ const paths = {
   templateUrl: './button-icon.html',
 })
 export class ButtonIcon {
-  readonly icon = input.required<keyof typeof paths>({ alias: 'appButtonIcon' });
+  readonly icon = input.required<IconName>({ alias: 'appButtonIcon' });
   readonly paths = paths;
 }

@@ -60,8 +60,11 @@ public class RaiseService {
         RaiseDtos.apply(request, input);
         request.status = "draft";
         validateValues(request);
+        if (!request.benefitsSpecified) {
+            RaiseDtos.applyBenefits(request, SalaryDtos.benefits(salaryService.get(request.baseSalaryId)));
+        }
         requests.saveAndFlush(request);
-        record(request, "raise_created", "personId,baseSalaryId,requestedOn,requestedSalary,requestedPercentage,motivation,status");
+        record(request, "raise_created", "personId,baseSalaryId,requestedOn,requestedSalary,requestedPercentage,motivation,status,benefits");
         return view(request);
     }
 
@@ -120,7 +123,8 @@ public class RaiseService {
         }
         Salary base = command.createSalary() ? salaryService.get(request.baseSalaryId) : null;
         SalaryDtos.Benefits benefits = command.createSalary()
-                ? (command.benefits() == null ? SalaryDtos.benefits(base) : command.benefits()) : null;
+                ? (command.benefits() != null ? command.benefits()
+                    : request.benefitsSpecified ? RaiseDtos.benefits(request) : SalaryDtos.benefits(base)) : null;
         var existing = salaries.findBySourceRaiseRequestId(id);
         if (request.status.equals("approved")) {
             boolean matching = Objects.equals(request.outcomeOn, command.outcomeOn())
@@ -229,6 +233,12 @@ public class RaiseService {
         if (!sameDecimal(r.requestedSalary, i.requestedSalary())) { fields.add("requestedSalary"); }
         if (!sameDecimal(r.requestedPercentage, i.requestedPercentage())) { fields.add("requestedPercentage"); }
         if (!Objects.equals(r.motivation, i.motivation())) { fields.add("motivation"); }
+        if (i.benefits() != null && (!r.benefitsSpecified
+                || !Objects.equals(r.mealVouchers, i.benefits().mealVouchers())
+                || !sameDecimal(r.bonusLetterAmount, i.benefits().bonusLetterAmount())
+                || !Objects.equals(r.companyCar, i.benefits().companyCar()))) {
+            fields.add("benefits");
+        }
         return String.join(",", fields);
     }
 

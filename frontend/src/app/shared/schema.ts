@@ -225,9 +225,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal' },
       { key: 'classificationLevel', label: 'Livello' },
       { key: 'reason', label: 'Motivo' },
-      { key: 'mealVouchers', label: 'Benefit: buoni pasto', type: 'boolean' },
-      { key: 'bonusLetterAmount', label: 'Benefit: lettera di bonus', type: 'money' },
-      { key: 'companyCar', label: 'Benefit: auto', type: 'boolean' },
+      { key: 'benefits', label: 'Benefit', type: 'benefits' },
     ],
   },
   'raise-requests': {
@@ -253,6 +251,7 @@ export const definitions: Record<Resource, Definition> = {
       },
       { key: 'requestedPercentage', label: 'Percentuale aumento', type: 'decimal', fraction: 4 },
       text('motivation', 'Motivazione', true),
+      ...salaryBenefitFields,
     ],
     columns: [
       { key: 'personId', label: 'Persona' },

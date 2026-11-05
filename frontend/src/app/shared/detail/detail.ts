@@ -13,6 +13,12 @@ import { PercentagePipe } from '../percentage';
 })
 export class Detail {
   readonly data = inject<{ row: Row; definition: Definition }>(MAT_DIALOG_DATA);
+  readonly displayRow: Row = {
+    ...this.data.row,
+    ...(typeof this.data.row['benefits'] === 'object' && !Array.isArray(this.data.row['benefits'])
+      ? this.data.row['benefits']
+      : {}),
+  };
   readonly fieldRows: Column[][] = [
     ...this.data.definition.fields.map((field) => [
       {

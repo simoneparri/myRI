@@ -4,6 +4,35 @@ import { definitions } from '../schema';
 import { Detail } from './detail';
 
 describe('Detail percentage formatting', () => {
+  it('renders the saved nested raise proposal, including No, zero and cleared values', async () => {
+    TestBed.configureTestingModule({
+      imports: [Detail],
+      providers: [
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: {
+            row: {
+              id: '1',
+              benefits: { mealVouchers: false, bonusLetterAmount: '0.00', companyCar: null },
+            },
+            definition: definitions['raise-requests'],
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(Detail);
+    await fixture.whenStable();
+    const terms = [...(fixture.nativeElement as HTMLElement).querySelectorAll('dt')];
+    for (const [label, value] of [
+      ['Buoni pasto', 'No'],
+      ['Lettera di bonus', '0,00'],
+      ['Auto', '-'],
+    ]) {
+      expect(
+        terms.find((term) => term.textContent === label)?.nextElementSibling?.textContent?.trim(),
+      ).toBe(value);
+    }
+  });
   it('groups benefits and shows false, null and a zero bonus distinctly', async () => {
     TestBed.configureTestingModule({
       imports: [Detail],

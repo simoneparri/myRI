@@ -6,6 +6,7 @@ import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/materi
 import { Api, Page, errorMessage } from '../../core/api';
 import { DisplayPipe } from '../../shared/format';
 import { italianPaginator } from '../../shared/paginator';
+import { ButtonIcon } from '../../shared/button-icon/button-icon';
 
 interface CareerDue {
   personId: string;
@@ -29,7 +30,7 @@ interface Summary {
 }
 
 @Component({
-  imports: [RouterLink, MatButtonModule, MatCardModule, MatPaginatorModule, DisplayPipe],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatPaginatorModule, DisplayPipe, ButtonIcon],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   templateUrl: './dashboard.html',
 })

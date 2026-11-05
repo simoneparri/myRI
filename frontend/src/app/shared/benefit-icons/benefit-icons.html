@@ -1,0 +1,19 @@
+@for (benefit of benefits; track benefit.key) {
+  @if (specified(benefit.key)) {
+    <span
+      tabindex="0"
+      role="img"
+      [attr.aria-label]="label(benefit.key, benefit.label)"
+      [matTooltip]="label(benefit.key, benefit.label)"
+      [class.negative]="row()[benefit.key] === false"
+    >
+      <svg [appButtonIcon]="benefit.icon"></svg>
+      @if (row()[benefit.key] === false) {
+        <span aria-hidden="true">No</span>
+      }
+    </span>
+  }
+}
+@if (!hasBenefits()) {
+  <span aria-label="Nessun benefit specificato">-</span>
+}

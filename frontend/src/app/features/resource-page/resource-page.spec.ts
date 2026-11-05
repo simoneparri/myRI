@@ -155,9 +155,13 @@ describe('ResourcePage', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
     const row = element.querySelector('tbody tr')!;
-    expect(row.querySelector('a')?.getAttribute('href')).toBe('/people/1');
-    expect(row.textContent).toContain('Scheda');
-    expect(row.textContent).toContain('Archivia');
+    expect(row.querySelector('button[aria-label="Azioni"]')).not.toBeNull();
+    expect(fixture.componentInstance.actionsFor(fixture.componentInstance.page().items[0])).toEqual(
+      [
+        { key: 'sheet', label: 'Scheda', icon: 'person', link: ['/people', '1'] },
+        { key: 'archive', label: 'Archivia', icon: 'archive' },
+      ],
+    );
     expect(row.textContent).not.toContain('Dettagli');
     expect(row.textContent).not.toContain('Modifica');
     for (const button of element.querySelectorAll('button:not(.mat-mdc-paginator button), a')) {
@@ -174,8 +178,12 @@ describe('ResourcePage', () => {
     await fixture.componentInstance.reload();
     await fixture.whenStable();
     const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!;
-    expect(row.textContent).toContain('Dettagli');
-    expect(row.textContent).toContain('Modifica');
+    expect(row.querySelector('button[aria-label="Azioni"]')).not.toBeNull();
+    expect(
+      fixture.componentInstance
+        .actionsFor(fixture.componentInstance.page().items[0])
+        .map((action) => action.key),
+    ).toEqual(['detail', 'edit', 'complete', 'cancel', 'archive']);
   });
   it('highlights current projects, displays past projects and sends period filters to the person endpoint', async () => {
     const fixture = await create();

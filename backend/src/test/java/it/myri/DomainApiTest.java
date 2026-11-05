@@ -378,6 +378,95 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void proposedBenefitsAreInheritedEditableAuditedAndAppliedOnlyToNewSalary() throws Exception {
+        String person = person();
+        var salaryBody = salaryInput();
+        salaryBody.put("mealVouchers", true);
+        salaryBody.put("bonusLetterAmount", "1200.00");
+        salaryBody.put("companyCar", false);
+        var base = send(post("/api/v1/people/" + person + "/salaries"), salaryBody, 201);
+        var body = raiseInput(person, base.get("id").asText());
+        var request = send(post("/api/v1/raise-requests"), body, 201);
+        assertTrue(request.get("benefits").get("mealVouchers").asBoolean());
+        assertEquals("1200.00", request.get("benefits").get("bonusLetterAmount").asText());
+        String path = "/api/v1/raise-requests/" + request.get("id").asText();
+        body.put("version", request.get("version").asText());
+        body.put("benefits", Map.of("mealVouchers", false, "bonusLetterAmount", "0.00", "companyCar", true));
+        request = send(put(path), body, 200);
+        assertFalse(request.get("benefits").get("mealVouchers").asBoolean());
+        body.put("version", request.get("version").asText());
+        body.put("benefits", Map.of("mealVouchers", false, "bonusLetterAmount", "0.0", "companyCar", true));
+        assertEquals(request.get("version"), send(put(path), body, 200).get("version"));
+        request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+        body.put("version", request.get("version").asText());
+        body.put("benefits", Map.of("companyCar", true));
+        request = send(put(path), body, 200);
+        assertTrue(request.get("benefits").get("bonusLetterAmount").isNull());
+        assertTrue(request.get("benefits").get("mealVouchers").isNull());
+        body.remove("benefits");
+        body.put("version", request.get("version").asText());
+        body.put("motivation", "Fictitious revision");
+        request = send(put(path), body, 200);
+        assertTrue(request.get("benefits").get("companyCar").asBoolean());
+        var command = Map.of("version", request.get("version").asText(),
+                "outcomeOn", "2026-02-01", "createSalary", true, "effectiveOn", "2026-03-01");
+        var approval = send(post(path + "/approve"), command, 200);
+        assertEquals(approval.get("salaryId"), send(post(path + "/approve"), command, 200).get("salaryId"));
+        var rows = mvc.perform(get("/api/v1/people/" + person + "/salaries").session(session))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(json.readTree(rows).get("items").get(0).get("companyCar").asBoolean());
+        assertTrue(json.readTree(rows).get("items").get(0).get("bonusLetterAmount").isNull());
+        assertEquals("1200.00", json.readTree(rows).get("items").get(1).get("bonusLetterAmount").asText());
+        body.put("version", approval.get("version").asText());
+        body.put("benefits", Map.of());
+        send(put(path), body, 409);
+        assertEquals(2, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM audit_event WHERE raise_request_id = ?
+                AND action = 'raise_updated' AND changed_fields = 'benefits'
+                """, Integer.class, request.get("id").asText()));
+        mvc.perform(get("/api/v1/audit").session(session).param("personId", person))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].benefits").doesNotExist());
+        mvc.perform(get("/api/v1/people/" + person + "/export").session(session))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.raiseRequests[0].benefits.companyCar").value(true));
+        String csv = mvc.perform(get("/api/v1/people/" + person + "/export")
+                .session(session).param("format", "csv")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(csv.contains("\"\"companyCar\"\":true"));
+        for (String invalid : List.of("-1", "1.001", "10000000000.00")) {
+            var invalidBody = raiseInput(person, base.get("id").asText());
+            invalidBody.put("benefits", Map.of("bonusLetterAmount", invalid));
+            send(post("/api/v1/raise-requests"), invalidBody, 400);
+        }
+        var emptyBody = raiseInput(person, base.get("id").asText());
+        emptyBody.put("benefits", Map.of());
+        var empty = send(post("/api/v1/raise-requests"), emptyBody, 201);
+        assertTrue(empty.get("benefits").get("mealVouchers").isNull());
+    }
+
+    @Test
+    void legacyRaiseWithoutSavedProposalStillInheritsBaseBenefitsOnApproval() throws Exception {
+        String person = person();
+        var input = salaryInput();
+        input.put("mealVouchers", true);
+        input.put("companyCar", false);
+        var base = send(post("/api/v1/people/" + person + "/salaries"), input, 201);
+        var request = send(post("/api/v1/raise-requests"), raiseInput(person, base.get("id").asText()), 201);
+        String path = "/api/v1/raise-requests/" + request.get("id").asText();
+        jdbc.update("""
+                UPDATE raise_request SET benefits_specified = FALSE,
+                meal_vouchers = NULL, bonus_letter_amount = NULL, company_car = NULL WHERE id = ?
+                """, request.get("id").asText());
+        mvc.perform(get(path).session(session)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.benefits").isEmpty());
+        request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+        send(post(path + "/approve"), Map.of("version", request.get("version").asText(),
+                "outcomeOn", "2026-02-01", "createSalary", true, "effectiveOn", "2026-03-01"), 200);
+        mvc.perform(get("/api/v1/people/" + person + "/salaries").session(session))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].mealVouchers").value(true))
+                .andExpect(jsonPath("$.items[0].companyCar").value(false));
+    }
+
+    @Test
     void salaryBenefitsAreOptionalValidatedExportedAndPartOfIdempotency() throws Exception {
         String person = person();
         String path = "/api/v1/people/" + person + "/salaries";

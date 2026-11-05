@@ -181,7 +181,7 @@ class FinancialAtomicityTest extends IntegrationTest {
                 "Livello fittizio", "Fictitious", UUID.randomUUID().toString(),
                 true, new BigDecimal("1000.00"), false));
         var request = raises.create(new RaiseDtos.Input(person.id(), salary.id(), LocalDate.of(2026, 1, 1),
-                new BigDecimal("55000.00"), new BigDecimal("10.0000"), "Fictitious", null));
+                new BigDecimal("55000.00"), new BigDecimal("10.0000"), "Fictitious", null, null));
         return raises.submit(request.id(), request.version());
     }
 

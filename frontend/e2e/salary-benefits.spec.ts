@@ -32,9 +32,11 @@ for (const width of [1440, 390]) {
       requestedPercentage: '10',
       motivation: 'Richiesta fittizia',
       status: 'submitted',
+      benefits: { mealVouchers: false, bonusLetterAmount: '2000.00', companyCar: true },
     };
     let created = false;
     let approved = false;
+    let proposalEdited = false;
     const unexpected: string[] = [];
     await page.route('**/api/v1/**', async (route) => {
       const req = route.request();
@@ -43,6 +45,7 @@ for (const width of [1440, 390]) {
         return route.fulfill({ json: { id: '1', username: 'utente-fittizio' } });
       if (path === 'auth/csrf')
         return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
+      if (path === 'notifications') return route.fulfill({ json: empty });
       if (path === 'people')
         return route.fulfill({
           json: {
@@ -88,6 +91,15 @@ for (const width of [1440, 390]) {
         return route.fulfill({
           json: { ...empty, items: [request], totalElements: 1, totalPages: 1 },
         });
+      if (path === 'raise-requests/20' && req.method() === 'PUT') {
+        expect(req.postDataJSON()).toMatchObject({
+          benefits: { mealVouchers: false, bonusLetterAmount: '2200.00', companyCar: true },
+        });
+        expect(req.postDataJSON()).not.toHaveProperty('mealVouchers');
+        request = { ...request, ...req.postDataJSON(), version: '1' };
+        proposalEdited = true;
+        return route.fulfill({ json: request });
+      }
       if (path === 'raise-requests/20/approve') {
         expect(req.postDataJSON()).toMatchObject({
           createSalary: true,
@@ -122,6 +134,15 @@ for (const width of [1440, 390]) {
     await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
     await expect(dialog).toHaveCount(0);
     expect(created).toBe(true);
+    const salaryRow = page.getByRole('row').filter({ hasText: '51.000,00' });
+    await expect(
+      salaryRow.getByRole('img', { name: 'Buoni pasto: No', exact: true }),
+    ).toBeVisible();
+    await expect(
+      salaryRow.getByRole('img', { name: 'Lettera di bonus: 0,00', exact: true }),
+    ).toBeVisible();
+    await expect(salaryRow.getByRole('img', { name: 'Auto: Si', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Benefit', exact: true })).toHaveCount(1);
 
     await page
       .getByRole('row')
@@ -134,15 +155,32 @@ for (const width of [1440, 390]) {
     await dialog.getByRole('button', { name: 'Chiudi', exact: true }).click();
 
     await page.getByRole('tab', { name: 'Aumenti', exact: true }).click();
-    await page.getByRole('button', { name: 'Approva', exact: true }).click();
+    await page
+      .getByRole('row')
+      .filter({ hasText: '55.000,00' })
+      .getByRole('button', { name: 'Azioni', exact: true })
+      .click();
+    await page.getByRole('menuitem', { name: 'Modifica', exact: true }).click();
+    dialog = page.getByRole('dialog');
+    await expect(dialog.getByLabel('Lettera di bonus', { exact: true })).toHaveValue('2000.00');
+    await dialog.getByLabel('Lettera di bonus', { exact: true }).fill('2200.00');
+    await dialog.getByRole('button', { name: 'Salva', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(proposalEdited).toBe(true);
+    await page
+      .getByRole('row')
+      .filter({ hasText: '55.000,00' })
+      .getByRole('button', { name: 'Azioni', exact: true })
+      .click();
+    await page.getByRole('menuitem', { name: 'Approva', exact: true }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByRole('combobox', { name: 'Generare nuova RAL?', exact: true }).click();
     await page.getByRole('option', { name: 'Si', exact: true }).click();
     await expect(dialog.getByRole('combobox', { name: 'Buoni pasto', exact: true })).toContainText(
-      'Si',
+      'No',
     );
-    await expect(dialog.getByLabel('Lettera di bonus', { exact: true })).toHaveValue('1500.00');
-    await expect(dialog.getByRole('combobox', { name: 'Auto', exact: true })).toContainText('No');
+    await expect(dialog.getByLabel('Lettera di bonus', { exact: true })).toHaveValue('2200.00');
+    await expect(dialog.getByRole('combobox', { name: 'Auto', exact: true })).toContainText('Si');
     await dialog
       .getByLabel('Decorrenza RAL (solo se generata)', { exact: true })
       .fill('01/12/2026');

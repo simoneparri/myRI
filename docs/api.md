@@ -100,8 +100,19 @@ La migrazione V12 lascia null i valori precedenti, senza riscrivere lo storico.
 Elenco, andamento ed export JSON/CSV riportano gli stessi campi.
 La chiave idempotenza di creazione confronta anche tutti i benefit.
 
-Il comando approve accetta `benefits` facoltativo: se omesso/null eredita i
-tre valori dalla RAL base. Se presente, l'oggetto `{mealVouchers,
+RaiseInput e RaiseView includono `benefits`, oggetto `{mealVouchers,
+bonusLetterAmount,companyCar}` con gli stessi vincoli della RAL. In creazione,
+se omesso/null, viene salvata una copia dei benefit della base. In PUT,
+omesso/null conserva la proposta salvata; un oggetto presente sostituisce tutto
+il gruppo, anche con tutti i valori null. Modifica solo in draft/submitted.
+V13 aggiunge i campi e un marcatore di presenza senza backfill: `benefits: null`
+nei record precedenti indica assenza di una proposta, distinta da tre null
+espliciti. La proposta e inclusa nell'export JSON; il CSV la conserva come JSON
+in una singola cella. L'audit registra il nome `benefits`, non i valori.
+
+Il comando approve accetta `benefits` facoltativo: se omesso/null applica la
+proposta salvata, oppure i tre valori della RAL base per le richieste legacy
+senza proposta. Se presente, l'oggetto `{mealVouchers,
 bonusLetterAmount,companyCar}` sostituisce l'intero gruppo sulla nuova RAL:
 campi omessi/null indicano non specificato, `false` indica No, `"0.00"` un bonus
 zero. Valido solo con `createSalary: true`; gli importi sono validati anche

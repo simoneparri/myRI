@@ -40,6 +40,7 @@ test('contact dates, legacy editing and server-side chronological pagination wit
       return route.fulfill({ json: { id: '1', username: 'utente-fittizio' } });
     if (path === 'auth/csrf')
       return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
+    if (path === 'notifications') return route.fulfill({ json: empty });
     if (path === 'people')
       return route.fulfill({
         json: { ...empty, items: [person], totalElements: 1, totalPages: 1 },
@@ -78,7 +79,8 @@ test('contact dates, legacy editing and server-side chronological pagination wit
   await expect(rows.nth(0)).toContainText('05/11/2026');
   await expect(rows.nth(1)).toContainText('01/01/2025');
   await expect(rows.nth(2)).toContainText('Contatto legacy');
-  await rows.nth(2).getByRole('button', { name: 'Modifica', exact: true }).click();
+  await rows.nth(2).getByRole('button', { name: 'Azioni', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Modifica', exact: true }).click();
   let dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Data di contatto', { exact: true })).toBeEmpty();
   await expect(dialog.getByRole('button', { name: 'Salva', exact: true })).toBeEnabled();

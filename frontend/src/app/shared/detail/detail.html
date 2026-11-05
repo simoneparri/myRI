@@ -12,13 +12,13 @@
           <dt>{{ field.label }}</dt>
           <dd>
             @if (field.key === 'requestedPercentage') {
-              {{ data.row[field.key] | percentage: 'points' }}
+              {{ displayRow[field.key] | percentage: 'points' }}
             } @else if (field.type === 'reference') {
-              #{{ data.row[field.key] }}
+              #{{ displayRow[field.key] }}
             } @else if (field.key === 'outcomeNotes') {
-              {{ data.row[field.key] }}
+              {{ displayRow[field.key] }}
             } @else {
-              {{ data.row[field.key] | display: field.type }}
+              {{ displayRow[field.key] | display: field.type }}
             }
           </dd>
         }

@@ -68,8 +68,17 @@ class SchemaMigrationTest {
         }
         Flyway previous = Flyway.configure()
                 .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
-                .locations("classpath:db/migration").target("11").cleanDisabled(true).load();
-        assertEquals(10, previous.migrate().migrationsExecuted);
+                .locations("classpath:db/migration").target("12").cleanDisabled(true).load();
+        assertEquals(11, previous.migrate().migrationsExecuted);
+        try (Connection connection = DriverManager.getConnection(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO raise_request (id, person_id, base_salary_id, currency,
+                        requested_on, requested_salary, motivation)
+                    VALUES (700000, 700000, 700000, 'EUR', '2026-02-01', 44000, 'Fictitious legacy request')
+                    """);
+        }
         Flyway flyway = flyway();
         assertEquals(1, flyway.migrate().migrationsExecuted);
         flyway.validate();
@@ -126,6 +135,32 @@ class SchemaMigrationTest {
 
         assertEquals(1644, rejected("UPDATE salary SET amount = 1 WHERE id = 700000").getErrorCode());
         assertEquals(1644, rejected("DELETE FROM salary WHERE id = 700000").getErrorCode());
+    }
+
+    @Test
+    void proposedBenefitsPreserveLegacyUnknownAndEnforceNullableBooleansAndMoney() throws SQLException {
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM raise_request WHERE id = 700000 AND benefits_specified = FALSE
+                AND meal_vouchers IS NULL AND bonus_letter_amount IS NULL AND company_car IS NULL
+                """));
+        long owner = person();
+        long request = raise(owner, salary(owner, "50000"));
+        rejected("UPDATE raise_request SET meal_vouchers = TRUE WHERE id = ?", request);
+        execute("UPDATE raise_request SET benefits_specified = TRUE, meal_vouchers = FALSE, "
+                + "bonus_letter_amount = 0, company_car = TRUE WHERE id = ?", request);
+        assertEquals(1, scalar("""
+                SELECT COUNT(*) FROM raise_request WHERE id = ? AND meal_vouchers = FALSE
+                AND bonus_letter_amount = 0 AND company_car = TRUE
+                """, request));
+        rejected("UPDATE raise_request SET meal_vouchers = 2 WHERE id = ?", request);
+        rejected("UPDATE raise_request SET company_car = -1 WHERE id = ?", request);
+        rejected("UPDATE raise_request SET bonus_letter_amount = -0.01 WHERE id = ?", request);
+        assertThrows(SQLException.class,
+                () -> execute("UPDATE raise_request SET bonus_letter_amount = 10000000000 WHERE id = ?", request));
+        rejected("UPDATE raise_request SET benefits_specified = 2 WHERE id = ?", request);
+        execute("UPDATE raise_request SET meal_vouchers = NULL, bonus_letter_amount = NULL, "
+                + "company_car = NULL WHERE id = ?", request);
+        assertEquals(1, scalar("SELECT COUNT(*) FROM raise_request WHERE id = ? AND benefits_specified = TRUE", request));
     }
 
     @Test

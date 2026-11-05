@@ -72,12 +72,7 @@
     @if (resource() === 'contacts') {
       <mat-form-field appearance="outline"
         ><mat-label>Tipo contatto</mat-label>
-        <input
-          matInput
-          name="category"
-          [(ngModel)]="category"
-          maxlength="50"
-        />
+        <input matInput name="category" [(ngModel)]="category" maxlength="50" />
       </mat-form-field>
     }
     @if (
@@ -99,9 +94,7 @@
       />
     }
     @if (resource() !== 'salaries' && !todoView) {
-      <mat-checkbox name="archived" [(ngModel)]="includeArchived"
-        >Includi archiviati</mat-checkbox
-      >
+      <mat-checkbox name="archived" [(ngModel)]="includeArchived">Includi archiviati</mat-checkbox>
     }
     <button mat-stroked-button type="submit" [disabled]="loading()">
       <svg appButtonIcon="filter"></svg>Applica filtri
@@ -117,8 +110,10 @@
     </p>
   }
   @if (resource() === 'projects') {
-    <p>Le date sono facoltative: una data assente indica un periodo aperto.
-      Il giorno di fine e incluso. I progetti attivi ora sono evidenziati.</p>
+    <p>
+      Le date sono facoltative: una data assente indica un periodo aperto. Il giorno di fine e
+      incluso. I progetti attivi ora sono evidenziati.
+    </p>
   }
   @if (error()) {
     <p role="alert" class="error">{{ error() }}</p>
@@ -152,13 +147,17 @@
             >
               @for (column of definition().columns; track column.key) {
                 <td>
-                  {{
-                    column.key === 'personId'
-                      ? personName(row[column.key])
-                      : column.type === 'percentage'
-                        ? (row[column.key] | percentage: 'points')
-                        : (row[column.key] | display: column.type)
-                  }}
+                  @if (column.type === 'benefits') {
+                    <app-benefit-icons [row]="row" />
+                  } @else {
+                    {{
+                      column.key === 'personId'
+                        ? personName(row[column.key])
+                        : column.type === 'percentage'
+                          ? (row[column.key] | percentage: 'points')
+                          : (row[column.key] | display: column.type)
+                    }}
+                  }
                   @if ($first && row['archivedAt']) {
                     <span class="badge">Archiviato</span>
                   }
@@ -168,88 +167,11 @@
                 </td>
               }
               <td class="actions">
-                @if (resource() === 'people') {
-                  <a mat-button [routerLink]="['/people', row.id]">
-                    <svg appButtonIcon="person"></svg>Scheda
-                  </a>
-                } @else {
-                  <button mat-button (click)="details(row)">
-                    <svg appButtonIcon="detail"></svg>Dettagli
-                  </button>
-                }
-                @if (resource() !== 'people' && editable(resource(), row)) {
-                  <button mat-button (click)="edit(row)" [disabled]="busy() || loading()">
-                    <svg appButtonIcon="edit"></svg>Modifica
-                  </button>
-                }
-                @if (!row['archivedAt'] && resource() !== 'salaries') {
-                  @if (resource() === 'raise-requests') {
-                    @if (row['status'] === 'draft') {
-                      <button
-                        mat-button
-                        (click)="command(row, 'submit')"
-                        [disabled]="busy() || loading()"
-                      >
-                        <svg appButtonIcon="send"></svg>Invia
-                      </button>
-                    }
-                    @if (row['status'] === 'postponed') {
-                      <button
-                        mat-button
-                        (click)="command(row, 'reopen')"
-                        [disabled]="busy() || loading()"
-                      >
-                        <svg appButtonIcon="refresh"></svg>Riapri
-                      </button>
-                    }
-                    @if (row['status'] === 'submitted') {
-                      <button
-                        mat-button
-                        (click)="decision(row, 'approve')"
-                        [disabled]="busy() || loading()"
-                      >
-                        <svg appButtonIcon="check"></svg>Approva
-                      </button>
-                      <button
-                        mat-button
-                        (click)="decision(row, 'reject')"
-                        [disabled]="busy() || loading()"
-                      >
-                        <svg appButtonIcon="close"></svg>Rifiuta
-                      </button>
-                      <button
-                        mat-button
-                        (click)="decision(row, 'postpone')"
-                        [disabled]="busy() || loading()"
-                      >
-                        <svg appButtonIcon="clock"></svg>Rimanda
-                      </button>
-                    }
-                  }
-                  @if (resource() === 'tasks' && editable(resource(), row)) {
-                    <button
-                      mat-button
-                      (click)="command(row, 'complete')"
-                      [disabled]="busy() || loading()"
-                    >
-                      <svg appButtonIcon="check"></svg>Completa
-                    </button>
-                    <button
-                      mat-button
-                      (click)="command(row, 'cancel')"
-                      [disabled]="busy() || loading()"
-                    >
-                      <svg appButtonIcon="close"></svg>Annulla task
-                    </button>
-                  }
-                  <button
-                    mat-button
-                    (click)="command(row, 'archive')"
-                    [disabled]="busy() || loading()"
-                  >
-                    <svg appButtonIcon="archive"></svg>Archivia
-                  </button>
-                }
+                <app-row-actions
+                  [actions]="actionsFor(row)"
+                  [disabled]="busy() || loading()"
+                  (selected)="runAction(row, $event)"
+                />
               </td>
             </tr>
           }

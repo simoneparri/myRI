@@ -56,8 +56,13 @@ un container root senza bind mount scrivibili sulla checkout.
 
 - RAL: gruppo Benefit con Buoni pasto e Auto (Si/No/Non specificato) e Lettera
   di bonus (importo EUR facoltativo, zero ammesso, massimo due decimali).
-  In approvazione con nuova RAL il gruppo parte dai valori della base ed e
-  modificabile; lasciarlo vuoto rimuove il valore solo dalla nuova voce.
+  La tabella usa una sola colonna Benefit con icone e tooltip accessibili.
+  Anche No e zero hanno un'icona; null indica non specificato e non ha icona.
+  Le richieste di aumento includono gli stessi campi: la nuova proposta parte
+  dai benefit della base selezionata e si puo salvare/modificare in bozza o inviata.
+  In approvazione con nuova RAL il gruppo parte dalla proposta salvata (dalla
+  base solo per richieste legacy senza proposta) ed e modificabile; lasciarlo
+  vuoto rimuove il valore solo dalla nuova voce.
   Senza creazione RAL i benefit sono disabilitati e non inviati.
   Ordine e gruppi del form restano dichiarati nei descrittori TypeScript.
 - Layout dati dichiarativo: righe della scheda e dei dettagli in array di array
@@ -133,6 +138,15 @@ un container root senza bind mount scrivibili sulla checkout.
   cambiare la PK myRI. L'inizio carriera non puo essere successivo all'assunzione.
 - Dashboard con conteggi e persone senza career talk recente; notifiche storiche
   leggibili/archiviabili e dettaglio del task collegato.
+  Ogni card ha un'icona locale, con Scaduti al primo posto.
+  Nell'header la campanella mostra il totale delle non lette e apre le cinque
+  piu recenti, con collegamenti alla lista filtrata e alla lista completa.
+  Aprire il pannello non segna nulla come letto. Il totale si aggiorna al login,
+  alla navigazione, all'apertura, dopo lettura/archiviazione e ogni 60 secondi;
+  al logout viene svuotato, senza accettare risposte tardive della sessione.
+  Errori espliciti con badge `!` e Riprova, mai uno zero fittizio.
+  Le righe con piu azioni usano il componente condiviso RowActions con menu
+  Azioni e descrittori TS; una sola azione resta un pulsante/link diretto.
 - Viste Task oggi/scaduti/prossimi 7 giorni/tutti aperti, anche per persona.
   I preset non applicano i filtri della gestione completa nascosti.
 - Andamento RAL cronologico nella scheda persona, importi precisi e valute

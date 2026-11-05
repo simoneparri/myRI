@@ -79,10 +79,11 @@ describe('PersonPage', () => {
         [],
         ['role', 'seniorityLevel', 'frameworks'],
         ['hiredOn', 'hiringLocation', 'residence'],
+        [],
         ['notes'],
       ],
     );
-    expect(details.querySelectorAll('hr')).toHaveLength(1);
+    expect(details.querySelectorAll('hr')).toHaveLength(2);
     expect(details.children[2].tagName).toBe('HR');
     expect(details.querySelectorAll('dl')).toHaveLength(5);
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');

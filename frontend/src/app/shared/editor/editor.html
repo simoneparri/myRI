@@ -19,7 +19,7 @@
           <legend>{{ group.label }}</legend>
           <p>Facoltativi. Lettera di bonus espressa come importo in euro.</p>
           @if (data.command === 'approve') {
-            <p>I benefit sono ereditati dalla RAL base e modificabili solo per la nuova RAL.</p>
+            <p>I benefit proposti sono modificabili solo per la nuova RAL.</p>
           }
         }
         @for (field of group.fields; track field.key) {

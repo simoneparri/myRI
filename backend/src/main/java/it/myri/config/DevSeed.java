@@ -53,7 +53,7 @@ public class DevSeed {
                             true, new BigDecimal("1000.00"), false));
                     raises.create(new RaiseDtos.Input(person.id(), base.id(), today,
                             new BigDecimal("55000.00"), new BigDecimal("10.0000"),
-                            "Richiesta fittizia", null));
+                            "Richiesta fittizia", null, null));
                     var talk = talks.create(new CareerTalkDtos.Input(person.id(), clock.instant().minus(Duration.ofDays(30)),
                             "Crescita professionale fittizia", "Obiettivi di esempio",
                             null, null, "Pianificare formazione", today.plusMonths(2), null));

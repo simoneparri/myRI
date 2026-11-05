@@ -2,7 +2,12 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export type Value = string | number | boolean | string[] | null;
+export interface BenefitValues {
+  mealVouchers: boolean | null;
+  bonusLetterAmount: string | null;
+  companyCar: boolean | null;
+}
+export type Value = string | number | boolean | string[] | BenefitValues | null;
 export interface Row {
   id: string;
   version?: string;
