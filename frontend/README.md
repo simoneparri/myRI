@@ -58,6 +58,7 @@ un container root senza bind mount scrivibili sulla checkout.
   TypeScript, colonne delle tabelle in array di descrittori. Gli HTML usano `@for`;
   non aggiungere ordinamenti/posizioni per campo in SCSS. La scheda mantiene i
   gruppi di righe anche su mobile, riducendo solo il numero di colonne.
+  Inserire `[]` in `fieldRows` per disegnare una linea orizzontale fra i gruppi.
 - Valuta non mostrata nei form, filtri, elenchi, dettagli, timeline e andamento
   RAL. La creazione RAL invia automaticamente `currency: "EUR"`; gli aumenti
   ereditano la valuta della RAL base secondo il contratto API esistente.

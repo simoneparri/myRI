@@ -25,6 +25,12 @@ body {
   color: #172d40;
   background: #f5f8fc;
 }
+.data-row-separator {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
 .framework-icon {
   margin-right: 0.4rem;
   font-size: 1.15em;

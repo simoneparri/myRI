@@ -1,23 +1,27 @@
 <h2 mat-dialog-title>Dettaglio {{ data.definition.singular }}</h2>
 <mat-dialog-content>
-  <dl>
-    @for (row of fieldRows; track $index) {
-      @for (field of row; track field.key) {
-        <dt>{{ field.label }}</dt>
-        <dd>
-          @if (field.key === 'requestedPercentage') {
-            {{ data.row[field.key] | percentage: 'points' }}
-          } @else if (field.type === 'reference') {
-            #{{ data.row[field.key] }}
-          } @else if (field.key === 'outcomeNotes') {
-            {{ data.row[field.key] }}
-          } @else {
-            {{ data.row[field.key] | display: field.type }}
-          }
-        </dd>
-      }
+  @for (row of fieldRows; track $index) {
+    @if (row.length === 0) {
+      <hr class="data-row-separator" />
+    } @else {
+      <dl>
+        @for (field of row; track field.key) {
+          <dt>{{ field.label }}</dt>
+          <dd>
+            @if (field.key === 'requestedPercentage') {
+              {{ data.row[field.key] | percentage: 'points' }}
+            } @else if (field.type === 'reference') {
+              #{{ data.row[field.key] }}
+            } @else if (field.key === 'outcomeNotes') {
+              {{ data.row[field.key] }}
+            } @else {
+              {{ data.row[field.key] | display: field.type }}
+            }
+          </dd>
+        }
+      </dl>
     }
-  </dl>
+  }
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-button mat-dialog-close><svg appButtonIcon="close"></svg>Chiudi</button>

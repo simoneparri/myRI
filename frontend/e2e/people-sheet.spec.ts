@@ -127,9 +127,9 @@ for (const width of [1440, 390]) {
     if (width > 800) {
       for (const fields of [
         ['rsnoAgresso', 'email', 'phone'],
-        ['bornOn', 'education'],
+        ['bornOn', 'education', 'careerStartedOn'],
         ['role', 'seniorityLevel', 'frameworks'],
-        ['hiredOn', 'careerStartedOn'],
+        ['hiredOn', 'hiringLocation', 'residence'],
       ]) {
         const positions = await Promise.all(
           fields.map((field) =>
@@ -148,15 +148,20 @@ for (const width of [1440, 390]) {
         );
         expect(leftPositions).toEqual([...leftPositions].sort((a, b) => a - b));
       }
-      await expect(page.locator('.detail-row').nth(1).locator('[data-field]')).toHaveCount(2);
+      await expect(page.locator('.detail-row').nth(1).locator('[data-field]')).toHaveCount(3);
       expect(
         await page
           .locator('.detail-row')
           .nth(1)
           .locator('[data-field]')
           .evaluateAll((fields) => fields.map((field) => field.getAttribute('data-field'))),
-      ).toEqual(['bornOn', 'education']);
+      ).toEqual(['bornOn', 'education', 'careerStartedOn']);
     }
+    const separator = page.locator('.person-details > hr');
+    await expect(separator).toBeVisible();
+    expect(await separator.evaluate((line) => line.getBoundingClientRect().width)).toBeGreaterThan(
+      200,
+    );
     const edit = page.getByRole('button', { name: 'Modifica', exact: true });
     const icon = edit.locator('svg[aria-hidden="true"]');
     await expect(icon).toBeVisible();

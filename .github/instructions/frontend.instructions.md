@@ -23,3 +23,4 @@ applyTo: "**/*.ts,**/*.html,**/*.scss"
   righe come array di campi, colonne tabellari come array di descrittori tipizzati.
   Gli HTML iterano con `@for`; SCSS solo per presentazione e responsive generici,
   mai grid-area/order o selettori per campo per decidere la posizione dei dati.
+  Un array vuoto `[]` in `fieldRows` rappresenta un separatore orizzontale (`hr`).

@@ -46,10 +46,10 @@ export class PersonPage {
   private readonly frameworkIcons = inject(FrameworkIcons);
   readonly fieldRows = [
     ['rsnoAgresso', 'email', 'phone'],
-    ['bornOn', 'education'],
+    ['bornOn', 'education', 'careerStartedOn'],
+    [],
     ['role', 'seniorityLevel', 'frameworks'],
-    ['hiredOn', 'careerStartedOn'],
-    ['hiringLocation', 'residence'],
+    ['hiredOn','hiringLocation', 'residence'],
     ['notes'],
   ].map((row) =>
     row.map((key) => {

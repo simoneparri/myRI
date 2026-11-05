@@ -41,38 +41,42 @@
   </div>
   <section class="person-details" aria-label="Informazioni persona">
     @for (row of fieldRows; track $index) {
-      <dl class="detail-row">
-        @for (field of row; track field.key) {
-          <div [attr.data-field]="field.key">
-            <dt>{{ field.key === 'frameworks' ? 'Framework conosciuti' : field.label }}</dt>
-            <dd>
-              @if (field.key === 'frameworks' && frameworkList(person).length) {
-                <ul class="framework-list">
-                  @for (framework of frameworkList(person); track framework) {
-                    <li>
-                      <i aria-hidden="true" [class]="frameworkIconClass(framework)"></i>
-                      {{ framework }}
-                    </li>
-                  }
-                </ul>
-              } @else {
-                {{ person[field.key] | display: field.type }}
-              }
-              @if (field.key === 'hiredOn' && person['seniority']) {
-                ({{ person['seniority'] }})
-              }
-              @if (
-                field.key === 'bornOn' && person['age'] !== null && person['age'] !== undefined
-              ) {
-                ({{ person['age'] }} {{ person['age'] === 1 ? 'anno' : 'anni' }})
-              }
-              @if (field.key === 'careerStartedOn' && person['careerDuration']) {
-                ({{ person['careerDuration'] }})
-              }
-            </dd>
-          </div>
-        }
-      </dl>
+      @if (row.length === 0) {
+        <hr class="data-row-separator" />
+      } @else {
+        <dl class="detail-row">
+          @for (field of row; track field.key) {
+            <div [attr.data-field]="field.key">
+              <dt>{{ field.key === 'frameworks' ? 'Framework conosciuti' : field.label }}</dt>
+              <dd>
+                @if (field.key === 'frameworks' && frameworkList(person).length) {
+                  <ul class="framework-list">
+                    @for (framework of frameworkList(person); track framework) {
+                      <li>
+                        <i aria-hidden="true" [class]="frameworkIconClass(framework)"></i>
+                        {{ framework }}
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  {{ person[field.key] | display: field.type }}
+                }
+                @if (field.key === 'hiredOn' && person['seniority']) {
+                  ({{ person['seniority'] }})
+                }
+                @if (
+                  field.key === 'bornOn' && person['age'] !== null && person['age'] !== undefined
+                ) {
+                  ({{ person['age'] }} {{ person['age'] === 1 ? 'anno' : 'anni' }})
+                }
+                @if (field.key === 'careerStartedOn' && person['careerDuration']) {
+                  ({{ person['careerDuration'] }})
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+      }
     }
     @if (person['archivedAt']) {
       <dl data-field="archivedAt">

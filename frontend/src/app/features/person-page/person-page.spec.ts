@@ -75,13 +75,16 @@ describe('PersonPage', () => {
     expect(fixture.componentInstance.fieldRows.map((row) => row.map((field) => field.key))).toEqual(
       [
         ['rsnoAgresso', 'email', 'phone'],
-        ['bornOn', 'education'],
+        ['bornOn', 'education', 'careerStartedOn'],
+        [],
         ['role', 'seniorityLevel', 'frameworks'],
-        ['hiredOn', 'careerStartedOn'],
-        ['hiringLocation', 'residence'],
+        ['hiredOn', 'hiringLocation', 'residence'],
         ['notes'],
       ],
     );
+    expect(details.querySelectorAll('hr')).toHaveLength(1);
+    expect(details.children[2].tagName).toBe('HR');
+    expect(details.querySelectorAll('dl')).toHaveLength(5);
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
     expect(element.querySelector('.person-title .badge')?.textContent?.trim()).toBe('Attiva');
     expect(details.textContent).not.toContain('Nome');

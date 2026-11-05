@@ -26,8 +26,12 @@ describe('Detail percentage formatting', () => {
       ],
     });
     const fixture = TestBed.createComponent(Detail);
+    fixture.componentInstance.fieldRows.splice(1, 0, [], []);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('hr')).toHaveLength(2);
+    expect(element.querySelector('mat-dialog-content')?.children[1].tagName).toBe('HR');
+    expect(element.querySelector('mat-dialog-content')?.children[2].tagName).toBe('HR');
     expect([...element.querySelectorAll('dt')].map((item) => item.textContent?.trim())).toEqual([
       'ID',
       'Stato',
