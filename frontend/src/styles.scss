@@ -296,3 +296,7 @@ dd {
     flex-wrap: wrap;
   }
 }
+.capacity-tooltip .mdc-tooltip__surface {
+  max-width: 32rem;
+  white-space: pre-line;
+}

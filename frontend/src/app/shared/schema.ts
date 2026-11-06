@@ -153,6 +153,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'hiringLocation', label: 'Sede di assunzione', max: 200 },
       { key: 'residence', label: 'Residenza', max: 500 },
       text('notes', 'Note'),
+      text('capacityManagement', 'Gestione capacity'),
       choice('status', 'Stato', ['active', 'inactive'], 'active'),
     ],
     columns: [
@@ -213,7 +214,13 @@ export const definitions: Record<Resource, Definition> = {
       },
       { key: 'effectiveOn', label: 'Decorrenza', type: 'date', required: true },
       { key: 'contractType', label: 'Tipo contratto', required: true, max: 100 },
-      { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal', required: true, fraction: 2 },
+      {
+        key: 'weeklyHours',
+        label: 'Ore settimanali',
+        type: 'decimal',
+        required: true,
+        fraction: 2,
+      },
       { key: 'classificationLevel', label: 'Livello di inquadramento', required: true, max: 100 },
       text('reason', 'Motivo della variazione', true),
       ...salaryBenefitFields,

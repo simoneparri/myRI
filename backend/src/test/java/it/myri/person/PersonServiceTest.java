@@ -102,7 +102,7 @@ class PersonServiceTest {
         return new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
                 valid.hiredOn(), null, null, null, null, null, "active", version,
                 valid.careerStartedOn(), valid.seniorityLevel(), valid.mypadId(), null, date,
-                valid.rsnoAgresso(), valid.insideId(), valid.education());
+                valid.rsnoAgresso(), valid.insideId(), valid.education(), null);
     }
 
     @Test
@@ -113,16 +113,27 @@ class PersonServiceTest {
         var input = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
                 null, null, "test-fictitious", List.of(" Java ", "Spring Boot"), LocalDate.of(1990, 1, 1),
-                "00001", "00002", "master");
+                "00001", "00002", "master", null);
         var saved = service.create(input);
         assertEquals(List.of("Java", "Spring Boot"), saved.frameworks());
 
         var duplicate = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
                 null, null, "test-fictitious", List.of("Java", " java "), LocalDate.of(1990, 1, 1),
-                "00001", "00002", "master");
+                "00001", "00002", "master", null);
         assertThrows(ApiException.class, () -> service.create(duplicate));
         verify(repository, times(1)).saveAndFlush(any());
+    }
+
+    @Test
+    void capacityManagementIsStoredAndExposed() {
+        when(users.lockSingleton()).thenReturn(Optional.of(new AppUser()));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var input = new PersonDtos.Input("Fictitious", "Example", null, null, null,
+                LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
+                null, null, "test-fictitious", null, LocalDate.of(1990, 1, 1),
+                "00001", "00002", "master", "Allocazione fittizia al 50%");
+        assertEquals("Allocazione fittizia al 50%", service.create(input).capacityManagement());
     }
 
     @Test
@@ -144,7 +155,7 @@ class PersonServiceTest {
         var valid = input(null, null);
         var missing = new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null,
                 valid.hiredOn(), null, null, null, null, null, "active", null, null, null, null, null, valid.bornOn(),
-                valid.rsnoAgresso(), valid.insideId(), valid.education());
+                valid.rsnoAgresso(), valid.insideId(), valid.education(), null);
         assertThrows(ApiException.class, () -> service.create(missing));
         when(repository.existsByMypadId(valid.mypadId())).thenReturn(true);
         var duplicate = assertThrows(ApiException.class, () -> service.create(valid));
@@ -158,7 +169,7 @@ class PersonServiceTest {
         var invalid = new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, null, null, null, "active", null,
                 LocalDate.of(2021, 1, 1), "junior", "fictitious-id", null, LocalDate.of(1990, 1, 1),
-                "00001", "00002", "master");
+                "00001", "00002", "master", null);
         assertThrows(ApiException.class, () -> service.create(invalid));
         verify(repository, never()).saveAndFlush(any());
         Person person = person(1L);
@@ -234,13 +245,13 @@ class PersonServiceTest {
         var valid = input(null, version);
         return new PersonDtos.Input(valid.firstName(), valid.lastName(), null, null, null, valid.hiredOn(),
                 null, null, null, null, null, "active", version, null, null, valid.mypadId(), null,
-                valid.bornOn(), rsno, inside, education);
+                valid.bornOn(), rsno, inside, education, null);
     }
 
     private static PersonDtos.Input input(Long manager, Long version) {
         return new PersonDtos.Input("Fictitious", "Example", null, null, null,
                 LocalDate.of(2020, 1, 1), null, null, manager, null, null, "active", version,
                 LocalDate.of(2018, 1, 1), "medior", "test-fictitious", null, LocalDate.of(1990, 1, 1),
-                "00001", "00002", "master");
+                "00001", "00002", "master", null);
     }
 }

@@ -8,6 +8,16 @@
     <div class="person-title">
       <h1>{{ displayName(person) }}</h1>
       <span class="badge">{{ person['status'] | display }}</span>
+      @if (capacity(person); as capacity) {
+        <span
+          class="badge capacity-badge"
+          tabindex="0"
+          [attr.aria-label]="'Gestione capacity: ' + capacity"
+          [matTooltip]="capacity"
+          matTooltipClass="capacity-tooltip"
+          >Capacity: {{ capacity }}</span
+        >
+      }
       <h3>
         @if (person['mypadId'] && mypadUrl(person); as url) {
           <a

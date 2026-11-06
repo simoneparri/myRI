@@ -10,7 +10,9 @@ describe('NotificationBell', () => {
   it('opens unread items with a total and full-page link, without marking them read', async () => {
     const inbox = {
       count: signal<number | null>(7),
-      items: signal<Row[]>([{ id: '1', kind: 'task_due', taskId: '4' }]),
+      items: signal<Row[]>([
+        { id: '1', kind: 'task_due', taskId: '4', taskTitle: 'Rinnovo fittizio' },
+      ]),
       loading: signal(false),
       error: signal(''),
       refresh: vi.fn(),
@@ -39,7 +41,7 @@ describe('NotificationBell', () => {
     await fixture.whenStable();
     expect(inbox.refresh).toHaveBeenCalledOnce();
     const menu = document.querySelector('[role="menu"]')!;
-    expect(menu.textContent).toContain('Task in scadenza #4');
+    expect(menu.textContent).toContain('Task in scadenza: Rinnovo fittizio');
     expect(menu.textContent).toContain('Mostrate 1 di 7');
     expect(menu.querySelector('a')?.getAttribute('href')).toBe('/notifications?unread=true');
     inbox.items.set([]);

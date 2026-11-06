@@ -27,9 +27,6 @@
   @for (item of data().items; track item.id) {
     <li>
       <strong>{{ title(item) }}</strong>
-      @if (item['personId']) {
-        <span> · Persona #{{ item['personId'] }}</span>
-      }
       <span> · {{ item['triggeredAt'] | display: 'instant' }}</span>
       @if (item['readAt']) {
         <span class="badge">Letta</span>

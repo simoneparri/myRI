@@ -148,7 +148,7 @@ class Step4ApiTest extends IntegrationTest {
     @WithAnonymousUser
     void step4EndpointsRequireLogin() throws Exception {
         for (String path : new String[] {"dashboard", "dashboard/career-due", "todos", "notifications",
-                "people/1/export", "people/1/salary-trend"}) {
+                "people/1/export", "people/1/salary-trend", "salary-comparison"}) {
             mvc.perform(get("/api/v1/" + path)).andExpect(status().isUnauthorized());
         }
     }
@@ -194,5 +194,63 @@ class Step4ApiTest extends IntegrationTest {
                 jdbc.update("UPDATE notification SET archived_at=UTC_TIMESTAMP(6) WHERE task_id=? OR person_id=?", ids[1], ids[0]);
             });
         }
+    }
+
+    @Test
+    void notificationsExposePersonNameAndTaskTitle() throws Exception {
+        long p = person("2026-01-01");
+        jdbc.update("UPDATE person SET first_name='Ada', last_name='Esempio' WHERE id=?", p);
+        long t = task(p, "2026-11-01 10:00:00", "todo");
+        jdbc.update("UPDATE task SET title='Rinnovo fittizio' WHERE id=?", t);
+        insert("""
+                INSERT INTO notification(kind,deduplication_key,task_id,triggered_at,version)
+                VALUES('task_due','test-task',?,'2026-11-03 10:00:00',0)""", t);
+        insert("""
+                INSERT INTO notification(kind,deduplication_key,person_id,triggered_at,version)
+                VALUES('career_talk_due','test-career',?,'2026-11-03 09:00:00',0)""", p);
+        mvc.perform(get("/api/v1/notifications")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].taskTitle").value("Rinnovo fittizio"))
+                .andExpect(jsonPath("$.items[0].personName").doesNotExist())
+                .andExpect(jsonPath("$.items[1].personName").value("Esempio Ada"))
+                .andExpect(jsonPath("$.items[1].taskTitle").doesNotExist());
+    }
+
+    @Test
+    void salaryComparisonUsesCurrentSalaryAndHidesArchivedPeopleByDefault() throws Exception {
+        long first = person("2020-11-03");
+        jdbc.update("UPDATE person SET last_name='Alfa', role='Dev', seniority_level='senior', born_on='1990-11-04' WHERE id=?", first);
+        long second = person("2025-05-03");
+        jdbc.update("UPDATE person SET last_name='Beta' WHERE id=?", second);
+        long withoutSalary = person("2024-01-01");
+        long archived = person("2021-01-01");
+        jdbc.update("UPDATE person SET last_name='Gamma', archived_at=UTC_TIMESTAMP(6) WHERE id=?", archived);
+        insert("""
+                INSERT INTO salary(person_id,amount,currency,effective_on,reason,classification_level,meal_vouchers,
+                bonus_letter_amount,company_car) VALUES(?,30000.00,'EUR','2025-01-01','Fittizia','C1',1,500.00,0)""", first);
+        insert("""
+                INSERT INTO salary(person_id,amount,currency,effective_on,reason,classification_level,meal_vouchers)
+                VALUES(?,35000.50,'EUR','2026-11-03','Fittizia','B2',1)""", first);
+        insert("INSERT INTO salary(person_id,amount,currency,effective_on,reason) VALUES(?,99999.00,'EUR','2026-12-01','Futura')", first);
+        insert("INSERT INTO salary(person_id,amount,currency,effective_on,reason) VALUES(?,40000.00,'EUR','2026-01-01','Fittizia')", second);
+        insert("INSERT INTO salary(person_id,amount,currency,effective_on,reason) VALUES(?,50000.00,'EUR','2026-01-01','Fittizia')", archived);
+        mvc.perform(get("/api/v1/salary-comparison")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.items[0].personId").value(first))
+                .andExpect(jsonPath("$.items[0].amount").value(35000.50))
+                .andExpect(jsonPath("$.items[0].classificationLevel").value("B2"))
+                .andExpect(jsonPath("$.items[0].seniorityLevel").value("senior"))
+                .andExpect(jsonPath("$.items[0].role").value("Dev"))
+                .andExpect(jsonPath("$.items[0].age").value(35))
+                .andExpect(jsonPath("$.items[0].seniority").value("6 anni e 0 mesi"))
+                .andExpect(jsonPath("$.items[0].mealVouchers").value(true))
+                .andExpect(jsonPath("$.items[0].bonusLetterAmount").doesNotExist())
+                .andExpect(jsonPath("$.items[1].personId").value(second));
+        mvc.perform(get("/api/v1/salary-comparison").param("sort", "amount,desc").param("includeArchived", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.items[0].personId").value(archived))
+                .andExpect(jsonPath("$.items[2].personId").value(first));
+        mvc.perform(get("/api/v1/salary-comparison").param("sort", "reason")).andExpect(status().isBadRequest());
+        assertTrue(withoutSalary > 0);
     }
 }

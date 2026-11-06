@@ -30,7 +30,8 @@ public final class PersonDtos {
             LocalDate bornOn,
             @Size(max = 100) @Pattern(regexp = "[^\\r\\n]*\\S[^\\r\\n]*") String rsnoAgresso,
             @Size(max = 100) @Pattern(regexp = "[^\\r\\n]*\\S[^\\r\\n]*") String insideId,
-            @Pattern(regexp = "diploma|bachelor|master|phd") String education) {}
+            @Pattern(regexp = "diploma|bachelor|master|phd") String education,
+            @Size(max = 10000) String capacityManagement) {}
 
     @io.swagger.v3.oas.annotations.media.Schema(name = "PersonView")
     public record View(Long id, String firstName, String lastName, String email,
@@ -40,5 +41,5 @@ public final class PersonDtos {
             Instant archivedAt, Instant createdAt, Instant updatedAt, Long version,
             LocalDate careerStartedOn, String careerDuration, String seniorityLevel, String mypadId,
             List<String> frameworks, LocalDate bornOn, Integer age,
-            String rsnoAgresso, String insideId, String education) {}
+            String rsnoAgresso, String insideId, String education, String capacityManagement) {}
 }

@@ -2,6 +2,11 @@
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: titoli notifiche con "Cognome Nome" e titolo task,
+campo testuale `capacityManagement` sulla persona (V14) mostrato come badge
+troncato con tooltip accanto allo stato, pagina Confronto RAL con RAL corrente,
+ruolo, livelli seniority/inquadramento, benefit, eta e anzianita.
+
 Estensione frontend autorizzata: PWA installabile con service worker Angular,
 cache della sola shell statica, notifiche browser opt-in per nuove notifiche
 inbox mentre l'app e aperta (senza Web Push/backend), avviso aggiornamento con

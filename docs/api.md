@@ -82,6 +82,7 @@ Keycloak/OIDC rimane un'opzione futura, non un provider fittizio gia attivo.
 | dashboard | GET | riepilogo al medesimo istante asOf |
 | dashboard/career-due | GET | page/size, persone attive oltre soglia |
 | people/{id}/salary-trend | GET | page/size, decorrenza ascendente, poi ID |
+| salary-comparison | GET | includeArchived, page/size, sort (default lastName,asc) |
 | people/{id}/export | GET | format=json/csv (default json), attachment no-store |
 
 I DTO dei contatti includono `contactedOn`, data civile `YYYY-MM-DD` negli anni
@@ -154,6 +155,8 @@ finche non assegnati ai record legacy, correggibili ma non svuotabili dopo
 l'assegnazione. Valori non validi restituiscono 400. PersonView ed export
 JSON/CSV includono tutti e tre i campi; V11 li aggiunge senza backfill.
 
+`capacityManagement` e un testo libero facoltativo (TEXT, max 10000 caratteri,
+V14) per la gestione capacity della persona; incluso negli export.
 `mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
 1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
 archiviate (confronto secondo la collation case-insensitive del DB).
@@ -305,6 +308,17 @@ readAt e archivedAt null. I conteggi sono numeri, non importi.
 dueAfter, lastTalkId; ordine ID asc, scansione keyset a memoria limitata.
 `salary-trend` include tutto lo storico della persona, incluse decorrenze future;
 nessuna conversione di valuta o importo in floating point.
+`salary-comparison` restituisce una riga per persona con la RAL corrente
+(ultima decorrenza <= oggi nel fuso applicativo, a parita l'ID maggiore):
+ruolo, seniorityLevel, classificationLevel, importo/valuta/decorrenza, benefit,
+eta e anzianita aziendale. Le persone senza RAL corrente sono escluse; per
+default solo persone attive non archiviate, `includeArchived=true` include
+anche archiviate e inattive. Ordinamenti ammessi: lastName (poi firstName),
+amount, hiredOn, bornOn, role, seniorityLevel, sempre con ID come spareggio.
+Nessuna conversione tra valute diverse.
+
+NotificationView include `personName` ("Cognome Nome") per le notifiche
+career talk e `taskTitle` per quelle di scadenza task, caricati per pagina.
 
 ## Export persona - Step 4
 

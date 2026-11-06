@@ -66,6 +66,27 @@ describe('PersonPage', () => {
     return fixture;
   }
 
+  it('shows capacity management as a badge next to the status only when present', async () => {
+    let fixture = await create();
+    expect(fixture.nativeElement.querySelector('.capacity-badge')).toBeNull();
+    TestBed.resetTestingModule();
+    fixture = await create({
+      ...person,
+      capacityManagement: '  Allocazione fittizia al 50%\nDettaglio  ',
+    });
+    const badge = fixture.nativeElement.querySelector(
+      '.person-title .capacity-badge',
+    ) as HTMLElement;
+    expect(badge.previousElementSibling?.textContent?.trim()).toBe('Attiva');
+    expect(badge.textContent?.trim()).toBe('Capacity: Allocazione fittizia al 50%\nDettaglio');
+    expect(badge.getAttribute('aria-label')).toBe(
+      'Gestione capacity: Allocazione fittizia al 50%\nDettaglio',
+    );
+    expect(fixture.nativeElement.querySelector('.person-details')?.textContent).not.toContain(
+      'Allocazione fittizia',
+    );
+  });
+
   it('shows both dates with elapsed time, seniority level and a separate MyPad ID', async () => {
     const fixture = await create();
     const element = fixture.nativeElement as HTMLElement;

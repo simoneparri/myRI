@@ -17,9 +17,13 @@ export const routes: Routes = [
           import('./features/notifications/notifications').then((m) => m.Notifications),
       },
       {
-        path: 'people/:id',
+        path: 'salary-comparison',
         loadComponent: () =>
-          import('./features/person-page/person-page').then((m) => m.PersonPage),
+          import('./features/salary-comparison/salary-comparison').then((m) => m.SalaryComparison),
+      },
+      {
+        path: 'people/:id',
+        loadComponent: () => import('./features/person-page/person-page').then((m) => m.PersonPage),
       },
       ...(['people', 'raise-requests', 'career-talks', 'tasks'] as const).map((resource) => ({
         path: resource,

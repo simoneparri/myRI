@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject } from 'rxjs';
 import { Api, Page, Row } from './api';
 import { Auth } from './auth';
-import { NotificationInbox } from './notification-inbox';
+import { NotificationInbox, notificationTitle } from './notification-inbox';
 import { Pwa } from './pwa';
 
 describe('NotificationInbox', () => {
@@ -122,5 +122,27 @@ describe('NotificationInbox', () => {
     await pending;
     expect(inbox.count()).toBeNull();
     expect(inbox.items()).toEqual([]);
+  });
+});
+
+describe('notificationTitle', () => {
+  it('uses task title and person full name with id fallbacks', () => {
+    expect(
+      notificationTitle({ id: '1', kind: 'task_due', taskId: '4', taskTitle: 'Rinnovo fittizio' }),
+    ).toBe('Task in scadenza: Rinnovo fittizio');
+    expect(notificationTitle({ id: '1', kind: 'task_due', taskId: '4' })).toBe(
+      'Task in scadenza: #4',
+    );
+    expect(
+      notificationTitle({
+        id: '1',
+        kind: 'career_talk_due',
+        personId: '2',
+        personName: 'Esempio Ada',
+      }),
+    ).toBe('Career talk da pianificare · Esempio Ada');
+    expect(notificationTitle({ id: '1', kind: 'career_talk_due', personId: '2' })).toBe(
+      'Career talk da pianificare · Persona #2',
+    );
   });
 });

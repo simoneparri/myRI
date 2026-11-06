@@ -7,6 +7,7 @@ import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/materi
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { Confirm } from '../../shared/confirm/confirm';
@@ -31,6 +32,7 @@ import { FrameworkIcons } from '../../shared/framework-icons';
     MatPaginatorModule,
     MatSelectModule,
     MatCheckboxModule,
+    MatTooltipModule,
     ResourcePage,
     DisplayPipe,
     SalaryTrend,
@@ -50,7 +52,7 @@ export class PersonPage {
     ['bornOn', 'education', 'careerStartedOn'],
     [],
     ['role', 'seniorityLevel', 'frameworks'],
-    ['hiredOn','hiringLocation', 'residence'],
+    ['hiredOn', 'hiringLocation', 'residence'],
     [],
     ['notes'],
   ].map((row) =>
@@ -114,6 +116,10 @@ export class PersonPage {
     return typeof id === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(id)
       ? `https://inside.alten.com/it/alten-profile/profile/${encodeURIComponent(id)}/structured`
       : null;
+  }
+  capacity(person: Row): string {
+    const value = person['capacityManagement'];
+    return typeof value === 'string' ? value.trim() : '';
   }
   frameworkList(person: Row): string[] {
     const frameworks = person['frameworks'];

@@ -40,5 +40,7 @@ public class Person extends MutableEntity {
     public String externalManager;
     @Column(columnDefinition = "text")
     public String notes;
+    @Column(columnDefinition = "text")
+    public String capacityManagement;
     public String status;
 }

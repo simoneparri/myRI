@@ -311,7 +311,6 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await expect(
     page.getByRole('heading', { name: firstName + ' Fittizia', exact: true }),
   ).toBeVisible();
-  const personPath = new URL(page.url()).pathname;
   await page.getByRole('tab', { name: 'RAL', exact: true }).click();
   await page.getByRole('button', { name: 'Nuova voce RAL', exact: true }).click();
   dialog = page.getByRole('dialog');
@@ -374,8 +373,7 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await page.getByRole('link', { name: 'Notifiche', exact: true }).click();
   const notification = page
     .locator('.timeline > li')
-    .filter({ hasText: new RegExp(`Persona #${personPath.split('/').at(-1)}\\b`) })
-    .filter({ hasText: 'Career talk da pianificare' });
+    .filter({ hasText: `Career talk da pianificare · Fittizia ${firstName}` });
   await expect(async () => {
     await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
     await expect(notification).toBeVisible();
@@ -387,7 +385,10 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await page.getByRole('checkbox', { name: 'Includi archiviati' }).check();
   await page.getByRole('button', { name: 'Aggiorna notifiche', exact: true }).click();
   await expect(notification).toContainText('Archiviata');
-  const taskNotification = page.locator('li').filter({ hasText: 'Task in scadenza #' }).first();
+  const taskNotification = page
+    .locator('li')
+    .filter({ hasText: `Task in scadenza: ${title}` })
+    .first();
   await rowAction(taskNotification, 'Apri task');
   await expect(page.getByRole('dialog')).toBeVisible();
 });

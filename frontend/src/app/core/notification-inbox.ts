@@ -6,9 +6,11 @@ import { Auth } from './auth';
 import { Pwa } from './pwa';
 
 export function notificationTitle(item: Row): string {
-  return item['kind'] === 'task_due'
-    ? `Task in scadenza #${item['taskId']}`
-    : 'Career talk da pianificare';
+  if (item['kind'] === 'task_due') {
+    return `Task in scadenza: ${item['taskTitle'] ?? '#' + item['taskId']}`;
+  }
+  const person = item['personName'] ?? (item['personId'] ? `Persona #${item['personId']}` : '');
+  return person ? `Career talk da pianificare · ${person}` : 'Career talk da pianificare';
 }
 
 @Injectable({ providedIn: 'root' })

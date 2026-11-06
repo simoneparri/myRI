@@ -14,7 +14,7 @@ public final class PersonMapper {
                 p.updatedAt, p.version, p.careerStartedOn, elapsed(p.careerStartedOn, today),
                 p.seniorityLevel, p.mypadId, p.frameworks == null ? List.of() : List.copyOf(p.frameworks),
                 p.bornOn, p.bornOn == null ? null : Period.between(p.bornOn, today).getYears(),
-                p.rsnoAgresso, p.insideId, p.education);
+                p.rsnoAgresso, p.insideId, p.education, p.capacityManagement);
     }
 
     private static String elapsed(LocalDate start, LocalDate today) {
@@ -49,6 +49,7 @@ public final class PersonMapper {
         p.managerId = input.managerId();
         p.externalManager = input.externalManager();
         p.notes = input.notes();
+        p.capacityManagement = input.capacityManagement();
         p.status = input.status();
     }
 }

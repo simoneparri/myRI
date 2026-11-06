@@ -148,6 +148,13 @@ un container root senza bind mount scrivibili sulla checkout.
   Errori espliciti con badge `!` e Riprova, mai uno zero fittizio.
   Le righe con piu azioni usano il componente condiviso RowActions con menu
   Azioni e descrittori TS; una sola azione resta un pulsante/link diretto.
+- Le notifiche mostrano "Career talk da pianificare · Cognome Nome" e
+  "Task in scadenza: titolo", con fallback all'ID se il riferimento manca.
+- Il dettaglio persona mostra la Gestione capacity come badge accanto allo stato,
+  troncato su una riga e completo nel tooltip; il campo si modifica nel form.
+- Pagina Confronto RAL (`/salary-comparison`): RAL corrente per persona con ruolo,
+  seniority, livello di inquadramento, benefit, eta e anzianita; ordinabile e
+  paginata, con filtro per includere archiviate e inattive.
 - PWA installabile con service worker Angular: offline viene mantenuta solo la
   shell statica, non le risposte API o i dati personali. Dal menu campanella
   l'utente puo concedere il permesso browser; le notifiche generiche vengono

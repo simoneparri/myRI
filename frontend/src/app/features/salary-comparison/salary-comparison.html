@@ -1,0 +1,95 @@
+<h1>Confronto RAL</h1>
+<p>
+  Per ogni persona e mostrata la RAL corrente, cioe l'ultima con decorrenza non futura. Le persone
+  senza RAL corrente non compaiono; importi in valute diverse non vengono convertiti.
+</p>
+<form class="filters" (ngSubmit)="search()">
+  <mat-form-field appearance="outline">
+    <mat-label>Ordina per</mat-label>
+    <mat-select name="sort" [(ngModel)]="sort">
+      @for (option of sorts; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox name="archived" [(ngModel)]="includeArchived"
+    >Includi archiviate e inattive</mat-checkbox
+  >
+  <button mat-stroked-button [disabled]="loading()">
+    <svg appButtonIcon="filter"></svg>Applica filtri
+  </button>
+</form>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+  <button mat-button (click)="load()"><svg appButtonIcon="refresh"></svg>Riprova</button>
+}
+@if (loading()) {
+  <p role="status">Caricamento confronto RAL...</p>
+} @else if (data().items.length === 0 && !error()) {
+  <p>Nessuna persona con RAL corrente.</p>
+}
+<div class="table-scroll">
+  <table>
+    <caption class="sr-only">
+      Confronto della RAL corrente per persona
+    </caption>
+    <thead>
+      <tr>
+        @for (column of columns; track column.key) {
+          <th scope="col">{{ column.label }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of data().items; track item['personId']) {
+        <tr [class.archived]="item['archivedAt']">
+          @for (column of columns; track column.key) {
+            <td>
+              @switch (column.type) {
+                @case ('person') {
+                  <a [routerLink]="['/people', item['personId']]"
+                    >{{ item['lastName'] }} {{ item['firstName'] }}</a
+                  >
+                  @if (item['archivedAt']) {
+                    <span class="badge">Archiviata</span>
+                  } @else if (item['status'] === 'inactive') {
+                    <span class="badge">Inattiva</span>
+                  }
+                }
+                @case ('money') {
+                  {{ item['amount'] | display: 'money' }} {{ item['currency'] }}
+                  <div class="hint">dal {{ item['effectiveOn'] | display: 'date' }}</div>
+                }
+                @case ('benefits') {
+                  <app-benefit-icons [row]="item" />
+                }
+                @case ('age') {
+                  {{ item['age'] ?? '-' }}
+                }
+                @case ('tenure') {
+                  {{ item['seniority'] ?? '-' }}
+                  @if (item['hiredOn']) {
+                    <div class="hint">dal {{ item['hiredOn'] | display: 'date' }}</div>
+                  }
+                }
+                @case ('display') {
+                  {{ item[column.key] | display }}
+                }
+                @default {
+                  {{ item[column.key] ?? '-' }}
+                }
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<mat-paginator
+  [length]="data().totalElements"
+  [pageIndex]="pageIndex"
+  [pageSize]="20"
+  (page)="paginate($event)"
+  aria-label="Paginazione confronto RAL"
+></mat-paginator>
