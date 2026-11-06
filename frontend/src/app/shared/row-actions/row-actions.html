@@ -1,6 +1,6 @@
 @if (actions().length > 1) {
-  <button mat-button [matMenuTriggerFor]="menu" [disabled]="disabled()" aria-label="Azioni">
-    <svg appButtonIcon="menu"></svg>Azioni
+  <button mat-icon-button [matMenuTriggerFor]="menu" [disabled]="disabled()" aria-label="Azioni">
+    <svg appButtonIcon="menu"></svg>
   </button>
   <mat-menu #menu="matMenu">
     @for (action of actions(); track action.key) {

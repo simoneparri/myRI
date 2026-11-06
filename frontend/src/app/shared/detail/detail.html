@@ -13,8 +13,6 @@
           <dd>
             @if (field.key === 'requestedPercentage') {
               {{ displayRow[field.key] | percentage: 'points' }}
-            } @else if (field.type === 'reference') {
-              #{{ displayRow[field.key] }}
             } @else if (field.key === 'outcomeNotes') {
               {{ displayRow[field.key] }}
             } @else {

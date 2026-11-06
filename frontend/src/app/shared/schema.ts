@@ -178,7 +178,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'contactedOn', label: 'Data di contatto', type: 'date' },
       { key: 'type', label: 'Tipo' },
       { key: 'value', label: 'Recapito' },
-      { key: 'notes', label: 'Note' },
+      { key: 'notes', label: 'Note', type: 'preview' },
     ],
   },
   projects: {
@@ -231,7 +231,7 @@ export const definitions: Record<Resource, Definition> = {
       { key: 'contractType', label: 'Tipo contratto' },
       { key: 'weeklyHours', label: 'Ore settimanali', type: 'decimal' },
       { key: 'classificationLevel', label: 'Livello' },
-      { key: 'reason', label: 'Motivo' },
+      { key: 'reason', label: 'Motivo', type: 'preview' },
       { key: 'benefits', label: 'Benefit', type: 'benefits' },
     ],
   },
@@ -284,7 +284,7 @@ export const definitions: Record<Resource, Definition> = {
     columns: [
       { key: 'personId', label: 'Persona' },
       { key: 'heldAt', label: 'Incontro', type: 'instant' },
-      { key: 'topics', label: 'Argomenti' },
+      { key: 'topics', label: 'Argomenti', type: 'preview' },
       { key: 'suggestedNextOn', label: 'Prossimo incontro', type: 'date' },
     ],
   },

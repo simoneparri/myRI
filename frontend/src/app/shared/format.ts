@@ -72,6 +72,10 @@ export class DisplayPipe implements PipeTransform {
     if (value === null || value === undefined || value === '') return '-';
     if (Array.isArray(value)) return value.length ? value.join(', ') : '-';
     const text = String(value);
+    if (type === 'preview') {
+      const characters = Array.from(text);
+      return characters.length > 250 ? characters.slice(0, 250).join('') + '...' : text;
+    }
     if (type === 'boolean') return value === true || value === 'true' ? 'Si' : 'No';
     if (type === 'decimal') return decimalDisplay(text);
     if (type === 'money') return moneyDisplay(text);

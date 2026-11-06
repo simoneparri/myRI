@@ -15,9 +15,27 @@ html {
     )
   );
   color-scheme: light;
+  @include mat.button-overrides(
+    (
+      filled-container-color: #003b60,
+      filled-label-text-color: #fff,
+      outlined-label-text-color: #003b60,
+      outlined-outline-color: #003b60,
+      text-label-text-color: #003b60,
+      protected-label-text-color: #003b60,
+    )
+  );
+  @include mat.icon-button-overrides(
+    (
+      icon-color: #003b60,
+    )
+  );
 }
 * {
   box-sizing: border-box;
+}
+[mat-icon-button] svg[appButtonIcon] {
+  margin-right: 0 !important;
 }
 body {
   margin: 0;

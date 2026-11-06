@@ -4,6 +4,32 @@ import { definitions } from '../schema';
 import { Detail } from './detail';
 
 describe('Detail percentage formatting', () => {
+  it('preserves business identifiers and full notes in person details', async () => {
+    TestBed.configureTestingModule({
+      imports: [Detail],
+      providers: [
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: {
+            row: {
+              id: '987654321',
+              insideId: 'INSIDE-FITTIZIO',
+              mypadId: 'MYPAD-FITTIZIO',
+              notes: 'a'.repeat(251),
+            },
+            definition: definitions.people,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(Detail);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).not.toContain('987654321');
+    expect(element.textContent).toContain('INSIDE-FITTIZIO');
+    expect(element.textContent).toContain('MYPAD-FITTIZIO');
+    expect(element.textContent).toContain('a'.repeat(251));
+  });
   it('renders the saved nested raise proposal, including No, zero and cleared values', async () => {
     TestBed.configureTestingModule({
       imports: [Detail],
@@ -61,7 +87,7 @@ describe('Detail percentage formatting', () => {
       ).toBe(value);
     }
   });
-  it('keeps metadata order, optional visibility, raw notes and reference prefixes', async () => {
+  it('keeps metadata order and full notes without exposing internal database IDs', async () => {
     TestBed.configureTestingModule({
       imports: [Detail],
       providers: [
@@ -72,12 +98,22 @@ describe('Detail percentage formatting', () => {
               id: '1',
               status: 'approved',
               outcomeOn: '2026-11-03',
-              outcomeNotes: 'active',
+              outcomeNotes: 'a'.repeat(251),
               salaryId: '2',
               sourceTaskId: '3',
+              sourceRaiseRequestId: '4',
+              personId: '5',
+              baseSalaryId: '6',
               completedAt: '2026-11-03T11:00:00Z',
             },
-            definition: { singular: 'fittizia', fields: [], columns: [] },
+            definition: {
+              singular: 'fittizia',
+              fields: [
+                { key: 'personId', label: 'Persona', type: 'id' },
+                { key: 'baseSalaryId', label: 'RAL base', type: 'id' },
+              ],
+              columns: [],
+            },
           },
         },
       ],
@@ -90,21 +126,15 @@ describe('Detail percentage formatting', () => {
     expect(element.querySelector('mat-dialog-content')?.children[1].tagName).toBe('HR');
     expect(element.querySelector('mat-dialog-content')?.children[2].tagName).toBe('HR');
     expect([...element.querySelectorAll('dt')].map((item) => item.textContent?.trim())).toEqual([
-      'ID',
       'Stato',
       'Data esito',
       'Note esito',
-      'RAL generata',
-      'Task origine',
       'Completato',
     ]);
     expect([...element.querySelectorAll('dd')].map((item) => item.textContent?.trim())).toEqual([
-      '1',
       'Approvata',
       '03/11/2026',
-      'active',
-      '#2',
-      '#3',
+      'a'.repeat(251),
       '03/11/2026, 12:00',
     ]);
   });

@@ -20,25 +20,23 @@ export class Detail {
       : {}),
   };
   readonly fieldRows: Column[][] = [
-    ...this.data.definition.fields.map((field) => [
-      {
-        key: field.key,
-        label: field.label,
-        group: field.group,
-        type: ['amount', 'requestedSalary', 'bonusLetterAmount'].includes(field.key)
-          ? 'money'
-          : field.type,
-      },
-    ]),
-    [{ key: 'id', label: 'ID' }],
+    ...this.data.definition.fields
+      .filter((field) => field.type !== 'id')
+      .map((field) => [
+        {
+          key: field.key,
+          label: field.label,
+          group: field.group,
+          type: ['amount', 'requestedSalary', 'bonusLetterAmount'].includes(field.key)
+            ? 'money'
+            : field.type,
+        },
+      ]),
     ...(
       [
         { key: 'status', label: 'Stato' },
         { key: 'outcomeOn', label: 'Data esito', type: 'date' },
         { key: 'outcomeNotes', label: 'Note esito' },
-        { key: 'salaryId', label: 'RAL generata', type: 'reference' },
-        { key: 'sourceRaiseRequestId', label: 'Richiesta origine', type: 'reference' },
-        { key: 'sourceTaskId', label: 'Task origine', type: 'reference' },
         { key: 'completedAt', label: 'Completato', type: 'instant' },
         { key: 'archivedAt', label: 'Archiviato', type: 'instant' },
       ] satisfies Column[]

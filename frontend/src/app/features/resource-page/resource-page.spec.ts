@@ -60,6 +60,28 @@ describe('ResourcePage', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Operazione non riuscita');
     expect(element.textContent).not.toContain('Nessun risultato');
   });
+  it('truncates long table notes without changing the saved row', async () => {
+    const fixture = await create();
+    const fullText = 'a'.repeat(250) + 'NON VISIBILE IN TABELLA';
+    for (const [resource, key] of [
+      ['contacts', 'notes'],
+      ['salaries', 'reason'],
+      ['career-talks', 'topics'],
+    ] as const) {
+      get.mockResolvedValue({
+        ...empty,
+        items: [{ id: '1', [key]: fullText }],
+        totalElements: 1,
+      });
+      fixture.componentRef.setInput('resource', resource);
+      fixture.componentRef.setInput('personId', '9');
+      await fixture.whenStable();
+      const body = (fixture.nativeElement as HTMLElement).querySelector('tbody')!;
+      expect(body.textContent).toContain('a'.repeat(250) + '...');
+      expect(body.textContent).not.toContain('NON VISIBILE IN TABELLA');
+      expect(fixture.componentInstance.page().items[0][key]).toBe(fullText);
+    }
+  });
   it('formats raise percentages in points without changing salary formatting', async () => {
     const fixture = await create();
     get.mockResolvedValue({

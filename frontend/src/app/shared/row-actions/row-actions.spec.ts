@@ -21,6 +21,10 @@ describe('RowActions', () => {
       { key: 'archive', label: 'Archivia', icon: 'archive' },
     ]);
     await fixture.whenStable();
+    const trigger = element.querySelector<HTMLButtonElement>('[aria-label="Azioni"]')!;
+    expect(trigger.hasAttribute('mat-icon-button')).toBe(true);
+    expect(trigger.textContent?.trim()).toBe('');
+    expect(trigger.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     element.querySelector<HTMLButtonElement>('[aria-label="Azioni"]')!.click();
     await fixture.whenStable();
     expect(document.querySelector('a[role="menuitem"]')?.getAttribute('href')).toBe('/people/1');
