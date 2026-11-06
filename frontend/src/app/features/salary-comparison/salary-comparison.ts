@@ -45,15 +45,15 @@ export class SalaryComparison {
     { key: 'classificationLevel', label: 'Livello', type: 'text' },
     { key: 'amount', label: 'RAL annua', type: 'money' },
     { key: 'benefits', label: 'Benefit', type: 'benefits' },
-    { key: 'age', label: 'Eta', type: 'age' },
-    { key: 'seniority', label: 'Anzianita aziendale', type: 'tenure' },
+    { key: 'age', label: 'Età', type: 'age' },
+    { key: 'seniority', label: 'Anzianità aziendale', type: 'tenure' },
   ];
   readonly sorts = [
     { value: 'lastName,asc', label: 'Cognome (A-Z)' },
     { value: 'amount,desc', label: 'RAL decrescente' },
     { value: 'amount,asc', label: 'RAL crescente' },
-    { value: 'hiredOn,asc', label: 'Anzianita decrescente' },
-    { value: 'bornOn,asc', label: 'Eta decrescente' },
+    { value: 'hiredOn,asc', label: 'Anzianità decrescente' },
+    { value: 'bornOn,asc', label: 'Età decrescente' },
     { value: 'role,asc', label: 'Ruolo (A-Z)' },
     { value: 'seniorityLevel,asc', label: 'Seniority' },
   ];
