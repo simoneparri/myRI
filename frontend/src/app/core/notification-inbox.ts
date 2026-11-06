@@ -7,7 +7,8 @@ import { Pwa } from './pwa';
 
 export function notificationTitle(item: Row): string {
   if (item['kind'] === 'task_due') {
-    return `Task in scadenza: ${item['taskTitle'] ?? '#' + item['taskId']}`;
+    const title = `Task in scadenza: ${item['taskTitle'] ?? '#' + item['taskId']}`;
+    return item['personName'] ? `${title} · ${item['personName']}` : title;
   }
   const person = item['personName'] ?? (item['personId'] ? `Persona #${item['personId']}` : '');
   return person ? `Career talk da pianificare · ${person}` : 'Career talk da pianificare';

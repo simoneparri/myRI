@@ -130,6 +130,15 @@ describe('notificationTitle', () => {
     expect(
       notificationTitle({ id: '1', kind: 'task_due', taskId: '4', taskTitle: 'Rinnovo fittizio' }),
     ).toBe('Task in scadenza: Rinnovo fittizio');
+    expect(
+      notificationTitle({
+        id: '1',
+        kind: 'task_due',
+        taskId: '4',
+        taskTitle: 'Rinnovo fittizio',
+        personName: 'Esempio Ada',
+      }),
+    ).toBe('Task in scadenza: Rinnovo fittizio · Esempio Ada');
     expect(notificationTitle({ id: '1', kind: 'task_due', taskId: '4' })).toBe(
       'Task in scadenza: #4',
     );

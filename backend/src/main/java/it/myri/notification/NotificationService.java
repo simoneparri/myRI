@@ -3,6 +3,7 @@ package it.myri.notification;
 import it.myri.common.*;
 import it.myri.person.Person;
 import it.myri.person.PersonRepository;
+import it.myri.task.Task;
 import it.myri.task.TaskRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -42,13 +43,15 @@ public class NotificationService {
                 .and(Queries.equal("kind", kind)).and(unread),
                 Queries.page(page, size, "triggeredAt,desc", Set.of("triggeredAt")));
         // Labels are loaded once per page to avoid one lookup per notification.
-        Map<Long, String> names = people.findAllById(result.stream().map(n -> n.personId)
+        Map<Long, Task> taskById = tasks.findAllById(result.stream().map(n -> n.taskId)
                 .filter(Objects::nonNull).collect(Collectors.toSet())).stream()
+                .collect(Collectors.toMap(t -> t.id, Function.identity()));
+        Set<Long> personIds = result.stream().map(n -> n.personId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        taskById.values().stream().map(t -> t.personId).filter(Objects::nonNull).forEach(personIds::add);
+        Map<Long, String> names = people.findAllById(personIds).stream()
                 .collect(Collectors.toMap(p -> p.id, NotificationService::fullName));
-        Map<Long, String> titles = tasks.findAllById(result.stream().map(n -> n.taskId)
-                .filter(Objects::nonNull).collect(Collectors.toSet())).stream()
-                .collect(Collectors.toMap(t -> t.id, t -> t.title));
-        return PageResponse.of(result, n -> view(n, names::get, titles::get));
+        return PageResponse.of(result, n -> view(n, names::get, taskById::get));
     }
 
     public View mark(Long id, Long version, boolean archive) {
@@ -62,16 +65,19 @@ public class NotificationService {
         Notification saved = notifications.saveAndFlush(item);
         return view(saved,
                 personId -> people.findById(personId).map(NotificationService::fullName).orElse(null),
-                taskId -> tasks.findById(taskId).map(t -> t.title).orElse(null));
+                taskId -> tasks.findById(taskId).orElse(null));
     }
 
     static String fullName(Person person) {
         return person.lastName + " " + person.firstName;
     }
 
-    private static View view(Notification n, Function<Long, String> names, Function<Long, String> titles) {
+    private static View view(Notification n, Function<Long, String> names, Function<Long, Task> tasks) {
+        Task task = n.taskId == null ? null : tasks.apply(n.taskId);
+        // Task notifications carry only task_id: the target person comes from the task.
+        Long personId = n.personId != null ? n.personId : task == null ? null : task.personId;
         return new View(n.id, n.kind, n.personId, n.taskId, n.triggeredAt, n.readAt, n.archivedAt, n.version,
-                n.personId == null ? null : names.apply(n.personId),
-                n.taskId == null ? null : titles.apply(n.taskId));
+                personId == null ? null : names.apply(personId),
+                task == null ? null : task.title);
     }
 }

@@ -149,7 +149,8 @@ un container root senza bind mount scrivibili sulla checkout.
   Le righe con piu azioni usano il componente condiviso RowActions con menu
   Azioni e descrittori TS; una sola azione resta un pulsante/link diretto.
 - Le notifiche mostrano "Career talk da pianificare · Cognome Nome" e
-  "Task in scadenza: titolo", con fallback all'ID se il riferimento manca.
+  "Task in scadenza: titolo · Cognome Nome" (persona del task, se presente),
+  con fallback all'ID se il riferimento manca.
 - Lo stato persona e un pallino con tooltip: verde attiva, giallo archiviata,
   grigio non piu nel team. La Gestione capacity e un badge accanto al pallino,
   troncato su una riga e completo nel tooltip; il campo si modifica nel form.

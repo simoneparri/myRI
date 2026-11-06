@@ -210,7 +210,7 @@ class Step4ApiTest extends IntegrationTest {
                 VALUES('career_talk_due','test-career',?,'2026-11-03 09:00:00',0)""", p);
         mvc.perform(get("/api/v1/notifications")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].taskTitle").value("Rinnovo fittizio"))
-                .andExpect(jsonPath("$.items[0].personName").doesNotExist())
+                .andExpect(jsonPath("$.items[0].personName").value("Esempio Ada"))
                 .andExpect(jsonPath("$.items[1].personName").value("Esempio Ada"))
                 .andExpect(jsonPath("$.items[1].taskTitle").doesNotExist());
     }

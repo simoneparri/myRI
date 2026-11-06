@@ -317,8 +317,9 @@ anche archiviate e inattive. Ordinamenti ammessi: lastName (poi firstName),
 amount, hiredOn, bornOn, role, seniorityLevel, sempre con ID come spareggio.
 Nessuna conversione tra valute diverse.
 
-NotificationView include `personName` ("Cognome Nome") per le notifiche
-career talk e `taskTitle` per quelle di scadenza task, caricati per pagina.
+NotificationView include `personName` ("Cognome Nome") e, per le scadenze task,
+`taskTitle`; per i task il nome e quello della persona collegata al task (se
+presente). Etichette caricate una volta per pagina.
 
 ## Export persona - Step 4
 
