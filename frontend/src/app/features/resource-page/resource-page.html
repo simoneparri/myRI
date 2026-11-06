@@ -102,12 +102,13 @@
     <button mat-button type="button" (click)="reload()" [disabled]="loading()">
       <svg appButtonIcon="refresh"></svg>Ricarica
     </button>
-  </form>
-  @if (resource() === 'contacts') {
-    <mat-slide-toggle [checked]="showFullNotes()" (change)="showFullNotes.set($event.checked)"
+    @if (resource() === 'contacts') {
+      <mat-slide-toggle [checked]="showFullNotes()" (change)="showFullNotes.set($event.checked)"
       >Mostra note complete</mat-slide-toggle
-    >
-  }
+      >
+    }
+  </form>
+
   @if (todoView) {
     <p>
       Solo task aperti non archiviati. Oggi e scaduti possono sovrapporsi; i prossimi 7 giorni
