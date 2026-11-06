@@ -26,13 +26,10 @@ mysql_command='
 '
 migrations="$root/backend/src/main/resources/db/migration"
 {
-    for migration in "$migrations/V2__protect_history_and_prevent_physical_deletes.sql" \
-                     "$migrations/V8__add_person_projects.sql"; do
-        awk '/^CREATE TRIGGER / { print "DROP TRIGGER IF EXISTS `" $3 "`;" }' "$migration"
-    done
+    migration="$migrations/V2__protect_history_and_prevent_physical_deletes.sql"
+    awk '/^CREATE TRIGGER / { print "DROP TRIGGER IF EXISTS `" $3 "`;" }' "$migration"
     if [[ "$action" == enable ]]; then
-        cat "$migrations/V2__protect_history_and_prevent_physical_deletes.sql"
-        awk '/^CREATE TRIGGER / { output=1 } output' "$migrations/V8__add_person_projects.sql"
+        cat "$migration"
     fi
 } | "${compose[@]}" exec -T db sh -c "$mysql_command"
 

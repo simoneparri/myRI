@@ -316,14 +316,16 @@ mutabile; notification usa read_at/archived_at, non updated_at.
 
 ## Migrazioni, privilegi e rischi
 
-- V1 crea nove tabelle, indici, CHECK e FK; risolve la dipendenza circolare
-  salary/raise_request aggiungendo la FK della sorgente dopo le due CREATE TABLE.
-- V2 aggiunge trigger append-only, anti-delete e anti-auto-riporto.
-- V3 (Step 2) aggiunge salary.request_key nullable con UNIQUE per idempotenza
-  degli inserimenti manuali; le righe storiche V1/V2 rimangono inalterate.
-- V5 aggiunge sede/residenza e i dati contrattuali alla persona/RAL. Le colonne
-  contrattuali restano nullable per preservare le voci RAL storiche; nuove voci
-  manuali le richiedono e quelle generate da aumento le ereditano dalla base.
+- V1 crea lo schema completo (tabelle, colonne, indici, CHECK e FK) e risolve
+  la dipendenza circolare salary/raise_request aggiungendo la FK della sorgente
+  dopo le due CREATE TABLE. Tutte le estensioni sviluppate prima del rilascio
+  sono consolidate in questa migrazione iniziale.
+- V2 installa tutti i trigger append-only, anti-delete e anti-auto-riporto,
+  inclusa la protezione della tabella project.
+- La cronologia incrementale V3-V14 usata durante lo sviluppo e stata rimossa
+  prima del primo rilascio. Database che l'hanno gia applicata vanno ricreati
+  soltanto se sono ambienti dev sacrificabili; non e previsto un upgrade da
+  quella cronologia consolidata.
 - Flyway con flyway-mysql; Hibernate ddl-auto=validate attivo nello Step 2.
 - Harness con Spring Boot parent 3.5.16 e Java 21. Flyway 11.20.3 fissato
   esplicitamente per supportare MySQL 8.4 senza l'avviso del ramo 10

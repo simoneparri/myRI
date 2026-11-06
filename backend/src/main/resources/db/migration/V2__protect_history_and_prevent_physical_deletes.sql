@@ -63,4 +63,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'self recurrence is disabled';
     END IF;
 END$$
+
+CREATE TRIGGER tr_project_no_delete BEFORE DELETE ON project
+FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'physical deletion is disabled'$$
 DELIMITER ;

@@ -260,9 +260,11 @@ log_bin_trust_function_creators=1 consente i trigger senza assegnare SUPER a Fly
 Gli script MySQL iniziali girano soltanto su volume vuoto: cambiare password
 nel .env non ruota automaticamente quelle di un DB esistente. Su dati esistenti
 occorre una procedura amministrativa esplicita, senza eliminare il volume.
-Flyway V1-V4 non sono state modificate; V5 aggiunge sede/residenza e i dati
-contrattuali storicizzati per le nuove voci RAL. I dati contrattuali preesistenti
-non sono ricostruiti e rimangono nulli.
+Prima del rilascio, le migrazioni di sviluppo sono state consolidate: V1 crea
+lo schema completo e V2 installa tutti i trigger. I database dev con la vecchia
+cronologia Flyway non sono aggiornabili con questa versione: ricrearli soltanto
+se contengono dati fittizi sacrificabili. Non applicare questa riscrittura a
+istanze rilasciate.
 
 Bootstrap applicativo non cambia la password a un account gia esistente.
 Per reset amministrativo locale, senza scrivere la password nella cronologia:
@@ -327,8 +329,8 @@ cd backend
 ./mvnw verify
 ```
 
-I test avviano MySQL effimero `mysql:8`. Lo schema viene creato da V1 e aggiornato
-fino a V5, verificando conservazione e protezione dello storico.
+I test avviano MySQL effimero `mysql:8`. V1 crea lo schema completo e V2 applica
+i trigger; il test verifica l'upgrade da V1 a V2 e la conservazione dei dati fittizi.
 Usa le stesse migrazioni di produzione, valida Flyway e verifica il no-op
 di una successiva migrate. Controlla tipi,
 charset/collation, FK/indici, immutabilita RAL/audit, soft archive, account unico,

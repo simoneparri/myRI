@@ -97,7 +97,7 @@ SalaryInput e SalaryView includono `mealVouchers` e `companyCar` (booleani
 nullable) e `bonusLetterAmount` (stringa decimale nullable, 0-9999999999.99 EUR,
 massimo due decimali). Sono benefit facoltativi della singola voce storica,
 distinti dalla RAL annua; non concorrono al calcolo dell'aumento.
-La migrazione V12 lascia null i valori precedenti, senza riscrivere lo storico.
+I campi nullable preservano i valori non specificati nelle voci storiche.
 Elenco, andamento ed export JSON/CSV riportano gli stessi campi.
 La chiave idempotenza di creazione confronta anche tutti i benefit.
 
@@ -106,10 +106,10 @@ bonusLetterAmount,companyCar}` con gli stessi vincoli della RAL. In creazione,
 se omesso/null, viene salvata una copia dei benefit della base. In PUT,
 omesso/null conserva la proposta salvata; un oggetto presente sostituisce tutto
 il gruppo, anche con tutti i valori null. Modifica solo in draft/submitted.
-V13 aggiunge i campi e un marcatore di presenza senza backfill: `benefits: null`
-nei record precedenti indica assenza di una proposta, distinta da tre null
-espliciti. La proposta e inclusa nell'export JSON; il CSV la conserva come JSON
-in una singola cella. L'audit registra il nome `benefits`, non i valori.
+Il marcatore di presenza distingue `benefits: null` nei record legacy, che indica
+assenza di una proposta, da tre null espliciti. La proposta e inclusa nell'export
+JSON; il CSV la conserva come JSON in una singola cella. L'audit registra il nome
+`benefits`, non i valori.
 
 Il comando approve accetta `benefits` facoltativo: se omesso/null applica la
 proposta salvata, oppure i tre valori della RAL base per le richieste legacy
@@ -153,10 +153,10 @@ anche le richieste concorrenti; i duplicati restituiscono 409.
 magistrale), `phd`. I tre campi sono obbligatori su POST, nullable su PUT soltanto
 finche non assegnati ai record legacy, correggibili ma non svuotabili dopo
 l'assegnazione. Valori non validi restituiscono 400. PersonView ed export
-JSON/CSV includono tutti e tre i campi; V11 li aggiunge senza backfill.
+JSON/CSV includono tutti e tre i campi.
 
-`capacityManagement` e un testo libero facoltativo (TEXT, max 10000 caratteri,
-V14) per la gestione capacity della persona; incluso negli export.
+`capacityManagement` e un testo libero facoltativo (TEXT, max 10000 caratteri)
+per la gestione capacity della persona; incluso negli export.
 `mypadId` e un identificativo esterno separato dall'ID tecnico auto-generato:
 1-100 lettere ASCII, numeri, underscore o trattini, univoco anche tra persone
 archiviate (confronto secondo la collation case-insensitive del DB).
@@ -170,8 +170,8 @@ aggiunge `careerDuration` come durata dall'inizio carriera: anni e mesi completi
 calcolati alla data corrente nel fuso applicativo, non editabili ne persistiti.
 Date future producono `data futura`; una data inizio carriera assente produce
 durata null. La seniority professionale manuale e invece `seniorityLevel`.
-La migrazione V6 non inventa date, livelli o ID per i record esistenti: i nuovi
-campi restano null, `hiredOn` resta invariata. L'eventuale colonna legacy
+I campi facoltativi non inventano date, livelli o ID per i record esistenti:
+restano null e `hiredOn` resta invariata. L'eventuale colonna legacy
 `seniority` resta nel database senza essere letta o aggiornata.
 JSON/CSV includono i nuovi campi. Reminder e soglie aziendali continuano a usare
 la data di assunzione, non quella di inizio carriera.
@@ -194,7 +194,7 @@ anche se `includeArchived=true`; senza `period` quest'ultimo li rende consultabi
 Liste paginate, ordinamento predefinito `startsOn,desc`; ammessi anche id, client,
 endsOn e createdAt. Archiviazione logica, nessun DELETE o trasferimento di persona.
 Progetti di persone archiviate restano leggibili, non creabili/modificabili.
-La migrazione V8 non converte i precedenti manager in progetti.
+I progetti non vengono derivati dai precedenti manager.
 
 Manager interno/esterno e relativo filtro non sono piu visibili nel frontend.
 I dati e i campi API legacy restano preservati per compatibilita; modificare
@@ -207,14 +207,14 @@ POST salaries richiede amount, currency ISO 4217, effectiveOn, reason e
 oltre a `contractType`, `weeklyHours` (da 0.01 a 168, massimo due decimali) e
 `classificationLevel`. Questi tre campi sono inclusi in ogni voce e nel relativo
 storico immutabile. Una RAL creata approvando un aumento eredita i dati dalla
-RAL base. Se la RAL base e precedente alla V5, i dati contrattuali non disponibili
+RAL base. Se i dati contrattuali non sono disponibili sulla RAL base, questi
 restano nulli anche nella voce generata; non vengono inventati valori.
-Le voci precedenti alla migrazione V5 mantengono questi campi nulli, perche non
-e possibile ricostruire retroattivamente dati mancanti.
+Le voci storiche prive di questi dati mantengono i campi nulli, perche non e
+possibile ricostruire retroattivamente informazioni mancanti.
 Ripetere la stessa chiave e payload restituisce la stessa voce, senza audit
 duplicato; chiave riutilizzata con payload diverso produce 409. La chiave e
 unica nell'intero database e usa la collation case-insensitive MySQL.
-Le voci storiche precedenti a V3 non richiedono retroattivamente una chiave.
+Le voci storiche prive di chiave non la richiedono retroattivamente.
 
 RAL mai sovrascritta; una correzione crea una nuova voce motivata.
 Creazione RAL e relativo audit sono una sola transazione. Runtime ha SELECT/INSERT

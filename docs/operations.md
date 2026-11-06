@@ -49,6 +49,12 @@ Cambiare password DB nel `.env` **non** cambia le utenze gia presenti: ruotarle
 con procedura amministrativa esplicita, senza esporre segreti o perdere il volume.
 Il profilo `dev` e soltanto per installazioni fittizie dedicate.
 
+Prima del rilascio le migrazioni di sviluppo sono state consolidate in V1
+(schema completo) e V2 (trigger). Un database dev che abbia gia applicato la
+vecchia sequenza V3-V14 non e aggiornabile automaticamente con questa versione:
+riutilizzarlo richiede una procedura esplicita di ricreazione o migrazione dei
+dati fittizi. Non applicare tale riscrittura a installazioni rilasciate.
+
 ### Trigger solo in sviluppo
 
 Le migrazioni normali continuano a creare i trigger di protezione di RAL, audit,
@@ -71,7 +77,7 @@ MYRI_DEV_DATABASE_CONFIRM=fictitious-data-only bash scripts/dev-triggers.sh enab
 
 `MYRI_ENV_FILE` seleziona un env file privato alternativo; `COMPOSE_FILE` e
 `COMPOSE_PROJECT_NAME` consentono di selezionare lo stack fittizio dedicato.
-Il ripristino ricrea le definizioni versionate V2/V8, senza riscrivere la storia
+Il ripristino ricrea le definizioni versionate in V2 senza riscrivere la storia
 Flyway. Riavviare il backend **non** ripristina automaticamente i trigger rimossi:
 eseguire `enable` prima di riutilizzare il database con protezioni normali.
 Il DDL non e transazionale: in caso di errore il comando fallisce esplicitamente

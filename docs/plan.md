@@ -1,5 +1,13 @@
 # Piano incrementale myRI
 
+## Stato migrazioni pre-release
+
+Prima del rilascio, le migrazioni incrementali usate durante lo sviluppo sono
+state consolidate: V1 crea lo schema completo e V2 installa tutti i trigger.
+I riferimenti V3-V14 nelle note sottostanti descrivono la cronologia dello
+sviluppo, non file presenti; i database dev con quella vecchia history Flyway
+devono essere ricreati solo se contengono dati fittizi sacrificabili.
+
 ## Stato e autorizzazioni
 
 Estensione autorizzata: titoli notifiche con "Cognome Nome" e titolo task,
