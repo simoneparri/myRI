@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NotificationInbox } from '../../core/notification-inbox';
+import { Pwa } from '../../core/pwa';
 import { Row } from '../../core/api';
 import { NotificationBell } from './notification-bell';
 
@@ -15,7 +16,19 @@ describe('NotificationBell', () => {
       refresh: vi.fn(),
     };
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: NotificationInbox, useValue: inbox }],
+      providers: [
+        provideRouter([]),
+        { provide: NotificationInbox, useValue: inbox },
+        {
+          provide: Pwa,
+          useValue: {
+            browserNotificationsSupported: false,
+            notificationPermission: signal('unsupported'),
+            notificationError: signal(''),
+            requestBrowserNotifications: vi.fn(),
+          },
+        },
+      ],
     });
     const fixture = TestBed.createComponent(NotificationBell);
     await fixture.whenStable();

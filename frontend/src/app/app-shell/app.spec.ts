@@ -4,6 +4,7 @@ import { signal } from '@angular/core';
 import { App } from './app';
 import { Auth } from '../core/auth';
 import { NotificationInbox } from '../core/notification-inbox';
+import { Pwa } from '../core/pwa';
 
 describe('App', () => {
   it('shows navigation only for an authenticated user', async () => {
@@ -13,6 +14,15 @@ describe('App', () => {
       providers: [
         provideRouter([]),
         { provide: Auth, useValue: { user } },
+        {
+          provide: Pwa,
+          useValue: {
+            notificationError: signal(''),
+            notificationPermission: signal('unsupported'),
+            browserNotificationsSupported: false,
+            requestBrowserNotifications: vi.fn(),
+          },
+        },
         {
           provide: NotificationInbox,
           useValue: {
@@ -34,5 +44,9 @@ describe('App', () => {
     await fixture.whenStable();
     expect(element.querySelector('nav')?.textContent).toContain('Persone');
     expect(element.textContent).toContain('Esci');
+    expect(element.textContent).toContain('Versione 0.0.0');
+    expect(element.querySelector('footer a')?.getAttribute('href')).toBe(
+      'https://simoneparri.github.io/',
+    );
   });
 });

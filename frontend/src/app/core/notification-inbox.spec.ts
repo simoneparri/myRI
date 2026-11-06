@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { Api, Page, Row } from './api';
 import { Auth } from './auth';
 import { NotificationInbox } from './notification-inbox';
+import { Pwa } from './pwa';
 
 describe('NotificationInbox', () => {
   const empty: Page<Row> = { items: [], page: 0, size: 5, totalElements: 0, totalPages: 0 };
@@ -13,17 +14,20 @@ describe('NotificationInbox', () => {
   let get: ReturnType<typeof vi.fn>;
   let events: Subject<NavigationEnd>;
   let inbox: NotificationInbox;
+  let showUnreadNotification: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     user.set(null);
     get = vi.fn().mockResolvedValue(empty);
+    showUnreadNotification = vi.fn().mockResolvedValue(undefined);
     events = new Subject<NavigationEnd>();
     TestBed.configureTestingModule({
       providers: [
         { provide: Api, useValue: { get } },
         { provide: Auth, useValue: { user } },
         { provide: Router, useValue: { events } },
+        { provide: Pwa, useValue: { showUnreadNotification } },
       ],
     });
     inbox = TestBed.inject(NotificationInbox);
@@ -72,6 +76,23 @@ describe('NotificationInbox', () => {
     await inbox.refresh();
     expect(inbox.error()).toBe('');
     expect(inbox.count()).toBe(0);
+  });
+  it('shows a browser notification only when the unread total increases after the initial load', async () => {
+    get.mockResolvedValueOnce({
+      ...empty,
+      totalElements: 2,
+      items: [{ id: '1', kind: 'task_due' }],
+    });
+    await login();
+    expect(showUnreadNotification).not.toHaveBeenCalled();
+
+    get.mockResolvedValueOnce({
+      ...empty,
+      totalElements: 3,
+      items: [{ id: '2', kind: 'career_talk_due' }],
+    });
+    await inbox.refresh();
+    expect(showUnreadNotification).toHaveBeenCalledOnce();
   });
   it('ignores stale requests after a newer refresh or logout', async () => {
     await login();

@@ -119,6 +119,19 @@ main {
   margin: auto;
   padding: 1.5rem;
 }
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 1.5rem;
+  color: #4b5c6e;
+  font-size: 0.875rem;
+}
+.app-footer a {
+  color: inherit;
+}
 h1,
 h2 {
   font-weight: 650;
@@ -267,6 +280,10 @@ dd {
 @media (max-width: 650px) {
   main {
     padding: 0.75rem;
+  }
+  .app-footer {
+    flex-direction: column;
+    padding: 1rem 0.75rem;
   }
   header {
     padding: 0.75rem;

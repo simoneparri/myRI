@@ -3,6 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, merge, timer } from 'rxjs';
 import { Api, Page, Row, errorMessage } from './api';
 import { Auth } from './auth';
+import { Pwa } from './pwa';
 
 export function notificationTitle(item: Row): string {
   return item['kind'] === 'task_due'
@@ -15,6 +16,7 @@ export class NotificationInbox {
   private readonly api = inject(Api);
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly pwa = inject(Pwa);
   readonly count = signal<number | null>(null);
   readonly items = signal<Row[]>([]);
   readonly error = signal('');
@@ -52,8 +54,12 @@ export class NotificationInbox {
         size: 5,
       });
       if (generation !== this.generation || this.auth.user() !== user) return;
+      const previousCount = this.count();
       this.items.set(page.items);
       this.count.set(page.totalElements);
+      if (previousCount !== null && page.totalElements > previousCount) {
+        void this.pwa.showUnreadNotification();
+      }
     } catch (error) {
       if (generation !== this.generation || this.auth.user() !== user) return;
       this.items.set([]);

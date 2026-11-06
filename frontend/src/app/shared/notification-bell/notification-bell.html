@@ -31,6 +31,20 @@
       {{ item['triggeredAt'] | display: 'instant' }}
     </a>
   }
+  @if (pwa.notificationError()) {
+    <p role="alert" class="error">{{ pwa.notificationError() }}</p>
+  }
+  @if (pwa.browserNotificationsSupported) {
+    @if (pwa.notificationPermission() === 'granted') {
+      <span mat-menu-item>Notifiche browser attive</span>
+    } @else if (pwa.notificationPermission() === 'denied') {
+      <span mat-menu-item>Permesso negato: controlla le impostazioni del browser</span>
+    } @else {
+      <button mat-menu-item (click)="pwa.requestBrowserNotifications()">
+        Attiva notifiche browser
+      </button>
+    }
+  }
   @if ((inbox.count() ?? 0) > inbox.items().length) {
     <p>Mostrate {{ inbox.items().length }} di {{ inbox.count() }} notifiche non lette.</p>
   }

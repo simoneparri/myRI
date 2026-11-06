@@ -4,6 +4,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { NotificationInbox, notificationTitle } from '../../core/notification-inbox';
+import { Pwa } from '../../core/pwa';
 import { DisplayPipe } from '../format';
 import { ButtonIcon } from '../button-icon/button-icon';
 
@@ -14,5 +15,6 @@ import { ButtonIcon } from '../button-icon/button-icon';
 })
 export class NotificationBell {
   readonly inbox = inject(NotificationInbox);
+  readonly pwa = inject(Pwa);
   readonly title = notificationTitle;
 }

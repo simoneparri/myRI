@@ -2,6 +2,11 @@
 
 ## Stato e autorizzazioni
 
+Estensione frontend autorizzata: PWA installabile con service worker Angular,
+cache della sola shell statica, notifiche browser opt-in per nuove notifiche
+inbox mentre l'app e aperta (senza Web Push/backend), avviso aggiornamento con
+azione esplicita, footer con versione package e link copyright.
+
 Estensione autorizzata: proposte Benefit persistite sulle richieste di aumento
 in bozza/inviate, inizializzate dalla RAL base e applicate alla nuova RAL in
 approvazione, con override esplicito e senza modificare lo storico. V13 mantiene

@@ -15,6 +15,7 @@ configurazione privata di `.env`. Aprire http://127.0.0.1:8080
 Per sviluppo con Node 24:
 
 ```sh
+. "$HOME/.nvm/nvm.sh" && nvm use 24
 npm ci
 npm start
 npm test -- --watch=false
@@ -147,6 +148,13 @@ un container root senza bind mount scrivibili sulla checkout.
   Errori espliciti con badge `!` e Riprova, mai uno zero fittizio.
   Le righe con piu azioni usano il componente condiviso RowActions con menu
   Azioni e descrittori TS; una sola azione resta un pulsante/link diretto.
+- PWA installabile con service worker Angular: offline viene mantenuta solo la
+  shell statica, non le risposte API o i dati personali. Dal menu campanella
+  l'utente puo concedere il permesso browser; le notifiche generiche vengono
+  mostrate quando l'inbox rileva nuove non lette mentre myRI e aperta. Non usa
+  Web Push e non notifica a browser chiuso. Le nuove versioni vengono segnalate
+  con azione Aggiorna. Il footer mostra la versione di `package.json` e il link
+  copyright a `https://simoneparri.github.io/`.
 - Viste Task oggi/scaduti/prossimi 7 giorni/tutti aperti, anche per persona.
   I preset non applicano i filtri della gestione completa nascosti.
 - Andamento RAL cronologico nella scheda persona, importi precisi e valute

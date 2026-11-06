@@ -27,6 +27,7 @@
     "@angular/material": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@angular/service-worker": "21.2.25",
     "devicon": "2.18.0",
     "intl-tel-input": "29.5.10",
     "rxjs": "~7.8.0",
