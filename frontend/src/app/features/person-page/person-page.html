@@ -7,7 +7,14 @@
   <div class="section-heading">
     <div class="person-title">
       <h1>{{ displayName(person) }}</h1>
-      <span class="badge">{{ person['status'] | display }}</span>
+      @let status = statusDot(person);
+      <span
+        [class]="'status-dot status-' + status.kind"
+        role="img"
+        tabindex="0"
+        [attr.aria-label]="status.label"
+        [matTooltip]="status.label"
+      ></span>
       @if (capacity(person); as capacity) {
         <span
           class="badge capacity-badge"

@@ -77,7 +77,7 @@ describe('PersonPage', () => {
     const badge = fixture.nativeElement.querySelector(
       '.person-title .capacity-badge',
     ) as HTMLElement;
-    expect(badge.previousElementSibling?.textContent?.trim()).toBe('Attiva');
+    expect(badge.previousElementSibling?.classList).toContain('status-dot');
     expect(badge.textContent?.trim()).toBe('Capacity: Allocazione fittizia al 50%\nDettaglio');
     expect(badge.getAttribute('aria-label')).toBe(
       'Gestione capacity: Allocazione fittizia al 50%\nDettaglio',
@@ -85,6 +85,18 @@ describe('PersonPage', () => {
     expect(fixture.nativeElement.querySelector('.person-details')?.textContent).not.toContain(
       'Allocazione fittizia',
     );
+  });
+
+  it('shows a yellow dot for archived people and a grey dot for inactive people', async () => {
+    let fixture = await create({ ...person, archivedAt: '2026-01-02T03:04:05Z' });
+    let dot = fixture.nativeElement.querySelector('.status-dot') as HTMLElement;
+    expect(dot.classList).toContain('status-archived');
+    expect(dot.getAttribute('aria-label')).toBe('Archiviata · Attiva');
+    TestBed.resetTestingModule();
+    fixture = await create({ ...person, status: 'inactive' });
+    dot = fixture.nativeElement.querySelector('.status-dot') as HTMLElement;
+    expect(dot.classList).toContain('status-inactive');
+    expect(dot.getAttribute('aria-label')).toBe('Non piu nel team');
   });
 
   it('shows both dates with elapsed time, seniority level and a separate MyPad ID', async () => {
@@ -111,7 +123,10 @@ describe('PersonPage', () => {
     expect(details.children[2].tagName).toBe('HR');
     expect(details.querySelectorAll('dl')).toHaveLength(5);
     expect(element.querySelector('h1')?.textContent).toBe('Persona FITTIZIA');
-    expect(element.querySelector('.person-title .badge')?.textContent?.trim()).toBe('Attiva');
+    const dot = element.querySelector('.person-title .status-dot')!;
+    expect(dot.classList).toContain('status-active');
+    expect(dot.getAttribute('aria-label')).toBe('Attiva');
+    expect(dot.textContent?.trim()).toBe('');
     expect(details.textContent).not.toContain('Nome');
     expect(details.textContent).not.toContain('Cognome');
     expect(

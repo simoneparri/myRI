@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { Confirm } from '../../shared/confirm/confirm';
-import { DisplayPipe } from '../../shared/format';
+import { DisplayPipe, labels } from '../../shared/format';
 import { ResourcePage } from '../resource-page/resource-page';
 import { italianPaginator } from '../../shared/paginator';
 import { SalaryTrend } from '../salary-trend/salary-trend';
@@ -116,6 +116,12 @@ export class PersonPage {
     return typeof id === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(id)
       ? `https://inside.alten.com/it/alten-profile/profile/${encodeURIComponent(id)}/structured`
       : null;
+  }
+  statusDot(person: Row): { kind: 'active' | 'archived' | 'inactive'; label: string } {
+    const status = String(person['status'] ?? '');
+    const statusLabel = labels[status] ?? status;
+    if (person['archivedAt']) return { kind: 'archived', label: `Archiviata · ${statusLabel}` };
+    return { kind: status === 'active' ? 'active' : 'inactive', label: statusLabel };
   }
   capacity(person: Row): string {
     const value = person['capacityManagement'];

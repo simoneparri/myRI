@@ -42,7 +42,7 @@ export class SalaryComparison {
     { key: 'lastName', label: 'Persona', type: 'person' },
     { key: 'role', label: 'Ruolo', type: 'text' },
     { key: 'seniorityLevel', label: 'Seniority', type: 'display' },
-    { key: 'classificationLevel', label: 'Livello di inquadramento', type: 'text' },
+    { key: 'classificationLevel', label: 'Livello', type: 'text' },
     { key: 'amount', label: 'RAL annua', type: 'money' },
     { key: 'benefits', label: 'Benefit', type: 'benefits' },
     { key: 'age', label: 'Eta', type: 'age' },

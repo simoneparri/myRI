@@ -79,7 +79,7 @@ for (const width of [1440, 390]) {
     ).toBeVisible();
     await expect(page.locator('.person-details dt', { hasText: /^Nome$/ })).toHaveCount(0);
     await expect(page.locator('.person-details dt', { hasText: /^Cognome$/ })).toHaveCount(0);
-    await expect(page.locator('.person-title .badge')).toHaveText('Attiva');
+    await expect(page.locator('.person-title .status-dot')).toHaveAttribute('aria-label', 'Attiva');
     await expect(page.getByText('Orari visualizzati in Europe/Rome.')).toHaveCount(0);
     await expect(page.getByText(/Export completo della persona/)).toHaveCount(0);
     expect(
