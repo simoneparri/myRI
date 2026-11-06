@@ -31,6 +31,8 @@ Niente infrastruttura cloud o Keycloak completo senza approvazione.
 Non leggere/stampare .env reali, introdurre password predefinite, cancellare volumi
 o backup reali. Comandi solo su risorse locali dedicate e non distruttive.
 Niente commit, push o deleghe; non cambiare logica di dominio.
+Container che montano la checkout sempre con `--user "$(id -u):$(id -g)" -e HOME=/tmp`;
+mai sudo/root per npm o file nel repository.
 
 ## Output
 

@@ -15,6 +15,8 @@ Le regole essenziali sotto devono restare coerenti con AGENTS.md.
 - Test mirati, documentazione e commit logico per ogni step implementativo.
   Un solo integratore committa; subagent senza commit/push.
 - Esplicitare dubbi importanti e verifiche non eseguibili. Preservare modifiche altrui.
+- npm/npx/ng/Playwright/mvnw solo come utente corrente, mai sudo/root; Docker su
+  bind mount con `--user "$(id -u):$(id -g)" -e HOME=/tmp`. Nessun file root nella checkout.
 
 ## Stack e codice
 

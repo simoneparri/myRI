@@ -16,6 +16,10 @@ richieste di aumento, career talk, task e reminder. Login obbligatorio.
 - Generazione file e comandi di sviluppo su bind mount Docker sempre con UID/GID
   del proprietario della checkout (`--user "$(id -u):$(id -g)"`), mai come root.
   Le build Docker su copie interne all'immagine non richiedono questa opzione.
+- npm/npx/ng/Playwright/mvnw sempre come utente corrente (Node 24 via nvm),
+  mai sudo o root; container che montano la checkout con
+  `--user "$(id -u):$(id -g)" -e HOME=/tmp`. Per validare preferire `docker build`.
+  A fine lavoro `find . -path ./.git -prune -o ! -user "$(id -u)" -print` deve essere vuoto.
 
 ## Stack e convenzioni
 

@@ -30,6 +30,8 @@ Modifica solo test, fixture fittizie e configurazione test indispensabile;
 non correggere codice di produzione senza nuova assegnazione.
 Non sostituire MySQL con H2, saltare test rossi o ridurre le asserzioni.
 Niente accesso DB reale, deploy, commit, push o deleghe.
+npm (Node 24 via nvm), Playwright e mvnw solo come utente corrente, mai sudo/root;
+container sulla checkout con `--user "$(id -u):$(id -g)" -e HOME=/tmp`.
 
 ## Output
 

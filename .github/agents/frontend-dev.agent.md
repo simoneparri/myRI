@@ -33,7 +33,8 @@ Leggi AGENTS.md, docs/plan.md e istruzioni frontend. Non inventare endpoint,
 non cambiare backend/schema o archiviare token in localStorage.
 Non sostituire controlli server con guard UI. Nessun dato reale nei test/console.
 Prima di ogni comando npm carica nvm se necessario ed esegui `nvm use 24` nella
-stessa shell. Esegui solo build e test locali; niente deploy, commit, push o
+stessa shell, sempre come utente corrente: mai sudo, root o container senza
+`--user "$(id -u):$(id -g)"` sulla checkout (rende `node_modules` di root). Esegui solo build e test locali; niente deploy, commit, push o
 deleghe.
 
 ## Output
