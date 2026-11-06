@@ -1,19 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="16" fill="#16324f" />
-  <circle cx="24" cy="23" r="8" fill="#76e0c2" />
-  <path
-    d="M9 49c1.7-9.2 7.2-14 15-14s13.3 4.8 15 14"
-    fill="none"
-    stroke="#fff"
-    stroke-linecap="round"
-    stroke-width="6"
-  />
-  <path
-    d="M45 18h5a7 7 0 0 1 0 14h-5V18Zm0 14v14"
-    fill="none"
-    stroke="#76e0c2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="5"
-  />
+  <text
+    x="32"
+    y="28"
+    fill="#fff"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="24"
+    font-weight="700"
+    text-anchor="middle"
+  >my</text>
+  <text
+    x="32"
+    y="52"
+    fill="#76e0c2"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="24"
+    font-weight="700"
+    text-anchor="middle"
+  >RI</text>
 </svg>
