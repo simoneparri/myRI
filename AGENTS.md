@@ -66,15 +66,17 @@ Disponibile: `cd backend && ./mvnw verify` verifica schema, service e API su
 Testcontainers MySQL e richiede JDK 21 completo e Docker.
 Compose completo operativo dopo compilazione privata di .env; soltanto nginx
 pubblica 127.0.0.1:8080. Angular 21 LTS/Material 21 con Node 24, Vitest e Playwright.
+Prima dei comandi npm, caricare nvm se non e gia disponibile nella shell e
+selezionare Node 24 con `nvm use 24`, tutto nella stessa shell.
 Browser test soltanto su DB fittizio dedicato, con credenziali E2E da ambiente.
 Backup disponibile; retention come numero di file via ambiente del comando,
 non tramite .env.
 
 ```sh
 cd backend && ./mvnw verify
-cd frontend && npm ci && npm run build
-cd frontend && npm test -- --watch=false
-cd frontend && npm run e2e
+cd frontend && . "$HOME/.nvm/nvm.sh" && nvm use 24 && npm ci && npm run build
+cd frontend && . "$HOME/.nvm/nvm.sh" && nvm use 24 && npm test -- --watch=false
+cd frontend && . "$HOME/.nvm/nvm.sh" && nvm use 24 && npm run e2e
 docker compose config --quiet
 docker compose up --build -d
 docker compose down
