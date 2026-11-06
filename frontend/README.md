@@ -60,6 +60,9 @@ un container root senza bind mount scrivibili sulla checkout.
   RAL e argomenti career talk) mostrano al massimo 250 caratteri seguiti da
   `...` solo se troncati. I dettagli mantengono il testo completo e non mostrano
   PK o riferimenti interni al database; i codici gestionali restano invariati.
+  In Contatti, il toggle "Mostra note complete" espande subito le note senza
+  richieste al server; parte spento a ogni ingresso o cambio persona e non
+  modifica i dati salvati o la visualizzazione delle altre sezioni.
 - RAL: gruppo Benefit con Buoni pasto e Auto (Si/No/Non specificato) e Lettera
   di bonus (importo EUR facoltativo, zero ammesso, massimo due decimali).
   La tabella usa una sola colonna Benefit con icone e tooltip accessibili.

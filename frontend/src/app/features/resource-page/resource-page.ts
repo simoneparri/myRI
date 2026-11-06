@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { firstValueFrom } from 'rxjs';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { Confirm } from '../../shared/confirm/confirm';
@@ -31,6 +32,7 @@ import { RowActions, RowAction } from '../../shared/row-actions/row-actions';
     MatInputModule,
     MatPaginatorModule,
     MatSelectModule,
+    MatSlideToggleModule,
     DisplayPipe,
     PercentagePipe,
     ButtonIcon,
@@ -60,6 +62,7 @@ export class ResourcePage {
   readonly error = signal('');
   readonly loading = signal(false);
   readonly busy = signal(false);
+  readonly showFullNotes = signal(false);
   readonly editable = canEdit;
   readonly newLabel = newLabel;
   readonly name = personLabel;
@@ -103,6 +106,7 @@ export class ResourcePage {
           this.category =
             '';
         this.includeArchived = false;
+        this.showFullNotes.set(false);
         this.applied = {};
         void this.reload();
       });

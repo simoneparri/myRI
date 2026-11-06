@@ -94,6 +94,48 @@ describe('ResourcePage', () => {
     expect(element.querySelector('tbody')?.textContent).toContain('5,80%');
     expect(element.querySelector('tbody')?.textContent).toContain('45.000,50');
   });
+  it('toggles full contact notes locally and returns to compact notes on entry', async () => {
+    const fixture = await create();
+    const fullText = 'a'.repeat(250) + 'FINE NOTA FITTIZIA';
+    get.mockResolvedValue({
+      ...empty,
+      items: [
+        { id: '1', notes: fullText },
+        { id: '2', notes: null },
+      ],
+      totalElements: 2,
+    });
+    fixture.componentRef.setInput('resource', 'contacts');
+    fixture.componentRef.setInput('personId', '9');
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('button[role="switch"]')!;
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(element.querySelector('tbody')?.textContent).not.toContain('FINE NOTA FITTIZIA');
+    get.mockClear();
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    expect(element.querySelector('tbody')?.textContent).toContain(fullText);
+    expect(
+      element.querySelectorAll('tbody tr')[1].querySelectorAll('td')[3].textContent?.trim(),
+    ).toBe('-');
+    expect(get).not.toHaveBeenCalled();
+    toggle.click();
+    await fixture.whenStable();
+    expect(element.querySelector('tbody')?.textContent).toContain('a'.repeat(250) + '...');
+    toggle.click();
+    await fixture.whenStable();
+    fixture.componentRef.setInput('personId', '10');
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    fixture.componentRef.setInput('resource', 'salaries');
+    await fixture.whenStable();
+    expect(element.querySelector('mat-slide-toggle')).toBeNull();
+    fixture.componentRef.setInput('resource', 'contacts');
+    await fixture.whenStable();
+    expect(element.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false');
+  });
   it('hides salary currency columns and filters while preserving contact filters', async () => {
     const fixture = await create();
     get.mockResolvedValue({
