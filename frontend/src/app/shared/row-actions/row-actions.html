@@ -18,11 +18,11 @@
 } @else {
   @for (action of actions(); track action.key) {
     @if (action.link) {
-      <a mat-button [routerLink]="action.link" [disabled]="disabled()">
+      <a mat-flat-button [routerLink]="action.link" [disabled]="disabled()">
         <svg [appButtonIcon]="action.icon"></svg>{{ action.label }}
       </a>
     } @else {
-      <button mat-button (click)="selected.emit(action.key)" [disabled]="disabled()">
+      <button mat-flat-button (click)="selected.emit(action.key)" [disabled]="disabled()">
         <svg [appButtonIcon]="action.icon"></svg>{{ action.label }}
       </button>
     }

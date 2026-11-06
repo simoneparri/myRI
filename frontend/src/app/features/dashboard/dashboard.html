@@ -68,7 +68,7 @@
       <thead>
         <tr>
           @for (column of careerColumns; track column.key) {
-            <th scope="col">{{ column.label }}</th>
+            <th scope="col" [class.actions]="column.key === 'actions'">{{ column.label }}</th>
           }
         </tr>
       </thead>
@@ -76,13 +76,15 @@
         @for (person of careers().items; track person.personId) {
           <tr>
             @for (column of careerColumns; track column.key) {
-              <td>
+              <td [class.actions]="column.key === 'actions'">
                 @switch (column.key) {
                   @case ('person') {
                     {{ person.firstName }} {{ person.lastName }}
                   }
                   @case ('actions') {
-                    <a mat-button [routerLink]="['/people', person.personId]">Scheda persona</a>
+                    <a mat-flat-button [routerLink]="['/people', person.personId]"
+                      >Scheda persona</a
+                    >
                   }
                   @default {
                     {{ person[column.key] | display: 'date' }}

@@ -14,6 +14,7 @@ describe('RowActions', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('[aria-label="Azioni"]')).toBeNull();
+    expect(element.querySelector('button')?.hasAttribute('mat-flat-button')).toBe(true);
     element.querySelector('button')!.click();
     expect(selected).toHaveBeenLastCalledWith('detail');
     fixture.componentRef.setInput('actions', [
@@ -35,5 +36,16 @@ describe('RowActions', () => {
     fixture.componentRef.setInput('disabled', true);
     await fixture.whenStable();
     expect(element.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true);
+  });
+  it('uses a filled button for a single linked action', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(RowActions);
+    fixture.componentRef.setInput('actions', [
+      { key: 'sheet', label: 'Scheda', icon: 'person', link: ['/people', '1'] },
+    ]);
+    await fixture.whenStable();
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a')!;
+    expect(link.hasAttribute('mat-flat-button')).toBe(true);
+    expect(link.getAttribute('href')).toBe('/people/1');
   });
 });

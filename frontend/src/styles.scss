@@ -242,9 +242,23 @@ td {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.actions {
-  min-width: 200px;
-  white-space: normal;
+th.actions,
+td.actions {
+  width: 1%;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
+table [mat-flat-button] {
+  @include mat.button-overrides(
+    (
+      filled-container-color: #003b60,
+      filled-label-text-color: #fff,
+    )
+  );
+}
+table [mat-icon-button]:not(:disabled) {
+  background-color: #003b60;
+  color: #fff;
 }
 .badge {
   display: inline-block;

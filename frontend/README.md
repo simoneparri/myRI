@@ -56,7 +56,10 @@ un container root senza bind mount scrivibili sulla checkout.
 ## Funzioni e contratti
 
 - Menu azioni delle righe con solo icona a tre puntini e nome accessibile
-  "Azioni"; pulsanti in blu scuro. I testi lunghi nelle tabelle (note, motivo
+  "Azioni"; colonna azioni compatta, dimensionata sul contenuto senza larghezza
+  minima fissa. I pulsanti nelle tabelle hanno sfondo blu scuro e testo/icone
+  bianchi; i controlli disabilitati mantengono lo stile Material.
+  I testi lunghi nelle tabelle (note, motivo
   RAL e argomenti career talk) mostrano al massimo 250 caratteri seguiti da
   `...` solo se troncati. I dettagli mantengono il testo completo e non mostrano
   PK o riferimenti interni al database; i codici gestionali restano invariati.

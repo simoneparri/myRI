@@ -104,7 +104,7 @@
     </button>
     @if (resource() === 'contacts') {
       <mat-slide-toggle [checked]="showFullNotes()" (change)="showFullNotes.set($event.checked)"
-      >Mostra note complete</mat-slide-toggle
+        >Mostra note complete</mat-slide-toggle
       >
     }
   </form>
@@ -142,7 +142,7 @@
             @for (column of definition().columns; track column.key) {
               <th scope="col">{{ column.label }}</th>
             }
-            <th scope="col">Azioni</th>
+            <th scope="col" class="actions">Azioni</th>
           </tr>
         </thead>
         <tbody>
