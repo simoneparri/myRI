@@ -15,6 +15,11 @@ sede di assunzione e residenza; RAL immutabile con dati contrattuali storicizzat
 richieste di aumento, career talk, task/reminder, timeline, dashboard ed export
 CSV/JSON.
 
+La pagina [Import/Export](docs/import-export.md) trasferisce una o piu persone
+tra RI tramite JSON, saltando chi ha gia RSNO Agresso o MyPad ID presenti.
+Le [utility SQL](scripts/sql-utilities/README.md) di cancellazione per ID
+sono riservate esclusivamente a dati fittizi dev/test.
+
 ## Workspace disponibile
 
 Configurazione in `.github/` per nove agenti specializzati, handoff manuali,

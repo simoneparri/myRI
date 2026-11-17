@@ -71,6 +71,15 @@ public class PersonService {
         return view(people.saveAndFlush(person));
     }
 
+    public Person importRecord(PersonDtos.Input input) {
+        users.lockSingleton().orElseThrow(ApiException::missing);
+        validateManager(null, input);
+        Person person = new Person();
+        person.initialize(clock);
+        PersonMapper.apply(person, input);
+        return people.saveAndFlush(person);
+    }
+
     public PersonDtos.View update(Long id, PersonDtos.Input input) {
         // The singleton lock serializes changes to the complete manager graph.
         users.lockSingleton().orElseThrow(ApiException::missing);

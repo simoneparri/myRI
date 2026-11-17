@@ -1,0 +1,22 @@
+section {
+  margin-block: 2rem;
+}
+
+.filters,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.people {
+  display: grid;
+  gap: 0.5rem;
+}
+
+section > input,
+section > mat-checkbox {
+  display: block;
+  margin-block: 1rem;
+}

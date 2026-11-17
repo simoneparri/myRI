@@ -10,6 +10,14 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: pagina Import/Export per trasferire una o piu persone
+tramite JSON con anagrafica, contatti, progetti, RAL, aumenti, career talk e task.
+Prima di ogni persona saltare l'intero aggregato se RSNO Agresso o MyPad ID
+esiste gia, inclusi archiviati. Manager non trasferiti conservati come testo
+esterno. Utility SQL di cancellazione per ID autorizzata soltanto su dati fittizi
+dev/test, fuori dal runtime e senza modificare migrazioni o protezioni applicative.
+Contratto e limiti in docs/import-export.md.
+
 Estensione autorizzata: titoli notifiche con "Cognome Nome" e titolo task,
 campo testuale `capacityManagement` sulla persona (V14) mostrato come badge
 troncato con tooltip accanto allo stato, pagina Confronto RAL con RAL corrente,

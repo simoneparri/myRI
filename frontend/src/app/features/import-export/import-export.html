@@ -1,0 +1,110 @@
+<h1>Import/Export</h1>
+<p>
+  Trasferisci persone tra installazioni myRI tramite JSON. Il file contiene dati personali, note e
+  informazioni economiche: conservalo e condividilo solo tramite canali protetti.
+</p>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+<section aria-labelledby="export-title">
+  <h2 id="export-title">Esporta persone</h2>
+  <p>
+    Include anagrafica, contatti, progetti, storico RAL, richieste di aumento, career talk e task,
+    anche archiviati. I manager non trasferiti diventano riferimenti testuali esterni. Massimo 100
+    persone, 1000 record per persona, 10000 record totali e 10 MiB.
+  </p>
+  <form (ngSubmit)="search()" class="filters">
+    <mat-form-field>
+      <mat-label>Cerca persone</mat-label>
+      <input matInput name="q" [(ngModel)]="q" [disabled]="busy()" />
+    </mat-form-field>
+    <mat-checkbox name="includeArchived" [(ngModel)]="includeArchived" [disabled]="busy()">
+      Includi persone archiviate
+    </mat-checkbox>
+    <button mat-button type="submit" [disabled]="busy() || loading()">Cerca</button>
+  </form>
+  <p aria-live="polite">{{ selectedCount() }} persone selezionate, anche su altre pagine</p>
+  @if (loading()) {
+    <p role="status">Caricamento...</p>
+  } @else {
+    <div class="people">
+      @for (person of data().items; track person.id) {
+        <mat-checkbox
+          [checked]="selected().has(person.id)"
+          [disabled]="busy() || (selectedCount() >= 100 && !selected().has(person.id))"
+          (change)="toggle(person.id, $event.checked)"
+        >
+          {{ person['lastName'] }} {{ person['firstName'] }}
+          @if (person['archivedAt']) {
+            (archiviata)
+          }
+        </mat-checkbox>
+      } @empty {
+        <p>Nessuna persona trovata.</p>
+      }
+    </div>
+  }
+  <mat-paginator
+    [length]="data().totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="20"
+    [disabled]="busy() || loading()"
+    (page)="paginate($event)"
+    aria-label="Pagine persone da esportare"
+  />
+  <div class="actions">
+    <button mat-flat-button (click)="exportFile()" [disabled]="busy() || !selectedCount()">
+      Esporta JSON
+    </button>
+    <button mat-button (click)="clearSelection()" [disabled]="busy() || !selectedCount()">
+      Svuota selezione
+    </button>
+  </div>
+</section>
+<section aria-labelledby="import-title">
+  <h2 id="import-title">Importa persone</h2>
+  <p>
+    Usa un file generato da questa pagina. Se RSNO Agresso oppure MyPad ID esiste gia, anche tra gli
+    archiviati, la persona viene saltata senza modifiche e si passa alla successiva. Un altro errore
+    annulla l'intero import. Notifiche e audit del RI di origine non sono trasferiti; viene
+    registrato un nuovo audit locale per i dati finanziari.
+  </p>
+  <label for="transfer-file">File JSON myRI (massimo 10 MiB)</label>
+  <input
+    id="transfer-file"
+    type="file"
+    accept=".json,application/json"
+    [disabled]="busy()"
+    (change)="chooseFile($event)"
+  />
+  <mat-checkbox
+    [ngModel]="consent()"
+    (ngModelChange)="consent.set($event)"
+    [disabled]="busy() || !file()"
+  >
+    Confermo di voler importare tutti i dati contenuti nel file selezionato
+  </mat-checkbox>
+  <button mat-flat-button (click)="importFile()" [disabled]="busy() || !file() || !consent()">
+    Importa JSON
+  </button>
+  @if (busy()) {
+    <p role="status">Operazione in corso...</p>
+  }
+  @if (report(); as result) {
+    <div role="status">
+      <p>Importate: {{ result.imported }}. Saltate: {{ result.skipped }}.</p>
+      <ul>
+        @for (item of result.results; track item.sourceId) {
+          <li>
+            ID origine {{ item.sourceId }}:
+            @if (item.status === 'imported') {
+              importata con ID {{ item.personId }}
+            } @else {
+              saltata per identificativo gia presente ({{ item.reason }})
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</section>

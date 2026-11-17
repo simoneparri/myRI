@@ -33,9 +33,20 @@ export class Api {
   post<T>(path: string, body: Payload = {}): Promise<T> {
     return firstValueFrom(this.http.post<T>('/api/v1/' + path, body));
   }
-  async download(path: string): Promise<Blob> {
+  postJson<T>(path: string, body: string): Promise<T> {
+    return firstValueFrom(
+      this.http.post<T>('/api/v1/' + path, body, {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+  }
+  async download(path: string, body?: Payload): Promise<Blob> {
     try {
-      return await firstValueFrom(this.http.get('/api/v1/' + path, { responseType: 'blob' }));
+      return await firstValueFrom(
+        body === undefined
+          ? this.http.get('/api/v1/' + path, { responseType: 'blob' })
+          : this.http.post('/api/v1/' + path, body, { responseType: 'blob' }),
+      );
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.error instanceof Blob) {
         const text = await error.error.text();

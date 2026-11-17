@@ -8,6 +8,11 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     children: [
       {
+        path: 'import-export',
+        loadComponent: () =>
+          import('./features/import-export/import-export').then((m) => m.ImportExport),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },

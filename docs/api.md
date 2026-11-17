@@ -84,6 +84,13 @@ Keycloak/OIDC rimane un'opzione futura, non un provider fittizio gia attivo.
 | people/{id}/salary-trend | GET | page/size, decorrenza ascendente, poi ID |
 | salary-comparison | GET | includeArchived, page/size, sort (default lastName,asc) |
 | people/{id}/export | GET | format=json/csv (default json), attachment no-store |
+| transfers/export | POST | personIds: 1-100 ID, attachment JSON no-store |
+| transfers/import | POST | file JSON myri-transfer v1, massimo 10 MiB, riepilogo importate/saltate |
+
+Il [contratto di trasferimento tra RI](import-export.md) descrive contenuti,
+rimappatura dei collegamenti e limiti. L'import salta l'intera persona se
+RSNO Agresso o MyPad ID esiste gia (anche archiviata); ogni altro errore annulla
+l'intero file. Non accetta gli export legacy della singola scheda persona.
 
 I DTO dei contatti includono `contactedOn`, data civile `YYYY-MM-DD` negli anni
 1000-9999, distinta dai timestamp tecnici. Obbligatoria in creazione e non

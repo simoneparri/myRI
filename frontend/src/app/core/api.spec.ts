@@ -4,6 +4,27 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Api, errorMessage } from './api';
 
 describe('API helpers', () => {
+  it('posts transfer downloads and raw JSON without converting precise values', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const api = TestBed.inject(Api);
+    const http = TestBed.inject(HttpTestingController);
+    const download = api.download('transfers/export', { personIds: ['9007199254740993'] });
+    const request = http.expectOne('/api/v1/transfers/export');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ personIds: ['9007199254740993'] });
+    request.flush(new Blob(['{}']));
+    await download;
+    const raw = '{"amount":"9999999999.99","id":"9007199254740993"}';
+    const imported = api.postJson('transfers/import', raw);
+    const upload = http.expectOne('/api/v1/transfers/import');
+    expect(upload.request.headers.get('Content-Type')).toBe('application/json');
+    expect(upload.request.body).toBe(raw);
+    upload.flush({ imported: 1, skipped: 0 });
+    expect(await imported).toEqual({ imported: 1, skipped: 0 });
+    http.verify();
+  });
   it('downloads blobs and exposes structured export errors without hiding the record limit', async () => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
