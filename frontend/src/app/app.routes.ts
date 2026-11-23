@@ -8,6 +8,10 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     children: [
       {
+        path: 'absences',
+        loadComponent: () => import('./features/absences/absences').then((m) => m.Absences),
+      },
+      {
         path: 'import-export',
         loadComponent: () =>
           import('./features/import-export/import-export').then((m) => m.ImportExport),

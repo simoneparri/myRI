@@ -34,7 +34,8 @@ public class RuntimeGrants {
                     }
                     try (Statement statement = context.getConnection().createStatement()) {
                         for (String table : List.of("app_user", "person", "contact", "raise_request",
-                                "career_talk", "task", "notification", "salary", "audit_event", "project")) {
+                                "career_talk", "task", "notification", "salary", "audit_event", "project",
+                                "absence")) {
                             String privileges = List.of("salary", "audit_event").contains(table)
                                     ? "SELECT, INSERT" : "SELECT, INSERT, UPDATE";
                             statement.execute("GRANT " + privileges + " ON `" + database + "`.`" + table

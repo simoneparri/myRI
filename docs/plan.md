@@ -10,6 +10,11 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: import CSV Agresso delle assenze, associazione del ResID
+al RSNO Agresso e calendario mensile filtrabile per piu persone. Le righe valide
+sono elaborate in ordine; sovrapposizioni sostituite tramite archiviazione logica.
+Formato, limiti e dettagli operativi sono descritti in docs/import-export.md.
+
 Estensione autorizzata: pagina Import/Export per trasferire una o piu persone
 tramite JSON con anagrafica, contatti, progetti, RAL, aumenti, career talk e task.
 Prima di ogni persona saltare l'intero aggregato se RSNO Agresso o MyPad ID

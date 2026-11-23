@@ -53,3 +53,40 @@ Non e un backup completo ne un trasferimento automatico verso servizi esterni.
 Le utility di pulizia sono separate in
 [`scripts/sql-utilities`](../scripts/sql-utilities/README.md), limitate a dati
 fittizi dev/test. Non autorizzano cancellazioni fisiche di dati reali.
+
+## Assenze Agresso
+
+La pagina **Assenze** importa CSV Agresso UTF-8 separati da `;` (massimo 2 MiB
+e 5000 record). Sono richieste le intestazioni `ResID`, `Abs. code`,
+`Abs. code (T)`, `Date from`, `Time from`, `Date to`, `Time to` e
+`Workflow status (T)`, `Days`, `Hours` e `Imported to Timesheet`. Le date sono
+`gg/mm/aaaa` e gli orari `HHmm` (ammesso
+anche `Hmm`). Il ResID e testo, confrontato con RSNO Agresso usando la collation
+MySQL, preservando gli zeri iniziali; sono incluse le persone archiviate.
+Il file non viene conservato, ne vengono usate le colonne con i nomi del sistema
+esterno. L'etichetta, lo stato, i giorni, le ore e l'indicatore timesheet sono
+conservati e visibili; giorni, ore e indicatore mantengono il testo del CSV.
+
+Le righe sono elaborate nell'ordine del file. Una riga non valida o senza
+persona corrispondente e saltata e segnalata con il numero di record CSV
+(non necessariamente il numero di riga fisica se contiene campi multilinea).
+Un record identico gia attivo non viene duplicato. Negli altri casi, tutte le
+assenze attive della stessa persona sovrapposte anche parzialmente sono
+archiviate interamente e la nuova viene inserita; non vengono suddivise.
+Gli intervalli sono `[inizio, fine)`, quindi quelli adiacenti non si sovrappongono.
+Eventuali sovrapposizioni fra record del file sono risolte nello stesso ordine:
+un record successivo puo sostituire un record importato poco prima. I conteggi
+si riferiscono alle operazioni eseguite, non al numero finale di record attivi.
+Un file strutturalmente non valido o un errore del database annulla l'intero
+import. La sola assenza di una riga in un import successivo non cancella nulla.
+
+Il calendario mostra inizialmente il mese corrente nel fuso applicativo e tutti
+gli stati; puo essere navigato e filtrato per massimo 100 persone. Oltre 5000
+assenze nel mese occorre restringere il filtro. Le assenze **non** sono incluse
+nel trasferimento persone JSON, ne nell'export dalla scheda persona.
+Le causali possono contenere dati particolarmente sensibili: proteggere il CSV
+e l'accesso all'installazione e non inserirli in repository, log o ticket.
+
+API autenticate e protette da CSRF: `POST /api/v1/absences/import` riceve il
+CSV originale come `text/csv`; `GET /api/v1/absences?month=AAAA-MM` accetta
+opzionalmente `personIds` separati da virgola e restituisce le assenze attive.

@@ -1,0 +1,112 @@
+<h1>Assenze</h1>
+<p>Le informazioni sulle assenze possono essere sensibili. Usa solo file e canali protetti.</p>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+<section aria-labelledby="absence-import-title">
+  <h2 id="absence-import-title">Importa CSV Agresso</h2>
+  <p>
+    Le righe sono associate tramite RSNO Agresso. Un'assenza sovrapposta viene annullata interamente
+    e sostituita; gli intervalli adiacenti restano distinti.
+  </p>
+  <label for="absence-file">File CSV UTF-8 (massimo 2 MiB)</label>
+  <input
+    id="absence-file"
+    type="file"
+    accept=".csv,text/csv"
+    (change)="chooseFile($event)"
+    [disabled]="busy()"
+  />
+  <button mat-flat-button (click)="importFile()" [disabled]="!file() || busy()">Importa CSV</button>
+  @if (busy()) {
+    <p role="status">Importazione in corso...</p>
+  }
+  @if (report(); as result) {
+    <div role="status">
+      <p>
+        Importate: {{ result.imported }}. Invariate: {{ result.unchanged }}. Saltate:
+        {{ result.skipped }}. Assenze sostituite: {{ result.replaced }}.
+      </p>
+      @if (result.errors.length) {
+        <ul>
+          @for (item of result.errors; track $index) {
+            <li>Record {{ item.row }}: {{ item.reason }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>
+<section aria-labelledby="absence-filter-title">
+  <h2 id="absence-filter-title">Filtra persone</h2>
+  <form (ngSubmit)="search()" class="filters">
+    <mat-form-field
+      ><mat-label>Cerca persone</mat-label><input matInput name="q" [(ngModel)]="q"
+    /></mat-form-field>
+    <button mat-button type="submit" [disabled]="peopleLoading()">Cerca</button>
+  </form>
+  <p>Selezionate: {{ selected().size }}. Nessuna selezione mostra tutte le persone.</p>
+  @for (person of people().items; track person.id) {
+    <mat-checkbox [checked]="selected().has(person.id)" (change)="toggle(person, $event.checked)">
+      {{ person['lastName'] }} {{ person['firstName'] }}
+      @if (person['archivedAt']) {
+        (archiviata)
+      }
+    </mat-checkbox>
+  }
+  <mat-paginator
+    [length]="people().totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="20"
+    [disabled]="peopleLoading()"
+    (page)="paginate($event)"
+    aria-label="Pagine persone"
+  />
+  <button mat-button (click)="clearSelection()" [disabled]="!selected().size">Mostra tutte</button>
+  @if (selected().size) {
+    <p>
+      Filtro attivo:
+      @for (name of selected().values(); track $index) {
+        <span>{{ name }}{{ $last ? '' : ', ' }}</span>
+      }
+    </p>
+  }
+</section>
+<section aria-labelledby="calendar-title">
+  <div class="calendar-heading">
+    <button mat-button (click)="changeMonth(-1)" aria-label="Mese precedente">←</button>
+    <h2 id="calendar-title">Calendario {{ month() }}</h2>
+    <button mat-button (click)="changeMonth(1)" aria-label="Mese successivo">→</button>
+  </div>
+  @if (loading()) {
+    <p role="status">Caricamento calendario...</p>
+  } @else {
+    <div class="calendar" aria-label="Calendario mensile delle assenze">
+      @for (day of daysOfWeek; track day) {
+        <div class="weekday">{{ day }}</div>
+      }
+      @for (day of days(); track day.date) {
+        <div class="day" [attr.aria-label]="day.date" [class.outside]="!day.inMonth">
+          <strong>{{ day.number }}</strong>
+          @for (item of day.items; track item.id) {
+            <div class="absence">
+              <span>{{ item.lastName }} {{ item.firstName }}</span>
+              <span>{{ item.label }} ({{ item.code }}) · {{ item.status }}</span>
+              <span
+                >Giorni: {{ item.days }} · Ore: {{ item.hours }} · Timesheet:
+                {{ item.importedToTimesheet }}</span
+              >
+              <span
+                >{{ item.startsAt.slice(0, 10) }} {{ item.startsAt.slice(11, 16) }} –
+                {{ item.endsAt.slice(0, 10) }} {{ item.endsAt.slice(11, 16) }}</span
+              >
+            </div>
+          }
+        </div>
+      }
+    </div>
+    @if (!entries().length) {
+      <p>Nessuna assenza per il mese e i filtri selezionati.</p>
+    }
+  }
+</section>

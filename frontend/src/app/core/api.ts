@@ -40,6 +40,13 @@ export class Api {
       }),
     );
   }
+  postCsv<T>(path: string, file: File): Promise<T> {
+    return firstValueFrom(
+      this.http.post<T>('/api/v1/' + path, file, {
+        headers: { 'Content-Type': 'text/csv' },
+      }),
+    );
+  }
   async download(path: string, body?: Payload): Promise<Blob> {
     try {
       return await firstValueFrom(
