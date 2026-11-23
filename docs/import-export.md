@@ -4,6 +4,7 @@ La pagina **Import/Export** permette di selezionare una o piu persone, anche
 su pagine diverse e includendo gli archiviati, e scaricare `myri-transfer.json`.
 Il destinatario seleziona il file nella stessa pagina della propria installazione
 e conferma l'importazione.
+Il pulsante **Scegli file** apre la selezione del JSON e mostra il nome del file scelto.
 
 Il formato `myri-transfer`, versione 1, contiene anagrafica, contatti, progetti,
 storico RAL, richieste di aumento, career talk e task, incluse voci archiviate,

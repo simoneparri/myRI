@@ -1,0 +1,15 @@
+.upload {
+  display: grid;
+  gap: 0.75rem;
+}
+.upload-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.file-name {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
+}

@@ -86,6 +86,25 @@ describe('ImportExport', () => {
     expect(component.consent()).toBe(false);
   });
 
+  it('displays the selected filename and disables the chooser during an operation', async () => {
+    const { fixture, component } = setup();
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const button = element.querySelector<HTMLButtonElement>('.upload-actions button')!;
+    const input = element.querySelector<HTMLInputElement>('#transfer-file')!;
+    const click = vi.spyOn(input, 'click').mockImplementation(() => undefined);
+    expect(element.textContent).toContain('Nessun file selezionato');
+    button.click();
+    expect(click).toHaveBeenCalledOnce();
+    choose(component, '{}');
+    fixture.detectChanges();
+    expect(element.querySelector('#transfer-file-name')?.textContent).toContain('fittizio.json');
+    component.busy.set(true);
+    fixture.detectChanges();
+    expect(button.disabled).toBe(true);
+    expect(input.disabled).toBe(true);
+  });
+
   it('shows server errors without a success report and enforces size and selection limits', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();

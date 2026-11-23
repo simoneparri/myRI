@@ -79,11 +79,17 @@ test('transfers multiple selected people and reports duplicates using only a moc
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Esporta JSON', exact: true }).click();
   expect((await downloaded).suggestedFilename()).toBe('myri-transfer.json');
+  await expect(page.getByText('Nessun file selezionato')).toBeVisible();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Scegli file' }).focus();
+  await page.keyboard.press('Enter');
+  await chooser;
   await page.getByLabel('File JSON myRI (massimo 10 MiB)').setInputFiles({
     name: 'fittizio.json',
     mimeType: 'application/json',
     buffer: Buffer.from(raw),
   });
+  await expect(page.getByText('fittizio.json')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Importa JSON', exact: true })).toBeDisabled();
   await page.getByRole('checkbox', { name: 'Confermo di voler importare' }).check();
   await page.getByRole('button', { name: 'Importa JSON', exact: true }).click();
@@ -93,4 +99,14 @@ test('transfers multiple selected people and reports duplicates using only a moc
   ).toBeVisible();
   expect(imported).toBe(true);
   expect(unexpected).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.getByLabel('File JSON myRI (massimo 10 MiB)').setInputFiles({
+    name: `${'trasferimento-fittizio-'.repeat(10)}.json`,
+    mimeType: 'application/json',
+    buffer: Buffer.from(raw),
+  });
+  await expect
+    .poll(() => page.locator('.upload').evaluate((element) => element.scrollWidth <= element.clientWidth))
+    .toBe(true);
+  await expect(page.getByRole('button', { name: 'Scegli file' })).toBeVisible();
 });

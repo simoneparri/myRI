@@ -69,14 +69,32 @@
     annulla l'intero import. Notifiche e audit del RI di origine non sono trasferiti; viene
     registrato un nuovo audit locale per i dati finanziari.
   </p>
-  <label for="transfer-file">File JSON myRI (massimo 10 MiB)</label>
-  <input
-    id="transfer-file"
-    type="file"
-    accept=".json,application/json"
-    [disabled]="busy()"
-    (change)="chooseFile($event)"
-  />
+  <div class="upload">
+    <label id="transfer-file-label" for="transfer-file">File JSON myRI (massimo 10 MiB)</label>
+    <div class="upload-actions">
+      <input
+        #fileInput
+        id="transfer-file"
+        type="file"
+        accept=".json,application/json"
+        [disabled]="busy()"
+        (change)="chooseFile($event)"
+        hidden
+      />
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="fileInput.click()"
+        [disabled]="busy()"
+        aria-describedby="transfer-file-label transfer-file-name"
+      >
+        Scegli file
+      </button>
+      <span id="transfer-file-name" class="file-name" aria-live="polite">
+        {{ file()?.name ?? 'Nessun file selezionato' }}
+      </span>
+    </div>
+  </div>
   <mat-checkbox
     [ngModel]="consent()"
     (ngModelChange)="consent.set($event)"
