@@ -76,6 +76,13 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
     throw new Error(`Unexpected API request: ${path}`);
   });
   await page.goto('/absences');
+  await expect(page.getByRole('button', { name: 'Scegli file' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Importa file' })).toBeDisabled();
+  await expect(page.getByText('Nessun file selezionato')).toBeVisible();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Scegli file' }).focus();
+  await page.keyboard.press('Enter');
+  await chooser;
   await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
   await page.getByRole('checkbox', { name: 'Fittizia Prima' }).check();
   await page.getByRole('checkbox', { name: 'Fittizia Seconda' }).check();
@@ -85,6 +92,8 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
     mimeType: 'text/csv',
     buffer: Buffer.from(csv),
   });
+  await expect(page.getByText('fittizio.csv')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Importa file' })).toBeEnabled();
   await page.getByRole('button', { name: 'Importa file' }).click();
   await expect(page.getByText(/Importate: 1\. Invariate: 0\./)).toBeVisible();
   await expect(page.getByText('Record 3: Dati non validi.')).toBeVisible();
@@ -98,4 +107,16 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await expect.poll(() => uploadedXlsx).toBe(true);
   await page.getByRole('button', { name: 'Mese successivo' }).click();
   await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.getByLabel('File CSV UTF-8 o XLSX (massimo 2 MiB)').setInputFiles({
+    name: `${'assenze-fittizie-'.repeat(12)}.xlsx`,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+  });
+  const upload = page.locator('.upload');
+  await expect
+    .poll(() => upload.evaluate((element) => element.scrollWidth <= element.clientWidth))
+    .toBe(true);
+  await expect(page.getByRole('button', { name: 'Scegli file' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Importa file' })).toBeVisible();
 });

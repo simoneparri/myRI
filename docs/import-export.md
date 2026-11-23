@@ -57,7 +57,8 @@ fittizi dev/test. Non autorizzano cancellazioni fisiche di dati reali.
 ## Assenze Agresso
 
 La pagina **Assenze** importa CSV Agresso UTF-8 separati da `;` oppure XLSX
-(massimo 2 MiB e 5000 record). Per XLSX viene letto esclusivamente il foglio
+(massimo 2 MiB e 5000 record). Il pulsante **Scegli file** mostra il nome del
+file selezionato; **Importa file** avvia l'importazione. Per XLSX viene letto esclusivamente il foglio
 `Absences for COE`: la prima riga contiene le intestazioni, e si importano
 solo le righe successive con la colonna A valorizzata; quindi la riga totale
 con colonna A vuota viene ignorata. Il numero riportato per gli errori XLSX e

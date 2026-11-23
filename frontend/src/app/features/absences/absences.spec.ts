@@ -62,8 +62,25 @@ describe('Absences', () => {
   it('uploads the original file and displays per-row results', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();
+    fixture.detectChanges();
+    const importButton: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '.upload-actions button:last-child',
+    );
+    expect(importButton.disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Nessun file selezionato');
     const file = new File(['csv fittizio'], 'assenze.csv', { type: 'text/csv' });
     component.chooseFile({ target: { files: [file] } } as unknown as Event);
+    fixture.detectChanges();
+    expect(importButton.disabled).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('assenze.csv');
+    component.busy.set(true);
+    fixture.detectChanges();
+    const chooseButton: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '.upload-actions button:first-of-type',
+    );
+    expect(chooseButton.disabled).toBe(true);
+    expect(importButton.disabled).toBe(true);
+    component.busy.set(false);
     await component.importFile();
     fixture.detectChanges();
     expect(api.postFile).toHaveBeenCalledWith('absences/import', file, 'text/csv');
@@ -87,5 +104,7 @@ describe('Absences', () => {
     } as unknown as Event);
     expect(component.file()).toBeNull();
     expect(component.error()).toContain('CSV o XLSX');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Nessun file selezionato');
   });
 });

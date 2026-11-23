@@ -9,17 +9,35 @@
     Le righe sono associate tramite RSNO Agresso. Un'assenza sovrapposta viene annullata interamente
     e sostituita; gli intervalli adiacenti restano distinti.
   </p>
-  <label for="absence-file">File CSV UTF-8 o XLSX (massimo 2 MiB)</label>
-  <input
-    id="absence-file"
-    type="file"
-    accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    (change)="chooseFile($event)"
-    [disabled]="busy()"
-  />
-  <button mat-flat-button (click)="importFile()" [disabled]="!file() || busy()">
-    Importa file
-  </button>
+  <div class="upload">
+    <label id="absence-file-label" for="absence-file">File CSV UTF-8 o XLSX (massimo 2 MiB)</label>
+    <div class="upload-actions">
+      <input
+        #fileInput
+        id="absence-file"
+        type="file"
+        accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        (change)="chooseFile($event)"
+        [disabled]="busy()"
+        hidden
+      />
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="fileInput.click()"
+        [disabled]="busy()"
+        aria-describedby="absence-file-label absence-file-name"
+      >
+        Scegli file
+      </button>
+      <span id="absence-file-name" class="file-name" aria-live="polite">
+        {{ file()?.name ?? 'Nessun file selezionato' }}
+      </span>
+      <button mat-flat-button type="button" (click)="importFile()" [disabled]="!file() || busy()">
+        Importa file
+      </button>
+    </div>
+  </div>
   @if (busy()) {
     <p role="status">Importazione in corso...</p>
   }
