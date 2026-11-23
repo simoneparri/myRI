@@ -63,8 +63,8 @@ describe('Absences', () => {
     expect(component.month()).toBe('2026-03');
   });
 
-  it('shows compact hours, holiday precedence, and manages closure dates', async () => {
-    const { fixture, component, api } = setup();
+  it('shows compact hours and holiday precedence', async () => {
+    const { fixture, component } = setup();
     component.month.set('2026-12');
     await fixture.whenStable();
     component.entries.set([
@@ -94,10 +94,6 @@ describe('Absences', () => {
         .querySelector('[aria-label="2026-12-24"] .day-number')
         .classList.contains('closure'),
     ).toBe(true);
-    await component.updateClosure('2026-12-24');
-    expect(api.post).toHaveBeenCalledWith('company-closures', { date: '2026-12-24' });
-    await component.updateClosure('2026-12-24', true);
-    expect(api.post).toHaveBeenCalledWith('company-closures/cancel', { date: '2026-12-24' });
   });
 
   it('computes Easter and fixed Italian holidays', () => {

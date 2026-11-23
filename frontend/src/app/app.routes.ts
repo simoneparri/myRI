@@ -12,6 +12,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/absences/absences').then((m) => m.Absences),
       },
       {
+        path: 'company-closures',
+        loadComponent: () =>
+          import('./features/company-closures/company-closures').then((m) => m.CompanyClosures),
+      },
+      {
         path: 'import-export',
         loadComponent: () =>
           import('./features/import-export/import-export').then((m) => m.ImportExport),

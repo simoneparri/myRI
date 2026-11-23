@@ -3,15 +3,31 @@
   <a routerLink="/people" class="brand">myRI</a>
   @if (auth.user()) {
     <nav aria-label="Navigazione principale">
-      <a mat-button routerLink="/dashboard" routerLinkActive="selected">Dashboard</a>
-      <a mat-button routerLink="/people" routerLinkActive="selected">Persone</a>
-      <a mat-button routerLink="/absences" routerLinkActive="selected">Assenze</a>
-      <a mat-button routerLink="/salary-comparison" routerLinkActive="selected">Confronto RAL</a>
-      <a mat-button routerLink="/raise-requests" routerLinkActive="selected">Aumenti</a>
-      <a mat-button routerLink="/career-talks" routerLinkActive="selected">Career talk</a>
-      <a mat-button routerLink="/tasks" routerLinkActive="selected">Task</a>
-      <a mat-button routerLink="/notifications" routerLinkActive="selected">Notifiche</a>
-      <a mat-button routerLink="/import-export" routerLinkActive="selected">Import/Export</a>
+      @for (section of navigation; track section.label) {
+        @if (section.children.length) {
+          <button
+            mat-button
+            [matMenuTriggerFor]="sectionMenu"
+            [class.selected]="sectionActive(section.children)"
+          >
+            {{ section.label }}
+          </button>
+          <mat-menu #sectionMenu="matMenu" [attr.aria-label]="section.label">
+            @for (item of section.children; track item.path) {
+              <a mat-menu-item [routerLink]="item.path" routerLinkActive="selected">{{
+                item.label
+              }}</a>
+            }
+          </mat-menu>
+        } @else {
+          <a mat-button [routerLink]="section.path" routerLinkActive="selected">{{
+            section.label
+          }}</a>
+        }
+      }
+      <a mat-button class="nav-import" routerLink="/import-export" routerLinkActive="selected"
+        >Import/Export</a
+      >
     </nav>
     <span class="user">{{ auth.user()?.username }}</span>
     @defer (on immediate) {

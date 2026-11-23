@@ -43,6 +43,25 @@ describe('App', () => {
     user.set({ id: '1', username: 'test-owner' });
     await fixture.whenStable();
     expect(element.querySelector('nav')?.textContent).toContain('Persone');
+    const nav = element.querySelector('nav')!;
+    const labels = Array.from(nav.querySelectorAll(':scope > a, :scope > button')).map((item) =>
+      item.textContent?.trim(),
+    );
+    expect(labels).toEqual([
+      'Dashboard',
+      'Task',
+      'Persone',
+      'Confronto RAL',
+      'Assenze',
+      'Import/Export',
+    ]);
+    const sections = fixture.componentInstance.navigation;
+    expect(
+      sections.find((section) => section.label === 'Persone')?.children.map((item) => item.path),
+    ).toEqual(['/people', '/raise-requests', '/career-talks']);
+    expect(
+      sections.find((section) => section.label === 'Assenze')?.children.map((item) => item.path),
+    ).toEqual(['/absences', '/company-closures']);
     expect(element.textContent).toContain('Esci');
     expect(element.textContent).toContain('Versione 0.0.0');
     expect(element.querySelector('footer a')?.getAttribute('href')).toBe(

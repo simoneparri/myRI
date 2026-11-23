@@ -1,0 +1,63 @@
+<h1>Chiusure aziendali</h1>
+<p>
+  Inserisci o annulla le singole giornate di chiusura. Sono evidenziate nel calendario delle
+  assenze.
+</p>
+@if (error()) {
+  <p role="alert" class="error">{{ error() }}</p>
+}
+<form #closureForm="ngForm" (ngSubmit)="closureForm.valid && update(closureDate)" class="controls">
+  <mat-form-field>
+    <mat-label>Data di chiusura</mat-label>
+    <input
+      matInput
+      type="date"
+      name="closureDate"
+      [(ngModel)]="closureDate"
+      min="1000-01-01"
+      max="9998-12-31"
+      required
+      [disabled]="busy()"
+    />
+  </mat-form-field>
+  <button mat-flat-button type="submit" [disabled]="!closureForm.valid || busy()">
+    Aggiungi chiusura
+  </button>
+</form>
+<mat-form-field>
+  <mat-label>Mese delle chiusure</mat-label>
+  <input
+    matInput
+    type="month"
+    [ngModel]="month()"
+    (ngModelChange)="changeMonth($event)"
+    min="1000-01"
+    max="9998-12"
+    [disabled]="busy()"
+  />
+</mat-form-field>
+@if (loading()) {
+  <p role="status">Caricamento chiusure...</p>
+} @else if (loadFailed()) {
+  <button mat-button type="button" (click)="load()">Riprova caricamento</button>
+} @else {
+  <h2>Chiusure del mese {{ month() }}</h2>
+  <ul>
+    @for (date of closures(); track date) {
+      <li>
+        {{ date }}
+        <button
+          mat-button
+          type="button"
+          [disabled]="busy()"
+          (click)="update(date, true)"
+          [attr.aria-label]="'Annulla chiusura ' + date"
+        >
+          Annulla
+        </button>
+      </li>
+    } @empty {
+      <li>Nessuna chiusura aziendale.</li>
+    }
+  </ul>
+}

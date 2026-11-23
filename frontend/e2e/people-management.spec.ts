@@ -370,7 +370,8 @@ test('dashboard, calendar todo, scheduled notification, salary trend and persona
   await page.getByRole('link', { name: 'Vedi scaduti', exact: true }).click();
   await expect(page.getByRole('row').filter({ hasText: title })).toBeVisible();
   await expect(page.getByLabel('Cerca', { exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Notifiche', exact: true }).click();
+  await page.getByRole('button', { name: /Notifiche (non lette|non disponibili)/ }).click();
+  await page.getByRole('menuitem', { name: 'Tutte le notifiche', exact: true }).click();
   const notification = page
     .locator('.timeline > li')
     .filter({ hasText: `Career talk da pianificare · Fittizia ${firstName}` });

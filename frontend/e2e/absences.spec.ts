@@ -92,6 +92,34 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
     throw new Error(`Unexpected API request: ${path}`);
   });
   await page.goto('/absences');
+  const nav = page.getByRole('navigation', { name: 'Navigazione principale' });
+  await expect(nav.locator(':scope > a, :scope > button')).toHaveText([
+    'Dashboard',
+    'Task',
+    'Persone',
+    'Confronto RAL',
+    'Assenze',
+    'Import/Export',
+  ]);
+  const personeMenu = nav.getByRole('button', { name: 'Persone', exact: true });
+  await personeMenu.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('menuitem', { name: 'Richieste Aumenti' })).toHaveAttribute(
+    'href',
+    '/raise-requests',
+  );
+  await expect(page.getByRole('menuitem', { name: 'Career talk' })).toHaveAttribute(
+    'href',
+    '/career-talks',
+  );
+  await page.keyboard.press('Escape');
+  await expect(nav.getByRole('button', { name: 'Assenze', exact: true })).toHaveClass(/selected/);
+  await page.getByRole('button', { name: /Notifiche non lette/ }).click();
+  await expect(page.getByRole('menuitem', { name: 'Tutte le notifiche' })).toHaveAttribute(
+    'href',
+    '/notifications',
+  );
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Scegli file' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Importa file' })).toBeDisabled();
   await expect(page.getByText('Nessun file selezionato')).toBeVisible();
@@ -109,16 +137,31 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
     '',
   );
   const closureDate = `${currentMonth}-10`;
+  await page.getByRole('button', { name: 'Assenze', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Chiusure Aziendali' }).click();
+  await expect(page).toHaveURL(/\/company-closures$/);
+  await page.getByLabel('Data di chiusura').fill('2027-01-15');
+  await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
+  await expect(page.getByLabel('Mese delle chiusure')).toHaveValue('2027-01');
+  await expect(page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' })).toBeVisible();
+  await page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' }).click();
   await page.getByLabel('Data di chiusura').fill(closureDate);
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
   await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toBeVisible();
+  await page.getByRole('button', { name: 'Assenze', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Assenze', exact: true }).click();
   await expect(page.locator(`[aria-label="${closureDate}"] .day-number`)).toHaveClass(/closure/);
+  await page.getByRole('button', { name: 'Assenze', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Chiusure Aziendali' }).click();
   await page.getByRole('button', { name: `Annulla chiusura ${closureDate}` }).click();
   await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toHaveCount(
     0,
   );
   await page.getByLabel('Data di chiusura').fill('2026-12-25');
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
+  await expect(page.getByRole('button', { name: 'Annulla chiusura 2026-12-25' })).toBeVisible();
+  await page.getByRole('button', { name: 'Assenze', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Assenze', exact: true }).click();
   await expect(page.locator('[aria-label="2026-12-25"] .day-number')).toHaveClass(/holiday/);
   await expect(page.locator('[aria-label="2026-12-25"] .day-number')).not.toHaveClass(/closure/);
   await expect(page.locator('[aria-label="2026-12-25"] .day-number')).toHaveAttribute(
@@ -149,6 +192,9 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.getByRole('button', { name: 'Mese successivo' }).click();
   await expect(page.getByText('Fittizia P. 8h')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true);
   await page.getByLabel('File CSV UTF-8 o XLSX (massimo 2 MiB)').setInputFiles({
     name: `${'assenze-fittizie-'.repeat(12)}.xlsx`,
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

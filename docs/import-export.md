@@ -100,7 +100,8 @@ Nel calendario le assenze mostrano cognome, iniziale e ore totali dell'intera
 assenza, anche per ciascun giorno di un intervallo di piu giorni; selezionandole
 si aprono tutti i dettagli. Sono evidenziate in rosso le festivita nazionali
 italiane (incluse Pasqua e Pasquetta); non sono incluse feste patronali locali.
-Le singole date di chiusura aziendale sono gestibili nella stessa pagina,
+Le singole date di chiusura aziendale sono gestibili nella pagina **Chiusure
+aziendali**, nel menu Assenze,
 persistite nel database e indicate in blu. Si possono annullare e reinserire;
 se una data coincide con una festivita, prevale il rosso. Le chiusure non
 sono incluse nel trasferimento persone.

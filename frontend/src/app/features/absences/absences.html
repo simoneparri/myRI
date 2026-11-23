@@ -93,47 +93,7 @@
   }
 </section>
 <section aria-labelledby="calendar-title">
-  <h2>Chiusure aziendali</h2>
-  <form (ngSubmit)="updateClosure(closureDate)" class="filters">
-    <mat-form-field>
-      <mat-label>Data di chiusura</mat-label>
-      <input
-        matInput
-        type="date"
-        name="closureDate"
-        [(ngModel)]="closureDate"
-        min="1000-01-01"
-        max="9998-12-31"
-        required
-      />
-    </mat-form-field>
-    <button mat-stroked-button type="submit" [disabled]="!closureDate || closureBusy()">
-      Aggiungi chiusura
-    </button>
-  </form>
-  @if (closureLoading()) {
-    <p role="status">Caricamento chiusure...</p>
-  } @else {
-    <p>Chiusure del mese:</p>
-    <ul>
-      @for (date of closures(); track date) {
-        <li>
-          {{ date }}
-          <button
-            mat-button
-            type="button"
-            [disabled]="closureBusy()"
-            (click)="updateClosure(date, true)"
-            [attr.aria-label]="'Annulla chiusura ' + date"
-          >
-            Annulla
-          </button>
-        </li>
-      } @empty {
-        <li>Nessuna chiusura aziendale.</li>
-      }
-    </ul>
-  }
+  @if (closureLoading()) { <p role="status">Caricamento chiusure...</p> }
   <p>Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso.</p>
   <div class="calendar-heading">
     <button mat-button (click)="changeMonth(-1)" aria-label="Mese precedente">←</button>

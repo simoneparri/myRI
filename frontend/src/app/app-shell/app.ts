@@ -2,6 +2,7 @@ import { Component, effect, inject, Injector, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { Auth } from '../core/auth';
 import { errorMessage } from '../core/api';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
@@ -9,7 +10,14 @@ import packageInfo from '../../../package.json';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, NotificationBell],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatButtonModule,
+    MatMenuModule,
+    NotificationBell,
+  ],
   templateUrl: './app.html',
 })
 export class App {
@@ -21,6 +29,32 @@ export class App {
   readonly busy = signal(false);
   readonly version = packageInfo.version;
   readonly year = new Date().getFullYear();
+  readonly navigation = [
+    { label: 'Dashboard', path: '/dashboard', children: [] },
+    { label: 'Task', path: '/tasks', children: [] },
+    {
+      label: 'Persone',
+      path: '',
+      children: [
+        { label: 'Persone', path: '/people' },
+        { label: 'Richieste Aumenti', path: '/raise-requests' },
+        { label: 'Career talk', path: '/career-talks' },
+      ],
+    },
+    { label: 'Confronto RAL', path: '/salary-comparison', children: [] },
+    {
+      label: 'Assenze',
+      path: '',
+      children: [
+        { label: 'Assenze', path: '/absences' },
+        { label: 'Chiusure Aziendali', path: '/company-closures' },
+      ],
+    },
+  ];
+  sectionActive(children: { path: string }[]): boolean {
+    const path = this.router.url.split(/[?#]/, 1)[0];
+    return children.some((child) => path === child.path || path.startsWith(child.path + '/'));
+  }
   constructor() {
     void import('../core/pwa')
       .then(({ Pwa }) => this.injector.get(Pwa))

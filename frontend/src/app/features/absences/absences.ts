@@ -62,7 +62,6 @@ export class Absences {
   readonly month = signal(calendarDate(new Date(), this.zone).slice(0, 7));
   readonly entries = signal<Absence[]>([]);
   readonly closures = signal<string[]>([]);
-  readonly closureBusy = signal(false);
   readonly closureLoading = signal(false);
   readonly selected = signal<ReadonlyMap<string, string>>(new Map());
   readonly people = signal<Page<Row>>({
@@ -110,7 +109,6 @@ export class Absences {
     });
   });
   q = '';
-  closureDate = '';
   pageIndex = 0;
   private calendarGeneration = 0;
   private peopleGeneration = 0;
@@ -218,21 +216,6 @@ export class Absences {
       }
     } finally {
       if (generation === this.closureGeneration) this.closureLoading.set(false);
-    }
-  }
-
-  async updateClosure(date: string, cancel = false): Promise<void> {
-    if (!date || this.closureBusy()) return;
-    this.closureBusy.set(true);
-    this.error.set('');
-    try {
-      await this.api.post<void>(cancel ? 'company-closures/cancel' : 'company-closures', { date });
-      if (!cancel) this.closureDate = '';
-      await this.loadClosures();
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.closureBusy.set(false);
     }
   }
 

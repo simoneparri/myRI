@@ -10,6 +10,9 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
+Riorganizzazione autorizzata: pagina dedicata alle chiusure aziendali e menu
+principale con sezioni Persone e Assenze; notifiche accessibili dalla campanella.
+
 Estensione autorizzata: calendario assenze compatto con dettagli su clic,
 festivita nazionali italiane automatiche e chiusure aziendali per data,
 archiviabili e ripristinabili. La festivita prevale visivamente sulla chiusura.
