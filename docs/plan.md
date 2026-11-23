@@ -10,6 +10,10 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: calendario assenze compatto con dettagli su clic,
+festivita nazionali italiane automatiche e chiusure aziendali per data,
+archiviabili e ripristinabili. La festivita prevale visivamente sulla chiusura.
+
 Estensione autorizzata: import CSV o XLSX Agresso delle assenze, associazione del ResID
 al RSNO Agresso e calendario mensile filtrabile per piu persone. Le righe valide
 sono elaborate in ordine; sovrapposizioni sostituite tramite archiviazione logica.

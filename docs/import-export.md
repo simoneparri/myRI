@@ -96,8 +96,20 @@ nel trasferimento persone JSON, ne nell'export dalla scheda persona.
 Le causali possono contenere dati particolarmente sensibili: proteggere il CSV
 e l'accesso all'installazione e non inserirli in repository, log o ticket.
 
+Nel calendario le assenze mostrano cognome, iniziale e ore totali dell'intera
+assenza, anche per ciascun giorno di un intervallo di piu giorni; selezionandole
+si aprono tutti i dettagli. Sono evidenziate in rosso le festivita nazionali
+italiane (incluse Pasqua e Pasquetta); non sono incluse feste patronali locali.
+Le singole date di chiusura aziendale sono gestibili nella stessa pagina,
+persistite nel database e indicate in blu. Si possono annullare e reinserire;
+se una data coincide con una festivita, prevale il rosso. Le chiusure non
+sono incluse nel trasferimento persone.
+
 API autenticate e protette da CSRF: `POST /api/v1/absences/import` riceve il
 file originale come `text/csv` oppure
 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`;
 `GET /api/v1/absences?month=AAAA-MM` accetta
 opzionalmente `personIds` separati da virgola e restituisce le assenze attive.
+Le chiusure sono consultabili con `GET /api/v1/company-closures?month=AAAA-MM`,
+aggiungibili con `POST /api/v1/company-closures` e annullabili con
+`POST /api/v1/company-closures/cancel`, entrambi con body `{"date":"AAAA-MM-GG"}`.

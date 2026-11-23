@@ -93,6 +93,48 @@
   }
 </section>
 <section aria-labelledby="calendar-title">
+  <h2>Chiusure aziendali</h2>
+  <form (ngSubmit)="updateClosure(closureDate)" class="filters">
+    <mat-form-field>
+      <mat-label>Data di chiusura</mat-label>
+      <input
+        matInput
+        type="date"
+        name="closureDate"
+        [(ngModel)]="closureDate"
+        min="1000-01-01"
+        max="9998-12-31"
+        required
+      />
+    </mat-form-field>
+    <button mat-stroked-button type="submit" [disabled]="!closureDate || closureBusy()">
+      Aggiungi chiusura
+    </button>
+  </form>
+  @if (closureLoading()) {
+    <p role="status">Caricamento chiusure...</p>
+  } @else {
+    <p>Chiusure del mese:</p>
+    <ul>
+      @for (date of closures(); track date) {
+        <li>
+          {{ date }}
+          <button
+            mat-button
+            type="button"
+            [disabled]="closureBusy()"
+            (click)="updateClosure(date, true)"
+            [attr.aria-label]="'Annulla chiusura ' + date"
+          >
+            Annulla
+          </button>
+        </li>
+      } @empty {
+        <li>Nessuna chiusura aziendale.</li>
+      }
+    </ul>
+  }
+  <p>Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso.</p>
   <div class="calendar-heading">
     <button mat-button (click)="changeMonth(-1)" aria-label="Mese precedente">←</button>
     <h2 id="calendar-title">Calendario {{ month() }}</h2>
@@ -107,20 +149,41 @@
       }
       @for (day of days(); track day.date) {
         <div class="day" [attr.aria-label]="day.date" [class.outside]="!day.inMonth">
-          <strong>{{ day.number }}</strong>
+          <strong
+            class="day-number"
+            [class.holiday]="day.holiday"
+            [class.closure]="day.closed && !day.holiday"
+            [attr.aria-label]="
+              day.date +
+              (day.holiday ? ' - ' + day.holiday : '') +
+              (day.closed ? ' - Chiusura aziendale' : '')
+            "
+            [title]="(day.holiday ?? '') + (day.closed ? ' Chiusura aziendale' : '')"
+            >{{ day.number }}</strong
+          >
           @for (item of day.items; track item.id) {
-            <div class="absence">
-              <span>{{ item.lastName }} {{ item.firstName }}</span>
-              <span>{{ item.label }} ({{ item.code }}) · {{ item.status }}</span>
-              <span
-                >Giorni: {{ item.days }} · Ore: {{ item.hours }} · Timesheet:
-                {{ item.importedToTimesheet }}</span
-              >
-              <span
-                >{{ item.startsAt.slice(0, 10) }} {{ item.startsAt.slice(11, 16) }} –
-                {{ item.endsAt.slice(0, 10) }} {{ item.endsAt.slice(11, 16) }}</span
-              >
-            </div>
+            <button
+              type="button"
+              class="absence"
+              [matMenuTriggerFor]="details"
+              [attr.aria-label]="item.lastName + ' ' + item.firstName + ', dettagli assenza'"
+            >
+              {{ compact(item) }}
+            </button>
+            <mat-menu #details="matMenu">
+              <div class="absence-details">
+                <strong>{{ item.lastName }} {{ item.firstName }}</strong>
+                <span>{{ item.label }} ({{ item.code }}) · {{ item.status }}</span>
+                <span
+                  >Giorni: {{ item.days }} · Ore: {{ item.hours }} · Timesheet:
+                  {{ item.importedToTimesheet }}</span
+                >
+                <span
+                  >{{ item.startsAt.slice(0, 10) }} {{ item.startsAt.slice(11, 16) }} –
+                  {{ item.endsAt.slice(0, 10) }} {{ item.endsAt.slice(11, 16) }}</span
+                >
+              </div>
+            </mat-menu>
           }
         </div>
       }

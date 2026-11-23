@@ -90,4 +90,29 @@ class AbsenceIntegrationTest extends IntegrationTest {
                 .contentType(AbsenceXlsxTestData.MIME).content(new byte[] {1, 2}))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void closuresAreAuthenticatedAndCanBeArchivedAndRestored() throws Exception {
+        String body = "{\"date\":\"2026-12-24\"}";
+        mvc.perform(get("/api/v1/company-closures").param("month", "2026-12"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/company-closures").with(user("fittizio").roles("OWNER"))
+                .contentType("application/json").content(body)).andExpect(status().isForbidden());
+        for (int i = 0; i < 2; i++) {
+            mvc.perform(post("/api/v1/company-closures").with(user("fittizio").roles("OWNER")).with(csrf())
+                    .contentType("application/json").content(body)).andExpect(status().isNoContent());
+        }
+        mvc.perform(get("/api/v1/company-closures").with(user("fittizio").roles("OWNER"))
+                .param("month", "2026-12")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value("2026-12-24")).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(post("/api/v1/company-closures/cancel").with(user("fittizio").roles("OWNER")).with(csrf())
+                .contentType("application/json").content(body)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/company-closures").with(user("fittizio").roles("OWNER"))
+                .param("month", "2026-12")).andExpect(jsonPath("$.length()").value(0));
+        assertThrows(org.springframework.dao.DataAccessException.class,
+                () -> jdbc.update("DELETE FROM company_closure"));
+        mvc.perform(post("/api/v1/company-closures").with(user("fittizio").roles("OWNER")).with(csrf())
+                .contentType("application/json").content(body)).andExpect(status().isNoContent());
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM company_closure WHERE closed_on='2026-12-24'", Integer.class));
+    }
 }

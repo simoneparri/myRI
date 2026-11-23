@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test('uploads fictitious CSV and XLSX and filters the monthly calendar', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-12-10T12:00:00Z'));
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const csv = 'ResID;Abs. code\n001;F\n';
   let uploaded = false;
   let uploadedXlsx = false;
+  const closures: string[] = [];
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -14,6 +16,20 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
     if (path === 'auth/csrf')
       return route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'csrf-fittizio' } });
     if (path === 'notifications') return route.fulfill({ json: empty });
+    if (path === 'company-closures' && request.method() === 'GET') {
+      return route.fulfill({
+        json: closures.filter((date) => date.startsWith(url.searchParams.get('month') ?? '')),
+      });
+    }
+    if (path === 'company-closures' && request.method() === 'POST') {
+      closures.push(request.postDataJSON().date);
+      return route.fulfill({ status: 204 });
+    }
+    if (path === 'company-closures/cancel') {
+      const index = closures.indexOf(request.postDataJSON().date);
+      if (index >= 0) closures.splice(index, 1);
+      return route.fulfill({ status: 204 });
+    }
     if (path === 'people')
       return route.fulfill({
         json: {
@@ -83,7 +99,32 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.getByRole('button', { name: 'Scegli file' }).focus();
   await page.keyboard.press('Enter');
   await chooser;
+  await expect(page.getByText('Fittizia P. 8h')).toBeVisible();
+  await page.getByRole('button', { name: 'Fittizia Prima, dettagli assenza' }).click();
   await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
+  await expect(page.getByText('Giorni: 1 · Ore: 8 · Timesheet: Si')).toBeVisible();
+  await page.keyboard.press('Escape');
+  const currentMonth = (await page.locator('#calendar-title').innerText()).replace(
+    'Calendario ',
+    '',
+  );
+  const closureDate = `${currentMonth}-10`;
+  await page.getByLabel('Data di chiusura').fill(closureDate);
+  await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
+  await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toBeVisible();
+  await expect(page.locator(`[aria-label="${closureDate}"] .day-number`)).toHaveClass(/closure/);
+  await page.getByRole('button', { name: `Annulla chiusura ${closureDate}` }).click();
+  await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toHaveCount(
+    0,
+  );
+  await page.getByLabel('Data di chiusura').fill('2026-12-25');
+  await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
+  await expect(page.locator('[aria-label="2026-12-25"] .day-number')).toHaveClass(/holiday/);
+  await expect(page.locator('[aria-label="2026-12-25"] .day-number')).not.toHaveClass(/closure/);
+  await expect(page.locator('[aria-label="2026-12-25"] .day-number')).toHaveAttribute(
+    'aria-label',
+    /Natale.*Chiusura aziendale/,
+  );
   await page.getByRole('checkbox', { name: 'Fittizia Prima' }).check();
   await page.getByRole('checkbox', { name: 'Fittizia Seconda' }).check();
   await expect(page.getByText('Selezionate: 2.')).toBeVisible();
@@ -106,7 +147,7 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.getByRole('button', { name: 'Importa file' }).click();
   await expect.poll(() => uploadedXlsx).toBe(true);
   await page.getByRole('button', { name: 'Mese successivo' }).click();
-  await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
+  await expect(page.getByText('Fittizia P. 8h')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
   await page.getByLabel('File CSV UTF-8 o XLSX (massimo 2 MiB)').setInputFiles({
     name: `${'assenze-fittizie-'.repeat(12)}.xlsx`,

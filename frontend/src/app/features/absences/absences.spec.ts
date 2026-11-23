@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Api } from '../../core/api';
 import { Absences } from './absences';
+import { italianHolidays } from './italian-holidays';
 
 describe('Absences', () => {
   const person = { id: '9007199254740993', firstName: 'Persona', lastName: 'Fittizia' };
@@ -22,9 +23,11 @@ describe('Absences', () => {
     const api = {
       get: vi.fn((path: string) =>
         Promise.resolve(
-          path === 'people'
-            ? { items: [person], page: 0, size: 20, totalElements: 1, totalPages: 1 }
-            : [absence],
+          path === 'company-closures'
+            ? []
+            : path === 'people'
+              ? { items: [person], page: 0, size: 20, totalElements: 1, totalPages: 1 }
+              : [absence],
         ),
       ),
       postFile: vi.fn().mockResolvedValue({
@@ -34,6 +37,7 @@ describe('Absences', () => {
         replaced: 1,
         errors: [{ row: 3, reason: 'Dati non validi.' }],
       }),
+      post: vi.fn().mockResolvedValue(undefined),
     };
     TestBed.configureTestingModule({
       imports: [Absences],
@@ -51,7 +55,7 @@ describe('Absences', () => {
     expect(component.days().find((day) => day.date === '2026-02-02')?.items).toHaveLength(0);
     component.toggle(person, true);
     await fixture.whenStable();
-    expect(api.get).toHaveBeenLastCalledWith('absences', {
+    expect(api.get).toHaveBeenCalledWith('absences', {
       month: '2026-02',
       personIds: '9007199254740993',
     });
@@ -59,6 +63,51 @@ describe('Absences', () => {
     expect(component.month()).toBe('2026-03');
   });
 
+  it('shows compact hours, holiday precedence, and manages closure dates', async () => {
+    const { fixture, component, api } = setup();
+    component.month.set('2026-12');
+    await fixture.whenStable();
+    component.entries.set([
+      {
+        ...absence,
+        startsAt: '2026-12-25T09:00:00',
+        endsAt: '2026-12-25T18:00:00',
+        hours: '8,00',
+      },
+    ]);
+    component.closures.set(['2026-12-25', '2026-12-24']);
+    fixture.detectChanges();
+    expect(component.compact({ ...absence, hours: '8,50' })).toBe('Fittizia P. 8,5h');
+    expect(component.compact({ ...absence, hours: '8,00' })).toBe('Fittizia P. 8h');
+    expect(
+      fixture.nativeElement
+        .querySelector('[aria-label="2026-12-25"] .day-number')
+        .classList.contains('holiday'),
+    ).toBe(true);
+    expect(
+      fixture.nativeElement
+        .querySelector('[aria-label="2026-12-25"] .day-number')
+        .classList.contains('closure'),
+    ).toBe(false);
+    expect(
+      fixture.nativeElement
+        .querySelector('[aria-label="2026-12-24"] .day-number')
+        .classList.contains('closure'),
+    ).toBe(true);
+    await component.updateClosure('2026-12-24');
+    expect(api.post).toHaveBeenCalledWith('company-closures', { date: '2026-12-24' });
+    await component.updateClosure('2026-12-24', true);
+    expect(api.post).toHaveBeenCalledWith('company-closures/cancel', { date: '2026-12-24' });
+  });
+
+  it('computes Easter and fixed Italian holidays', () => {
+    const holidays = italianHolidays(2026);
+    expect(holidays.get('2026-04-05')).toBe('Pasqua');
+    expect(holidays.get('2026-04-06')).toBe('Pasquetta');
+    expect(holidays.get('2026-08-15')).toBe('Ferragosto');
+    expect(holidays.get('2026-12-25')).toBe('Natale');
+    expect(italianHolidays(2027).get('2027-03-28')).toBe('Pasqua');
+  });
   it('uploads the original file and displays per-row results', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();

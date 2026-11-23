@@ -80,7 +80,7 @@ class SchemaMigrationTest {
                 .locations("classpath:db/migration").target("2").cleanDisabled(true).load();
         assertEquals(1, previous.migrate().migrationsExecuted);
         Flyway flyway = flyway();
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+        assertEquals(2, flyway.migrate().migrationsExecuted);
         flyway.validate();
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }
@@ -262,13 +262,13 @@ class SchemaMigrationTest {
                 assertEquals("utf8mb4_0900_ai_ci", tables.getString(3));
                 count++;
             }
-            assertEquals(11, count);
+            assertEquals(12, count);
         }
         assertEquals(0, scalar("""
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND data_type = 'enum'
                 """));
-        assertEquals(11, scalar("""
+        assertEquals(12, scalar("""
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND column_name = 'id'
                   AND data_type = 'bigint' AND extra = 'auto_increment'

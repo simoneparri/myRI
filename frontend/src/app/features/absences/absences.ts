@@ -4,10 +4,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { calendarDate, TIMEZONE } from '../../shared/format';
 import { italianPaginator } from '../../shared/paginator';
+import { italianHolidays } from './italian-holidays';
 
 interface Absence {
   id: string;
@@ -35,6 +37,8 @@ interface Day {
   number: number;
   inMonth: boolean;
   items: Absence[];
+  holiday: string | null;
+  closed: boolean;
 }
 
 @Component({
@@ -45,6 +49,7 @@ interface Day {
     MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
+    MatMenuModule,
     MatPaginatorModule,
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
@@ -56,6 +61,9 @@ export class Absences {
   private readonly zone = inject(TIMEZONE);
   readonly month = signal(calendarDate(new Date(), this.zone).slice(0, 7));
   readonly entries = signal<Absence[]>([]);
+  readonly closures = signal<string[]>([]);
+  readonly closureBusy = signal(false);
+  readonly closureLoading = signal(false);
   readonly selected = signal<ReadonlyMap<string, string>>(new Map());
   readonly people = signal<Page<Row>>({
     items: [],
@@ -73,6 +81,7 @@ export class Absences {
   readonly daysOfWeek = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
   readonly days = computed<Day[]>(() => {
     const [year, month] = this.month().split('-').map(Number);
+    const holidays = italianHolidays(year);
     const first = new Date(Date.UTC(year, month - 1, 1));
     const start = new Date(first);
     start.setUTCDate(1 - ((first.getUTCDay() + 6) % 7));
@@ -90,6 +99,8 @@ export class Absences {
         date,
         number: current.getUTCDate(),
         inMonth,
+        holiday: inMonth ? (holidays.get(date) ?? null) : null,
+        closed: inMonth && this.closures().includes(date),
         items: inMonth
           ? this.entries().filter(
               (item) => item.startsAt < nextDate + 'T00:00:00' && item.endsAt > date + 'T00:00:00',
@@ -99,13 +110,16 @@ export class Absences {
     });
   });
   q = '';
+  closureDate = '';
   pageIndex = 0;
   private calendarGeneration = 0;
   private peopleGeneration = 0;
+  private closureGeneration = 0;
 
   constructor() {
     void this.loadCalendar();
     void this.loadPeople();
+    void this.loadClosures();
   }
 
   async loadCalendar(): Promise<void> {
@@ -179,6 +193,47 @@ export class Absences {
     const date = new Date(Date.UTC(year, month - 1 + delta, 1));
     this.month.set(date.toISOString().slice(0, 7));
     void this.loadCalendar();
+    void this.loadClosures();
+  }
+
+  compact(item: Absence): string {
+    const initial = Array.from(item.firstName.trim())[0]?.toLocaleUpperCase('it-IT') ?? '';
+    const hours = item.hours
+      .trim()
+      .replace(/([,.]\d*?[1-9])0+$/, '$1')
+      .replace(/[,.]0+$/, '');
+    return `${item.lastName} ${initial}. ${hours}h`;
+  }
+
+  async loadClosures(): Promise<void> {
+    const generation = ++this.closureGeneration;
+    this.closureLoading.set(true);
+    try {
+      const dates = await this.api.get<string[]>('company-closures', { month: this.month() });
+      if (generation === this.closureGeneration) this.closures.set(dates);
+    } catch (error) {
+      if (generation === this.closureGeneration) {
+        this.closures.set([]);
+        this.error.set(errorMessage(error));
+      }
+    } finally {
+      if (generation === this.closureGeneration) this.closureLoading.set(false);
+    }
+  }
+
+  async updateClosure(date: string, cancel = false): Promise<void> {
+    if (!date || this.closureBusy()) return;
+    this.closureBusy.set(true);
+    this.error.set('');
+    try {
+      await this.api.post<void>(cancel ? 'company-closures/cancel' : 'company-closures', { date });
+      if (!cancel) this.closureDate = '';
+      await this.loadClosures();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.closureBusy.set(false);
+    }
   }
 
   chooseFile(event: Event): void {
