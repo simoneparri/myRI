@@ -40,10 +40,10 @@ export class Api {
       }),
     );
   }
-  postCsv<T>(path: string, file: File): Promise<T> {
+  postFile<T>(path: string, file: File, contentType: string): Promise<T> {
     return firstValueFrom(
       this.http.post<T>('/api/v1/' + path, file, {
-        headers: { 'Content-Type': 'text/csv' },
+        headers: { 'Content-Type': contentType },
       }),
     );
   }

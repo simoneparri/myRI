@@ -27,7 +27,7 @@ describe('Absences', () => {
             : [absence],
         ),
       ),
-      postCsv: vi.fn().mockResolvedValue({
+      postFile: vi.fn().mockResolvedValue({
         imported: 1,
         unchanged: 0,
         skipped: 1,
@@ -66,8 +66,26 @@ describe('Absences', () => {
     component.chooseFile({ target: { files: [file] } } as unknown as Event);
     await component.importFile();
     fixture.detectChanges();
-    expect(api.postCsv).toHaveBeenCalledWith('absences/import', file);
+    expect(api.postFile).toHaveBeenCalledWith('absences/import', file, 'text/csv');
     expect(fixture.nativeElement.textContent).toContain('Saltate: 1');
     expect(fixture.nativeElement.textContent).toContain('Record 3: Dati non validi.');
+  });
+
+  it('uploads XLSX with the spreadsheet content type and rejects other extensions', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    const file = new File(['fittizio'], 'ASSENZE.XLSX');
+    component.chooseFile({ target: { files: [file] } } as unknown as Event);
+    await component.importFile();
+    expect(api.postFile).toHaveBeenCalledWith(
+      'absences/import',
+      file,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    component.chooseFile({
+      target: { files: [new File(['x'], 'assenze.xls')], value: 'x' },
+    } as unknown as Event);
+    expect(component.file()).toBeNull();
+    expect(component.error()).toContain('CSV o XLSX');
   });
 });

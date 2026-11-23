@@ -189,7 +189,13 @@ export class Absences {
     if (file && (file.size === 0 || file.size > 2 * 1024 * 1024)) {
       this.file.set(null);
       input.value = '';
-      this.error.set('Scegli un CSV non vuoto di massimo 2 MiB.');
+      this.error.set('Scegli un file CSV o XLSX non vuoto di massimo 2 MiB.');
+      return;
+    }
+    if (file && !/\.(csv|xlsx)$/i.test(file.name)) {
+      this.file.set(null);
+      input.value = '';
+      this.error.set('Scegli un file CSV o XLSX.');
       return;
     }
     this.file.set(file);
@@ -202,7 +208,10 @@ export class Absences {
     this.error.set('');
     this.report.set(null);
     try {
-      this.report.set(await this.api.postCsv<ImportReport>('absences/import', file));
+      const contentType = /\.xlsx$/i.test(file.name)
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'text/csv';
+      this.report.set(await this.api.postFile<ImportReport>('absences/import', file, contentType));
       await this.loadCalendar();
     } catch (error) {
       this.error.set(errorMessage(error));

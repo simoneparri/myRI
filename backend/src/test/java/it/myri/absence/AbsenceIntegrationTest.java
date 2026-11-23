@@ -70,4 +70,24 @@ class AbsenceIntegrationTest extends IntegrationTest {
                 .param("month", "2026-02").param("personIds", "-1"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void xlsxImportUsesSameRulesAsCsvAndRejectsUnauthorizedRequests() throws Exception {
+        jdbc.update("INSERT INTO person (first_name,last_name,hired_on,rsno_agresso,status,created_at,updated_at,version) "
+                + "VALUES ('Persona','Fittizia','2020-01-01','xlsx-001','active',NOW(),NOW(),0)");
+        byte[] file = AbsenceXlsxTestData.workbook("xlsx-001");
+        mvc.perform(post("/api/v1/absences/import").with(user("fittizio").roles("OWNER"))
+                .contentType(AbsenceXlsxTestData.MIME).content(file)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/absences/import").with(user("fittizio").roles("OWNER")).with(csrf())
+                .contentType(AbsenceXlsxTestData.MIME).content(file))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.imported").value(1))
+                .andExpect(jsonPath("$.skipped").value(1)).andExpect(jsonPath("$.errors[0].row").value(5));
+        String csv = "ResID;Abs. code;Abs. code (T);Date from;Time from;Date to;Time to;"
+                + "Workflow status (T);Days;Hours;Imported to Timesheet\n"
+                + "xlsx-001;F;Ferie;01/02/2026;900;01/02/2026;1700;Approvata;1;8,00;0\n";
+        assertEquals(1, service.importCsv(csv).unchanged());
+        mvc.perform(post("/api/v1/absences/import").with(user("fittizio").roles("OWNER")).with(csrf())
+                .contentType(AbsenceXlsxTestData.MIME).content(new byte[] {1, 2}))
+                .andExpect(status().isBadRequest());
+    }
 }

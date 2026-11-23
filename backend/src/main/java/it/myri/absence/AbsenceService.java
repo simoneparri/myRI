@@ -15,7 +15,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -28,10 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AbsenceService {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/uuuu")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final Set<String> HEADERS = Set.of("ResID", "Abs. code", "Abs. code (T)",
+    static final Set<String> HEADERS = Set.of("ResID", "Abs. code", "Abs. code (T)",
             "Date from", "Time from", "Date to", "Time to", "Workflow status (T)",
             "Days", "Hours", "Imported to Timesheet");
-    private static final int MAX_ROWS = 5000;
+    static final int MAX_ROWS = 5000;
     private final AbsenceRepository absences;
     private final PersonRepository people;
     private final Clock clock;
@@ -44,7 +46,7 @@ public class AbsenceService {
 
     @Transactional
     public AbsenceDtos.ImportReport importCsv(String csv) {
-        List<CSVRecord> rows;
+        List<ImportRow> rows = new ArrayList<>();
         try (CSVParser parser = CSVFormat.DEFAULT.builder().setDelimiter(';').setHeader()
                 .setSkipHeaderRecord(true).setDuplicateHeaderMode(
                         org.apache.commons.csv.DuplicateHeaderMode.DISALLOW).get()
@@ -52,30 +54,42 @@ public class AbsenceService {
             if (!parser.getHeaderMap().keySet().containsAll(HEADERS)) {
                 throw ApiException.invalid("Intestazione CSV Agresso non valida.");
             }
-            rows = new ArrayList<>();
             for (CSVRecord row : parser) {
                 if (rows.size() == MAX_ROWS) throw ApiException.invalid("Massimo 5000 righe per import.");
-                rows.add(row);
+                Map<String, String> fields = new HashMap<>();
+                if (row.isConsistent()) {
+                    for (String header : HEADERS) fields.put(header, row.get(header));
+                }
+                rows.add(new ImportRow(row.getRecordNumber() + 1, fields));
             }
         } catch (IOException | UncheckedIOException | IllegalArgumentException exception) {
             throw ApiException.invalid("Formato CSV non valido.");
         }
 
+        return importRows(rows);
+    }
+
+    @Transactional
+    public AbsenceDtos.ImportReport importXlsx(byte[] xlsx) {
+        return importRows(AbsenceXlsxReader.read(xlsx));
+    }
+
+    private AbsenceDtos.ImportReport importRows(List<ImportRow> rows) {
         int imported = 0, unchanged = 0, skipped = 0, replaced = 0;
         List<AbsenceDtos.RowError> errors = new ArrayList<>();
-        for (CSVRecord row : rows) {
+        for (ImportRow row : rows) {
             Parsed parsed;
             try {
-                parsed = parse(row);
+                parsed = parse(row.fields());
             } catch (IllegalArgumentException exception) {
                 skipped++;
-                errors.add(new AbsenceDtos.RowError(row.getRecordNumber() + 1, "Dati non validi."));
+                errors.add(new AbsenceDtos.RowError(row.number(), "Dati non validi."));
                 continue;
             }
             Person person = people.findByRsnoAgresso(parsed.resId()).orElse(null);
             if (person == null) {
                 skipped++;
-                errors.add(new AbsenceDtos.RowError(row.getRecordNumber() + 1,
+                errors.add(new AbsenceDtos.RowError(row.number(),
                         "Nessuna persona con questo RSNO Agresso."));
                 continue;
             }
@@ -134,8 +148,7 @@ public class AbsenceService {
                 && a.hours.equals(p.hours()) && a.importedToTimesheet.equals(p.importedToTimesheet());
     }
 
-    private static Parsed parse(CSVRecord row) {
-        if (!row.isConsistent()) throw new IllegalArgumentException();
+    private static Parsed parse(Map<String, String> row) {
         String resId = field(row, "ResID", 100);
         String code = field(row, "Abs. code", 100);
         String label = field(row, "Abs. code (T)", 255);
@@ -144,10 +157,10 @@ public class AbsenceService {
         String hours = field(row, "Hours", 50);
         String importedToTimesheet = field(row, "Imported to Timesheet", 100);
         try {
-            LocalDateTime start = LocalDateTime.of(LocalDate.parse(row.get("Date from").trim(), DATE),
-                    time(row.get("Time from")));
-            LocalDateTime end = LocalDateTime.of(LocalDate.parse(row.get("Date to").trim(), DATE),
-                    time(row.get("Time to")));
+            LocalDateTime start = LocalDateTime.of(LocalDate.parse(field(row, "Date from", 10), DATE),
+                    time(field(row, "Time from", 4)));
+            LocalDateTime end = LocalDateTime.of(LocalDate.parse(field(row, "Date to", 10), DATE),
+                    time(field(row, "Time to", 4)));
             if (start.getYear() < 1000 || end.getYear() < 1000 || !start.isBefore(end)) {
                 throw new IllegalArgumentException();
             }
@@ -157,8 +170,10 @@ public class AbsenceService {
         }
     }
 
-    private static String field(CSVRecord row, String key, int max) {
-        String value = row.get(key).trim();
+    private static String field(Map<String, String> row, String key, int max) {
+        String raw = row.get(key);
+        if (raw == null) throw new IllegalArgumentException();
+        String value = raw.trim();
         if (value.isEmpty() || value.length() > max) throw new IllegalArgumentException();
         return value;
     }
@@ -173,4 +188,5 @@ public class AbsenceService {
 
     private record Parsed(String resId, LocalDateTime start, LocalDateTime end,
             String code, String label, String status, String days, String hours, String importedToTimesheet) {}
+    record ImportRow(long number, Map<String, String> fields) {}
 }

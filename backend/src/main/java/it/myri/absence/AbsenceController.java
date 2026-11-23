@@ -27,10 +27,7 @@ public class AbsenceController {
 
     @PostMapping(value = "/import", consumes = "text/csv")
     public AbsenceDtos.ImportReport importCsv(HttpServletRequest request) throws IOException {
-        byte[] bytes = request.getInputStream().readNBytes(MAX_BYTES + 1);
-        if (bytes.length == 0 || bytes.length > MAX_BYTES) {
-            throw ApiException.invalid("Il CSV deve essere non vuoto e non superare 2 MiB.");
-        }
+        byte[] bytes = readFile(request);
         try {
             String csv = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
@@ -40,6 +37,19 @@ public class AbsenceController {
         } catch (CharacterCodingException exception) {
             throw ApiException.invalid("Il CSV deve essere codificato in UTF-8.");
         }
+    }
+
+    @PostMapping(value = "/import", consumes = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public AbsenceDtos.ImportReport importXlsx(HttpServletRequest request) throws IOException {
+        return service.importXlsx(readFile(request));
+    }
+
+    private static byte[] readFile(HttpServletRequest request) throws IOException {
+        byte[] bytes = request.getInputStream().readNBytes(MAX_BYTES + 1);
+        if (bytes.length == 0 || bytes.length > MAX_BYTES) {
+            throw ApiException.invalid("Il file deve essere non vuoto e non superare 2 MiB.");
+        }
+        return bytes;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)

@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-test('imports fictitious CSV and filters the monthly calendar', async ({ page }) => {
+test('uploads fictitious CSV and XLSX and filters the monthly calendar', async ({ page }) => {
   const empty = { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
   const csv = 'ResID;Abs. code\n001;F\n';
   let uploaded = false;
+  let uploadedXlsx = false;
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -26,9 +27,17 @@ test('imports fictitious CSV and filters the monthly calendar', async ({ page })
         },
       });
     if (path === 'absences/import') {
-      expect(request.postData()).toBe(csv);
+      if (request.headers()['content-type'] === 'text/csv') {
+        expect(request.postData()).toBe(csv);
+        uploaded = true;
+      } else {
+        expect(request.headers()['content-type']).toBe(
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        expect(request.postDataBuffer()).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+        uploadedXlsx = true;
+      }
       expect(request.headers()['x-csrf-token']).toBe('csrf-fittizio');
-      uploaded = true;
       return route.fulfill({
         json: {
           imported: 1,
@@ -71,15 +80,22 @@ test('imports fictitious CSV and filters the monthly calendar', async ({ page })
   await page.getByRole('checkbox', { name: 'Fittizia Prima' }).check();
   await page.getByRole('checkbox', { name: 'Fittizia Seconda' }).check();
   await expect(page.getByText('Selezionate: 2.')).toBeVisible();
-  await page.getByLabel('File CSV UTF-8 (massimo 2 MiB)').setInputFiles({
+  await page.getByLabel('File CSV UTF-8 o XLSX (massimo 2 MiB)').setInputFiles({
     name: 'fittizio.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from(csv),
   });
-  await page.getByRole('button', { name: 'Importa CSV' }).click();
+  await page.getByRole('button', { name: 'Importa file' }).click();
   await expect(page.getByText(/Importate: 1\. Invariate: 0\./)).toBeVisible();
   await expect(page.getByText('Record 3: Dati non validi.')).toBeVisible();
   expect(uploaded).toBe(true);
+  await page.getByLabel('File CSV UTF-8 o XLSX (massimo 2 MiB)').setInputFiles({
+    name: 'fittizio.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+  });
+  await page.getByRole('button', { name: 'Importa file' }).click();
+  await expect.poll(() => uploadedXlsx).toBe(true);
   await page.getByRole('button', { name: 'Mese successivo' }).click();
   await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
 });

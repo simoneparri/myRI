@@ -10,7 +10,7 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
-Estensione autorizzata: import CSV Agresso delle assenze, associazione del ResID
+Estensione autorizzata: import CSV o XLSX Agresso delle assenze, associazione del ResID
 al RSNO Agresso e calendario mensile filtrabile per piu persone. Le righe valide
 sono elaborate in ordine; sovrapposizioni sostituite tramite archiviazione logica.
 Formato, limiti e dettagli operativi sono descritti in docs/import-export.md.

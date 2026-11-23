@@ -56,8 +56,12 @@ fittizi dev/test. Non autorizzano cancellazioni fisiche di dati reali.
 
 ## Assenze Agresso
 
-La pagina **Assenze** importa CSV Agresso UTF-8 separati da `;` (massimo 2 MiB
-e 5000 record). Sono richieste le intestazioni `ResID`, `Abs. code`,
+La pagina **Assenze** importa CSV Agresso UTF-8 separati da `;` oppure XLSX
+(massimo 2 MiB e 5000 record). Per XLSX viene letto esclusivamente il foglio
+`Absences for COE`: la prima riga contiene le intestazioni, e si importano
+solo le righe successive con la colonna A valorizzata; quindi la riga totale
+con colonna A vuota viene ignorata. Il numero riportato per gli errori XLSX e
+la riga fisica del foglio. Sono richieste le intestazioni `ResID`, `Abs. code`,
 `Abs. code (T)`, `Date from`, `Time from`, `Date to`, `Time to` e
 `Workflow status (T)`, `Days`, `Hours` e `Imported to Timesheet`. Le date sono
 `gg/mm/aaaa` e gli orari `HHmm` (ammesso
@@ -65,7 +69,11 @@ anche `Hmm`). Il ResID e testo, confrontato con RSNO Agresso usando la collation
 MySQL, preservando gli zeri iniziali; sono incluse le persone archiviate.
 Il file non viene conservato, ne vengono usate le colonne con i nomi del sistema
 esterno. L'etichetta, lo stato, i giorni, le ore e l'indicatore timesheet sono
-conservati e visibili; giorni, ore e indicatore mantengono il testo del CSV.
+conservati e visibili; giorni, ore e indicatore mantengono il testo del CSV
+oppure, per XLSX, il valore visualizzato secondo il formato della cella in
+locale italiano. Le formule nei campi da importare non sono eseguite e rendono
+la riga non valida. Un XLSX puo contenere al massimo 10000 righe fisiche nel
+foglio, 2000 elementi ZIP e 32 MiB dopo decompressione.
 
 Le righe sono elaborate nell'ordine del file. Una riga non valida o senza
 persona corrispondente e saltata e segnalata con il numero di record CSV
@@ -88,5 +96,7 @@ Le causali possono contenere dati particolarmente sensibili: proteggere il CSV
 e l'accesso all'installazione e non inserirli in repository, log o ticket.
 
 API autenticate e protette da CSRF: `POST /api/v1/absences/import` riceve il
-CSV originale come `text/csv`; `GET /api/v1/absences?month=AAAA-MM` accetta
+file originale come `text/csv` oppure
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`;
+`GET /api/v1/absences?month=AAAA-MM` accetta
 opzionalmente `personIds` separati da virgola e restituisce le assenze attive.
