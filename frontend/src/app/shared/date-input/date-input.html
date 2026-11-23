@@ -18,6 +18,7 @@
     aria-hidden="true"
     [matDatepicker]="picker"
     [value]="calendarValue"
+    [max]="maxCalendarDate"
     [disabled]="disabled"
     (dateChange)="choose($event.value)"
   />
@@ -27,11 +28,14 @@
 </mat-form-field>
 @if (invalid) {
   <p class="date-error" role="alert" [id]="errorId">
-    {{
-      instant()
-        ? 'Data e ora non valide. Usa gg/mm/aaaa HH:mm (UTC).'
-        : 'Data non valida. Usa gg/mm/aaaa.'
-    }}
+    @if (validate()?.['maxDate']) {
+      La data non puo essere successiva al {{ maxDate().split('-').reverse().join('/') }}.
+    } @else {
+      {{
+        instant()
+          ? 'Data e ora non valide. Usa gg/mm/aaaa HH:mm (UTC).'
+          : 'Data non valida. Usa gg/mm/aaaa.'
+      }}
+    }
   </p>
 }
-

@@ -7,19 +7,14 @@
   <p role="alert" class="error">{{ error() }}</p>
 }
 <form #closureForm="ngForm" (ngSubmit)="closureForm.valid && update(closureDate)" class="controls">
-  <mat-form-field>
-    <mat-label>Data di chiusura</mat-label>
-    <input
-      matInput
-      type="date"
-      name="closureDate"
-      [(ngModel)]="closureDate"
-      min="1000-01-01"
-      max="9998-12-31"
-      required
-      [disabled]="busy()"
-    />
-  </mat-form-field>
+  <app-date-input
+    name="closureDate"
+    [(ngModel)]="closureDate"
+    label="Data di chiusura"
+    [required]="true"
+    maxDate="9998-12-31"
+    [disabled]="busy()"
+  />
   <button mat-flat-button type="submit" [disabled]="!closureForm.valid || busy()">
     Aggiungi chiusura
   </button>

@@ -5,10 +5,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Api, errorMessage } from '../../core/api';
 import { calendarDate, TIMEZONE } from '../../shared/format';
+import { DateInput } from '../../shared/date-input/date-input';
 
 @Component({
   selector: 'app-company-closures',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, DateInput],
   templateUrl: './company-closures.html',
   styleUrl: './company-closures.scss',
 })

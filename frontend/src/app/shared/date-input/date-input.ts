@@ -69,6 +69,7 @@ export class DateInput implements ControlValueAccessor, Validator {
   readonly label = input.required<string>();
   readonly instant = input(false);
   readonly required = input(false);
+  readonly maxDate = input('');
   text = '';
   disabled = false;
   private touched = false;
@@ -82,6 +83,11 @@ export class DateInput implements ControlValueAccessor, Validator {
     const iso = parseDateInput(this.text, this.instant());
     if (!iso) return null;
     const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  get maxCalendarDate(): Date | null {
+    if (!this.maxDate()) return null;
+    const [year, month, day] = this.maxDate().split('-').map(Number);
     return new Date(year, month - 1, day);
   }
   writeValue(value: string | null): void {
@@ -102,7 +108,10 @@ export class DateInput implements ControlValueAccessor, Validator {
   }
   validate(): ValidationErrors | null {
     if (!this.text) return this.required() ? { required: true } : null;
-    return parseDateInput(this.text, this.instant()) ? null : { dateInput: true };
+    const iso = parseDateInput(this.text, this.instant());
+    if (!iso) return { dateInput: true };
+    if (this.maxDate() && iso.slice(0, 10) > this.maxDate()) return { maxDate: true };
+    return null;
   }
   change(text: string): void {
     this.text = text;

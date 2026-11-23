@@ -141,11 +141,22 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.getByRole('menuitem', { name: 'Chiusure Aziendali' }).click();
   await expect(page).toHaveURL(/\/company-closures$/);
   await page.getByLabel('Data di chiusura').fill('2027-01-15');
+  await expect(page.getByRole('button', { name: 'Aggiungi chiusura' })).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText('Data non valida. Usa gg/mm/aaaa');
+  await page.getByLabel('Data di chiusura').fill('31/02/2027');
+  await expect(page.getByRole('button', { name: 'Aggiungi chiusura' })).toBeDisabled();
+  await page.getByLabel('Data di chiusura').fill('01/01/9999');
+  await expect(page.getByRole('button', { name: 'Aggiungi chiusura' })).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText('31/12/9998');
+  await page.getByLabel('Data di chiusura').fill('14/01/2027');
+  await page.getByRole('button', { name: 'Apri calendario' }).click();
+  await page.locator('mat-calendar').getByRole('button', { name: '15 gennaio 2027' }).click();
+  await expect(page.getByRole('textbox', { name: 'Data di chiusura' })).toHaveValue('15/01/2027');
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
   await expect(page.getByLabel('Mese delle chiusure')).toHaveValue('2027-01');
   await expect(page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' })).toBeVisible();
   await page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' }).click();
-  await page.getByLabel('Data di chiusura').fill(closureDate);
+  await page.getByLabel('Data di chiusura').fill(closureDate.split('-').reverse().join('/'));
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
   await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toBeVisible();
   await page.getByRole('button', { name: 'Assenze', exact: true }).click();
@@ -157,7 +168,7 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await expect(page.getByRole('button', { name: `Annulla chiusura ${closureDate}` })).toHaveCount(
     0,
   );
-  await page.getByLabel('Data di chiusura').fill('2026-12-25');
+  await page.getByLabel('Data di chiusura').fill('25/12/2026');
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
   await expect(page.getByRole('button', { name: 'Annulla chiusura 2026-12-25' })).toBeVisible();
   await page.getByRole('button', { name: 'Assenze', exact: true }).click();

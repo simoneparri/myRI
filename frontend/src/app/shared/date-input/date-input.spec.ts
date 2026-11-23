@@ -50,4 +50,18 @@ describe('date input', () => {
     input.setDisabledState(true);
     expect(input.disabled).toBe(true);
   });
+
+  it('enforces an optional maximum date for typing and the calendar', () => {
+    const fixture = TestBed.createComponent(DateInput);
+    fixture.componentRef.setInput('label', 'Data');
+    fixture.componentRef.setInput('maxDate', '9998-12-31');
+    const input = fixture.componentInstance;
+    input.change('31/12/9998');
+    expect(input.validate()).toBeNull();
+    input.change('01/01/9999');
+    expect(input.validate()).toEqual({ maxDate: true });
+    expect(input.maxCalendarDate?.getFullYear()).toBe(9998);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('31/12/9998');
+  });
 });
