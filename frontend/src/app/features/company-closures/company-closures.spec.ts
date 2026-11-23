@@ -44,6 +44,36 @@ describe('CompanyClosures', () => {
     expect(component.loading()).toBe(false);
   });
 
+  it('navigates months and year boundaries, respecting limits and busy state', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    component.changeMonth('2027-01');
+    component.stepMonth(-1);
+    await fixture.whenStable();
+    expect(component.month()).toBe('2026-12');
+    expect(api.get).toHaveBeenLastCalledWith('company-closures', { month: '2026-12' });
+    component.stepMonth(1);
+    await fixture.whenStable();
+    expect(component.month()).toBe('2027-01');
+    component.changeMonth('1000-01');
+    fixture.detectChanges();
+    const previous: HTMLButtonElement = fixture.nativeElement.querySelector('[aria-label="Mese precedente"]');
+    const next: HTMLButtonElement = fixture.nativeElement.querySelector('[aria-label="Mese successivo"]');
+    expect(previous.disabled).toBe(true);
+    component.stepMonth(-1);
+    expect(component.month()).toBe('1000-01');
+    component.changeMonth('9998-12');
+    fixture.detectChanges();
+    expect(next.disabled).toBe(true);
+    component.stepMonth(1);
+    expect(component.month()).toBe('9998-12');
+    component.busy.set(true);
+    component.stepMonth(-1);
+    fixture.detectChanges();
+    expect(previous.disabled).toBe(true);
+    expect(component.month()).toBe('9998-12');
+  });
+
   it('reports load failures without presenting an empty result', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();

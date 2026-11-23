@@ -155,6 +155,12 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();
   await expect(page.getByLabel('Mese delle chiusure')).toHaveValue('2027-01');
   await expect(page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mese precedente' }).click();
+  await expect(page.getByLabel('Mese delle chiusure')).toHaveValue('2026-12');
+  await expect(page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Mese successivo' }).click();
+  await expect(page.getByLabel('Mese delle chiusure')).toHaveValue('2027-01');
+  await expect(page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' })).toBeVisible();
   await page.getByRole('button', { name: 'Annulla chiusura 2027-01-15' }).click();
   await page.getByLabel('Data di chiusura').fill(closureDate.split('-').reverse().join('/'));
   await page.getByRole('button', { name: 'Aggiungi chiusura' }).click();

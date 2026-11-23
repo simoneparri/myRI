@@ -53,6 +53,14 @@ export class CompanyClosures {
     void this.load();
   }
 
+  stepMonth(delta: -1 | 1): void {
+    if (this.busy()) return;
+    const [year, month] = this.month().split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1 + delta, 1));
+    const next = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    this.changeMonth(next);
+  }
+
   async update(date: string, cancel = false): Promise<void> {
     if (!date || this.busy()) return;
     this.busy.set(true);

@@ -19,18 +19,24 @@
     Aggiungi chiusura
   </button>
 </form>
-<mat-form-field>
-  <mat-label>Mese delle chiusure</mat-label>
-  <input
-    matInput
-    type="month"
-    [ngModel]="month()"
-    (ngModelChange)="changeMonth($event)"
-    min="1000-01"
-    max="9998-12"
-    [disabled]="busy()"
-  />
-</mat-form-field>
+<div class="controls">
+  <button mat-button type="button" aria-label="Mese precedente" (click)="stepMonth(-1)"
+    [disabled]="busy() || month() === '1000-01'">←</button>
+  <mat-form-field>
+    <mat-label>Mese delle chiusure</mat-label>
+    <input
+      matInput
+      type="month"
+      [ngModel]="month()"
+      (ngModelChange)="changeMonth($event)"
+      min="1000-01"
+      max="9998-12"
+      [disabled]="busy()"
+    />
+  </mat-form-field>
+  <button mat-button type="button" aria-label="Mese successivo" (click)="stepMonth(1)"
+    [disabled]="busy() || month() === '9998-12'">→</button>
+</div>
 @if (loading()) {
   <p role="status">Caricamento chiusure...</p>
 } @else if (loadFailed()) {

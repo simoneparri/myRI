@@ -103,8 +103,9 @@ si aprono tutti i dettagli. Sono evidenziate in rosso le festivita nazionali
 italiane (incluse Pasqua e Pasquetta); non sono incluse feste patronali locali.
 Le singole date di chiusura aziendale si inseriscono nel formato `gg/mm/aaaa`
 o tramite il calendario e sono gestibili nella pagina **Chiusure
-aziendali**, nel menu Assenze,
-persistite nel database e indicate in blu. Si possono annullare e reinserire;
+aziendali**, nel menu Assenze. Il mese si seleziona direttamente oppure si scorre
+con i pulsanti precedente e successivo. Le chiusure sono persistite nel database
+e indicate in blu. Si possono annullare e reinserire;
 se una data coincide con una festivita, prevale il rosso. Le chiusure non
 sono incluse nel trasferimento persone.
 
