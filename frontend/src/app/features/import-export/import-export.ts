@@ -46,6 +46,8 @@ export class ImportExport {
   readonly selectedIds = computed(() => [...this.selected()]);
   readonly selectedCount = computed(() => this.selected().size);
   readonly loading = signal(false);
+  readonly selectingAll = signal(false);
+  readonly selectionMessage = signal('');
   readonly busy = signal(false);
   readonly error = signal('');
   readonly report = signal<TransferReport | null>(null);
@@ -107,6 +109,44 @@ export class ImportExport {
     const labels = new Map(this.selectablePeople().map(({ id, label }) => [id, label]));
     this.selected.set(new Set(ids));
     this.selectedLabels.set(new Map(ids.map((id) => [id, labels.get(id) ?? id])));
+    this.selectionMessage.set('');
+  }
+
+  async selectAll(): Promise<void> {
+    if (this.busy() || this.loading() || this.selectingAll()) return;
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = undefined;
+    this.selectingAll.set(true);
+    this.selectionMessage.set('');
+    this.error.set('');
+    try {
+      const results = await this.api.get<Page<Row>>('people', {
+        q: this.q,
+        includeArchived: this.includeArchived,
+        page: 0,
+        size: 100,
+        sort: 'lastName,asc',
+      });
+      const people = results.items.slice(0, 100);
+      this.selected.set(new Set(people.map((person) => person.id)));
+      this.selectedLabels.set(
+        new Map(
+          people.map((person) => [
+            person.id,
+            `${person['lastName']} ${person['firstName']}${person['archivedAt'] ? ' (archiviata)' : ''}`,
+          ]),
+        ),
+      );
+      this.selectionMessage.set(
+        results.totalElements > 100
+          ? 'Selezionate le prime 100 persone corrispondenti; è il limite massimo per l’export.'
+          : `Selezionate tutte le ${people.length} persone corrispondenti.`,
+      );
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.selectingAll.set(false);
+    }
   }
 
   toggle(id: string, checked: boolean): void {
@@ -136,6 +176,7 @@ export class ImportExport {
   clearSelection(): void {
     this.selected.set(new Set());
     this.selectedLabels.set(new Map());
+    this.selectionMessage.set('');
   }
 
   async load(): Promise<void> {

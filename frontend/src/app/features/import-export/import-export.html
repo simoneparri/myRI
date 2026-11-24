@@ -14,18 +14,35 @@
     persone, 1000 record per persona, 10000 record totali e 10 MiB.
   </p>
   <form (ngSubmit)="search()" class="filters">
-    <mat-checkbox name="includeArchived" [(ngModel)]="includeArchived" [disabled]="busy()">
+    <mat-checkbox
+      name="includeArchived"
+      [(ngModel)]="includeArchived"
+      [disabled]="busy() || loading() || selectingAll()"
+    >
       Includi persone archiviate
     </mat-checkbox>
-    <button mat-button type="submit" [disabled]="busy() || loading()">Aggiorna risultati</button>
+    <button mat-button type="submit" [disabled]="busy() || loading() || selectingAll()">
+      Aggiorna risultati
+    </button>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="selectAll()"
+      [disabled]="busy() || loading() || selectingAll()"
+    >
+      Seleziona tutti i risultati (max 100)
+    </button>
   </form>
   <p aria-live="polite">{{ selectedCount() }} persone selezionate, anche su altre pagine</p>
+  @if (selectionMessage()) {
+    <p role="status">{{ selectionMessage() }}</p>
+  }
   <mat-form-field appearance="outline">
     <mat-label>Persone da esportare</mat-label>
     <mat-select
       [value]="selectedIds()"
       (selectionChange)="updateSelection($event.value)"
-      [disabled]="busy()"
+      [disabled]="busy() || selectingAll()"
       panelClass="people-select-panel"
       multiple
       aria-label="Seleziona persone da esportare"
@@ -43,7 +60,7 @@
             matInput
             #peopleSearchInput
             [value]="q"
-            [disabled]="busy()"
+            [disabled]="busy() || selectingAll()"
             (input)="searchPeople(peopleSearchInput.value)"
             autocomplete="off"
             aria-label="Cerca persone"
@@ -53,7 +70,9 @@
       @for (person of selectablePeople(); track person.id) {
         <mat-option
           [value]="person.id"
-          [disabled]="busy() || (selectedCount() >= 100 && !selected().has(person.id))"
+          [disabled]="
+            busy() || selectingAll() || (selectedCount() >= 100 && !selected().has(person.id))
+          "
         >
           {{ person.label }}
         </mat-option>
@@ -69,7 +88,8 @@
     [length]="data().totalElements"
     [pageIndex]="pageIndex"
     [pageSize]="20"
-    [disabled]="busy() || loading()"
+    [hidePageSize]="true"
+    [disabled]="busy() || loading() || selectingAll()"
     (page)="paginate($event)"
     aria-label="Pagine persone da esportare"
   />
@@ -77,7 +97,11 @@
     <button mat-flat-button (click)="exportFile()" [disabled]="busy() || !selectedCount()">
       Esporta JSON
     </button>
-    <button mat-button (click)="clearSelection()" [disabled]="busy() || !selectedCount()">
+    <button
+      mat-button
+      (click)="clearSelection()"
+      [disabled]="busy() || selectingAll() || !selectedCount()"
+    >
       Svuota selezione
     </button>
   </div>

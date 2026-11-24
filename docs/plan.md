@@ -20,7 +20,9 @@ accordion, filtro persone con selezione multipla e ricerca interna, colore dei
 link invariato dopo la visita e stato attivo visibile nella navigazione.
 
 Rifinitura UI autorizzata per Export persone: selettore multi-selezione con
-ricerca interna, mantenendo filtro archiviati, selezione tra pagine e limiti export.
+ricerca interna, pulsante per selezionare i risultati corrispondenti fino al
+limite di 100 persone e paginazione senza controllo "Elementi per pagina",
+mantenendo filtro archiviati e selezione tra pagine.
 
 Riorganizzazione autorizzata: pagina dedicata alle chiusure aziendali e menu
 principale con sezioni Persone e Assenze; notifiche accessibili dalla campanella.

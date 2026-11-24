@@ -97,6 +97,55 @@ describe('ImportExport', () => {
     expect(fixture.nativeElement.querySelector('mat-select')).not.toBeNull();
   });
 
+  it('selects all matching export results up to the 100-person limit', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    const people = Array.from({ length: 100 }, (_, index) => ({
+      id: String(index + 1),
+      firstName: 'Persona',
+      lastName: `Cognome${index + 1}`,
+    }));
+    component.q = 'Cognome';
+    component.includeArchived = true;
+    component.updateSelection([first.id]);
+    api.get.mockResolvedValueOnce({
+      items: people,
+      page: 0,
+      size: 100,
+      totalElements: 130,
+      totalPages: 2,
+    });
+
+    await component.selectAll();
+    fixture.detectChanges();
+
+    expect(api.get).toHaveBeenLastCalledWith('people', {
+      q: 'Cognome',
+      includeArchived: true,
+      page: 0,
+      size: 100,
+      sort: 'lastName,asc',
+    });
+    expect(component.selectedCount()).toBe(100);
+    expect(component.selected().has(first.id)).toBe(false);
+    expect(component.selectionMessage()).toContain('prime 100 persone');
+    expect(component.selectablePeople()).toContainEqual({
+      id: '1',
+      label: 'Cognome1 Persona',
+    });
+    expect(fixture.nativeElement.textContent).toContain('Seleziona tutti i risultati (max 100)');
+  });
+
+  it('hides the page-size control while keeping pagination', async () => {
+    const { fixture } = setup();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('mat-paginator')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.mat-mdc-paginator-page-size')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.mat-mdc-paginator-range-label')).not.toBeNull();
+  });
+
   it('requires confirmation, sends the original JSON and displays imported/skipped results', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();
