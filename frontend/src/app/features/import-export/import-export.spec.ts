@@ -41,6 +41,10 @@ describe('ImportExport', () => {
     component.paginate({ pageIndex: 1, pageSize: 20, length: 21 });
     await fixture.whenStable();
     expect(component.selected().has(first.id)).toBe(true);
+    expect(component.selectablePeople()).toContainEqual({
+      id: first.id,
+      label: 'Fittizia Persona',
+    });
     component.includeArchived = true;
     component.q = 'Fittizia';
     component.search();
@@ -68,6 +72,29 @@ describe('ImportExport', () => {
       click.mockRestore();
       vi.unstubAllGlobals();
     }
+  });
+
+  it('searches inside the multiselect and retains selected people', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    component.updateSelection([first.id]);
+    component.searchPeople('persona');
+    await new Promise((resolve) => setTimeout(resolve, 275));
+    await fixture.whenStable();
+
+    expect(api.get).toHaveBeenLastCalledWith('people', {
+      q: 'persona',
+      includeArchived: false,
+      page: 0,
+      size: 20,
+      sort: 'lastName,asc',
+    });
+    expect(component.selectedIds()).toEqual([first.id]);
+    expect(component.selectablePeople()).toContainEqual({
+      id: first.id,
+      label: 'Fittizia Persona',
+    });
+    expect(fixture.nativeElement.querySelector('mat-select')).not.toBeNull();
   });
 
   it('requires confirmation, sends the original JSON and displays imported/skipped results', async () => {

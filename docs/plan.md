@@ -19,6 +19,9 @@ Rifiniture UI autorizzate per la pagina Assenze: importazione ed export in un
 accordion, filtro persone con selezione multipla e ricerca interna, colore dei
 link invariato dopo la visita e stato attivo visibile nella navigazione.
 
+Rifinitura UI autorizzata per Export persone: selettore multi-selezione con
+ricerca interna, mantenendo filtro archiviati, selezione tra pagine e limiti export.
+
 Riorganizzazione autorizzata: pagina dedicata alle chiusure aziendali e menu
 principale con sezioni Persone e Assenze; notifiche accessibili dalla campanella.
 

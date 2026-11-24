@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { italianPaginator } from '../../shared/paginator';
 
@@ -31,6 +32,7 @@ const maxBytes = 10 * 1024 * 1024;
     MatFormFieldModule,
     MatInputModule,
     MatPaginatorModule,
+    MatSelectModule,
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   templateUrl: './import-export.html',
@@ -40,6 +42,8 @@ export class ImportExport {
   private readonly api = inject(Api);
   readonly data = signal<Page<Row>>(emptyPage);
   readonly selected = signal<ReadonlySet<string>>(new Set());
+  private readonly selectedLabels = signal<ReadonlyMap<string, string>>(new Map());
+  readonly selectedIds = computed(() => [...this.selected()]);
   readonly selectedCount = computed(() => this.selected().size);
   readonly loading = signal(false);
   readonly busy = signal(false);
@@ -51,19 +55,58 @@ export class ImportExport {
   includeArchived = false;
   pageIndex = 0;
   private generation = 0;
+  private searchTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      if (this.searchTimer) clearTimeout(this.searchTimer);
+    });
     void this.load();
   }
 
   search(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = undefined;
     this.pageIndex = 0;
     void this.load();
   }
 
+  searchPeople(query: string): void {
+    this.q = query;
+    this.pageIndex = 0;
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      void this.load();
+      this.searchTimer = undefined;
+    }, 250);
+  }
+
   paginate(event: PageEvent): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = undefined;
     this.pageIndex = event.pageIndex;
     void this.load();
+  }
+
+  selectablePeople(): { id: string; label: string }[] {
+    const options = new Map([...this.selectedLabels()].map(([id, label]) => [id, { id, label }]));
+    for (const person of this.data().items) {
+      options.set(person.id, {
+        id: person.id,
+        label: `${person['lastName']} ${person['firstName']}${person['archivedAt'] ? ' (archiviata)' : ''}`,
+      });
+    }
+    return [...options.values()];
+  }
+
+  updateSelection(ids: string[]): void {
+    if (ids.length > 100) {
+      this.error.set('Puoi selezionare al massimo 100 persone.');
+      return;
+    }
+    const labels = new Map(this.selectablePeople().map(({ id, label }) => [id, label]));
+    this.selected.set(new Set(ids));
+    this.selectedLabels.set(new Map(ids.map((id) => [id, labels.get(id) ?? id])));
   }
 
   toggle(id: string, checked: boolean): void {
@@ -75,10 +118,24 @@ export class ImportExport {
     if (checked) next.add(id);
     else next.delete(id);
     this.selected.set(next);
+    const labels = new Map(this.selectedLabels());
+    if (checked) {
+      const person = this.data().items.find((item) => item.id === id);
+      labels.set(
+        id,
+        person
+          ? `${person['lastName']} ${person['firstName']}${person['archivedAt'] ? ' (archiviata)' : ''}`
+          : id,
+      );
+    } else {
+      labels.delete(id);
+    }
+    this.selectedLabels.set(labels);
   }
 
   clearSelection(): void {
     this.selected.set(new Set());
+    this.selectedLabels.set(new Map());
   }
 
   async load(): Promise<void> {

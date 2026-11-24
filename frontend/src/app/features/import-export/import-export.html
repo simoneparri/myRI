@@ -14,35 +14,56 @@
     persone, 1000 record per persona, 10000 record totali e 10 MiB.
   </p>
   <form (ngSubmit)="search()" class="filters">
-    <mat-form-field>
-      <mat-label>Cerca persone</mat-label>
-      <input matInput name="q" [(ngModel)]="q" [disabled]="busy()" />
-    </mat-form-field>
     <mat-checkbox name="includeArchived" [(ngModel)]="includeArchived" [disabled]="busy()">
       Includi persone archiviate
     </mat-checkbox>
-    <button mat-button type="submit" [disabled]="busy() || loading()">Cerca</button>
+    <button mat-button type="submit" [disabled]="busy() || loading()">Aggiorna risultati</button>
   </form>
   <p aria-live="polite">{{ selectedCount() }} persone selezionate, anche su altre pagine</p>
-  @if (loading()) {
-    <p role="status">Caricamento...</p>
-  } @else {
-    <div class="people">
-      @for (person of data().items; track person.id) {
-        <mat-checkbox
-          [checked]="selected().has(person.id)"
+  <mat-form-field appearance="outline">
+    <mat-label>Persone da esportare</mat-label>
+    <mat-select
+      [value]="selectedIds()"
+      (selectionChange)="updateSelection($event.value)"
+      [disabled]="busy()"
+      panelClass="people-select-panel"
+      multiple
+      aria-label="Seleziona persone da esportare"
+    >
+      <mat-select-trigger>{{ selectedCount() }} persone selezionate</mat-select-trigger>
+      <div
+        class="people-search-panel"
+        role="presentation"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Cerca persone</mat-label>
+          <input
+            matInput
+            #peopleSearchInput
+            [value]="q"
+            [disabled]="busy()"
+            (input)="searchPeople(peopleSearchInput.value)"
+            autocomplete="off"
+            aria-label="Cerca persone"
+          />
+        </mat-form-field>
+      </div>
+      @for (person of selectablePeople(); track person.id) {
+        <mat-option
+          [value]="person.id"
           [disabled]="busy() || (selectedCount() >= 100 && !selected().has(person.id))"
-          (change)="toggle(person.id, $event.checked)"
         >
-          {{ person['lastName'] }} {{ person['firstName'] }}
-          @if (person['archivedAt']) {
-            (archiviata)
-          }
-        </mat-checkbox>
+          {{ person.label }}
+        </mat-option>
       } @empty {
-        <p>Nessuna persona trovata.</p>
+        <mat-option disabled>Nessuna persona trovata.</mat-option>
       }
-    </div>
+    </mat-select>
+  </mat-form-field>
+  @if (loading()) {
+    <p role="status">Caricamento persone...</p>
   }
   <mat-paginator
     [length]="data().totalElements"
