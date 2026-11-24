@@ -64,6 +64,14 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
         },
       });
     }
+    if (path === 'absences/capacity.xlsx') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers: { 'Content-Disposition': 'attachment; filename="assenze-capacity.xlsx"' },
+        body: 'xlsx-fittizio',
+      });
+    }
     if (path === 'absences') {
       const month = url.searchParams.get('month');
       const selected = url.searchParams.get('personIds');
@@ -128,6 +136,10 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await page.keyboard.press('Enter');
   await chooser;
   await expect(page.getByText('Fittizia P. 8h')).toBeVisible();
+  await expect(page.locator('[aria-label="2026-12-10"] .day-number')).toHaveClass(/today/);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Esporta Excel' }).click();
+  expect((await download).suggestedFilename()).toBe('assenze-capacity.xlsx');
   await page.getByRole('button', { name: 'Fittizia Prima, dettagli assenza' }).click();
   await expect(page.getByText('Ferie fittizie (F) · Approvata')).toBeVisible();
   await expect(page.getByText('Giorni: 1 · Ore: 8 · Timesheet: Si')).toBeVisible();
@@ -208,6 +220,9 @@ test('uploads fictitious CSV and XLSX and filters the monthly calendar', async (
   await expect.poll(() => uploadedXlsx).toBe(true);
   await page.getByRole('button', { name: 'Mese successivo' }).click();
   await expect(page.getByText('Fittizia P. 8h')).toBeVisible();
+  await page.getByRole('button', { name: 'Vai a oggi' }).click();
+  await expect(page.locator('#calendar-title')).toHaveText('Calendario 2026-12');
+  await expect(page.locator('[aria-label="2026-12-10"] .day-number')).toHaveClass(/today/);
   await page.setViewportSize({ width: 390, height: 900 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))

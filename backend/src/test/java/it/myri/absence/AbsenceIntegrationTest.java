@@ -8,8 +8,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import it.myri.IntegrationTest;
+import java.io.ByteArrayInputStream;
+import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,6 +27,45 @@ class AbsenceIntegrationTest extends IntegrationTest {
     @Autowired AbsenceService service;
     @Autowired JdbcTemplate jdbc;
     @Autowired MockMvc mvc;
+    @Autowired Clock clock;
+    @Autowired ZoneId zone;
+
+    @Test
+    void capacityDownloadIsAuthenticatedAndIncludesArchivedPeopleWithRealDatabaseData() throws Exception {
+        jdbc.update("INSERT INTO person (first_name,last_name,hired_on,rsno_agresso,status,created_at,updated_at,version) "
+                + "VALUES ('Cap','Fittizia','2020-01-01','capacity-test-001','active',NOW(),NOW(),0)");
+        jdbc.update("INSERT INTO person (first_name,last_name,hired_on,rsno_agresso,status,archived_at,created_at,updated_at,version) "
+                + "VALUES ('Archivio','Fittizia','2020-01-01','capacity-test-002','active',NOW(),NOW(),NOW(),0)");
+        LocalDate monday = LocalDate.now(clock.withZone(zone))
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/uuuu");
+        String header = "ResID;Abs. code;Abs. code (T);Date from;Time from;Date to;Time to;"
+                + "Workflow status (T);Days;Hours;Imported to Timesheet\n";
+        String row = "capacity-test-001;F;Ferie;" + monday.format(format) + ";0900;"
+                + monday.plusDays(4).format(format) + ";1800;Approvata;5;40;Si\n";
+        assertEquals(1, service.importCsv(header + row).imported());
+        mvc.perform(get("/api/v1/absences/capacity.xlsx")).andExpect(status().isUnauthorized());
+        byte[] file = mvc.perform(get("/api/v1/absences/capacity.xlsx").with(user("fittizio").roles("OWNER")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"assenze-capacity.xlsx\""))
+                .andReturn().getResponse().getContentAsByteArray();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+            var sheet = workbook.getSheetAt(0);
+            boolean activeFound = false, archivedFound = false;
+            for (int i = 3; i <= sheet.getLastRowNum(); i++) {
+                var data = sheet.getRow(i);
+                String name = data.getCell(0).getStringCellValue();
+                if (name.equals("Fittizia, Cap")) {
+                    activeFound = true;
+                    assertEquals(1.0, data.getCell(2).getNumericCellValue(), 0.00001);
+                }
+                if (name.equals("Fittizia, Archivio")) archivedFound = true;
+            }
+            assertTrue(activeFound);
+            assertTrue(archivedFound);
+        }
+    }
 
     @Test
     void migrationImportOverlapAndMonthFilteringWorkWithMysql() throws Exception {

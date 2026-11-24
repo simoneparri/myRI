@@ -110,11 +110,30 @@ e indicate in blu. Si possono annullare e reinserire;
 se una data coincide con una festivita, prevale il rosso. Le chiusure non
 sono incluse nel trasferimento persone.
 
+Il pulsante **Vai a oggi** torna al mese corrente nel fuso applicativo; oggi e
+indicato con un bordo blu, anche in presenza di festivita o chiusure.
+**Esporta Excel** produce un file XLSX con tutte le persone, incluse quelle
+archiviate e indipendentemente dal filtro. Ogni colonna rappresenta una
+settimana ISO, dalla settimana precedente a quella corrente fino alla settimana
+che comprende il 31 dicembre dell'anno ISO corrente; dalla settimana 24 in poi
+l'intervallo arriva alla settimana che comprende il 31 dicembre dell'anno
+successivo. Anche quando una settimana attraversa il cambio d'anno e conteggiata
+per intero. La settimana corrente
+e verde. Per ogni persona si sommano le assenze attive di tutti gli stati nei
+giorni lunedi-venerdi, calcolando gli intervalli 09:00-13:00 e 14:00-18:00
+(anche nei giorni festivi o di chiusura); i valori testuali delle ore importate
+non sono usati per il calcolo. Le percentuali sono basate su 40 ore settimanali,
+arrotondate per eccesso all'intero e limitate al 100%. Le settimane senza
+assenze riportano 0%. Massimo 5000 persone e 50000 assenze nel periodo:
+superato il limite l'export fallisce esplicitamente senza troncamenti. Il file
+contiene dati personali e va conservato e trasferito tramite canali protetti.
+
 API autenticate e protette da CSRF: `POST /api/v1/absences/import` riceve il
 file originale come `text/csv` oppure
 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`;
 `GET /api/v1/absences?month=AAAA-MM` accetta
 opzionalmente `personIds` separati da virgola e restituisce le assenze attive.
+`GET /api/v1/absences/capacity.xlsx` scarica l'export capacity senza cache.
 Le chiusure sono consultabili con `GET /api/v1/company-closures?month=AAAA-MM`,
 aggiungibili con `POST /api/v1/company-closures` e annullabili con
 `POST /api/v1/company-closures/cancel`, entrambi con body `{"date":"AAAA-MM-GG"}`.

@@ -10,7 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +25,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class AbsenceController {
     private static final int MAX_BYTES = 2 * 1024 * 1024;
     private final AbsenceService service;
+    private final AbsenceCapacityExportService capacityExport;
 
-    public AbsenceController(AbsenceService service) { this.service = service; }
+    public AbsenceController(AbsenceService service, AbsenceCapacityExportService capacityExport) {
+        this.service = service;
+        this.capacityExport = capacityExport;
+    }
+
+    @GetMapping("/capacity.xlsx")
+    public ResponseEntity<byte[]> capacity() throws IOException {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"assenze-capacity.xlsx\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(capacityExport.export());
+    }
 
     @PostMapping(value = "/import", consumes = "text/csv")
     public AbsenceDtos.ImportReport importCsv(HttpServletRequest request) throws IOException {

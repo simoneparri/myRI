@@ -57,6 +57,16 @@
     </div>
   }
 </section>
+<section aria-labelledby="absence-export-title">
+  <h2 id="absence-export-title">Esporta assenze capacity</h2>
+  <p>Il file include tutte le persone, indipendentemente dal filtro del calendario.</p>
+  <button mat-stroked-button type="button" (click)="exportCapacity()" [disabled]="exporting()">
+    Esporta Excel
+  </button>
+  @if (exporting()) {
+    <p role="status">Esportazione in corso...</p>
+  }
+</section>
 <section aria-labelledby="absence-filter-title">
   <h2 id="absence-filter-title">Filtra persone</h2>
   <form (ngSubmit)="search()" class="filters">
@@ -103,6 +113,7 @@
     <button mat-button (click)="changeMonth(-1)" aria-label="Mese precedente">←</button>
     <h2 id="calendar-title">Calendario {{ month() }}</h2>
     <button mat-button (click)="changeMonth(1)" aria-label="Mese successivo">→</button>
+    <button mat-stroked-button type="button" (click)="goToToday()">Vai a oggi</button>
   </div>
   @if (loading()) {
     <p role="status">Caricamento calendario...</p>
@@ -117,8 +128,11 @@
             class="day-number"
             [class.holiday]="day.holiday"
             [class.closure]="day.closed && !day.holiday"
+            [class.today]="day.date === today()"
+            [attr.aria-current]="day.date === today() ? 'date' : null"
             [attr.aria-label]="
               day.date +
+              (day.date === today() ? ' - Oggi' : '') +
               (day.holiday ? ' - ' + day.holiday : '') +
               (day.closed ? ' - Chiusura aziendale' : '')
             "

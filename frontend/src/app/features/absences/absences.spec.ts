@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Api } from '../../core/api';
 import { Absences } from './absences';
 import { italianHolidays } from './italian-holidays';
@@ -38,6 +39,7 @@ describe('Absences', () => {
         errors: [{ row: 3, reason: 'Dati non validi.' }],
       }),
       post: vi.fn().mockResolvedValue(undefined),
+      download: vi.fn().mockResolvedValue(new Blob(['fittizio'])),
     };
     TestBed.configureTestingModule({
       imports: [Absences],
@@ -104,6 +106,59 @@ describe('Absences', () => {
     expect(holidays.get('2026-08-15')).toBe('Ferragosto');
     expect(holidays.get('2026-12-25')).toBe('Natale');
     expect(italianHolidays(2027).get('2027-03-28')).toBe('Pasqua');
+  });
+
+  it('returns to today and highlights it without losing holiday styling', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    const today = component.today();
+    component.month.set('2020-01');
+    component.goToToday();
+    await fixture.whenStable();
+    expect(component.month()).toBe(today.slice(0, 7));
+    expect(api.get).toHaveBeenCalledWith('company-closures', { month: today.slice(0, 7) });
+    component.closures.set([today]);
+    fixture.detectChanges();
+    const number: HTMLElement = fixture.nativeElement.querySelector(
+      `[aria-label="${today}"] .day-number`,
+    );
+    expect(number.classList.contains('today')).toBe(true);
+    expect(number.getAttribute('aria-current')).toBe('date');
+    expect(number.classList.contains('closure') || number.classList.contains('holiday')).toBe(true);
+  });
+
+  it('exports all people independently of the current selection', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    component.toggle(person, true);
+    const create = vi.fn().mockReturnValue('blob:fittizio');
+    const revoke = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL: create, revokeObjectURL: revoke });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    try {
+      await component.exportCapacity();
+      expect(api.download).toHaveBeenCalledWith('absences/capacity.xlsx');
+      expect(click).toHaveBeenCalledOnce();
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      expect(revoke).toHaveBeenCalledWith('blob:fittizio');
+    } finally {
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('displays capacity export errors', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    api.download.mockRejectedValue(
+      new HttpErrorResponse({ status: 400, error: { detail: 'Troppe persone per l’export.' } }),
+    );
+    await component.exportCapacity();
+    fixture.detectChanges();
+    expect(component.exporting()).toBe(false);
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+      'Troppe persone per l’export.',
+    );
   });
   it('uploads the original file and displays per-row results', async () => {
     const { fixture, component, api } = setup();

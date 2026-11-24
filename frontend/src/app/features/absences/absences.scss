@@ -42,6 +42,10 @@ section {
   background: #005b96;
   color: #fff;
 }
+.today {
+  outline: 2px solid #005b96;
+  outline-offset: -2px;
+}
 .absence {
   display: block;
   max-width: 100%;

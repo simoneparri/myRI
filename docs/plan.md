@@ -10,6 +10,11 @@ devono essere ricreati solo se contengono dati fittizi sacrificabili.
 
 ## Stato e autorizzazioni
 
+Estensione autorizzata: ritorno a oggi nel calendario assenze ed export XLSX
+capacity settimanale per tutte le persone. Calcolo dagli intervalli lavorativi
+09:00-13:00 e 14:00-18:00, dal lunedi al venerdi; limiti e dettagli in
+docs/import-export.md.
+
 Riorganizzazione autorizzata: pagina dedicata alle chiusure aziendali e menu
 principale con sezioni Persone e Assenze; notifiche accessibili dalla campanella.
 

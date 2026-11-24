@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -59,7 +59,8 @@ interface Day {
 export class Absences {
   private readonly api = inject(Api);
   private readonly zone = inject(TIMEZONE);
-  readonly month = signal(calendarDate(new Date(), this.zone).slice(0, 7));
+  readonly today = signal(calendarDate(new Date(), this.zone));
+  readonly month = signal(this.today().slice(0, 7));
   readonly entries = signal<Absence[]>([]);
   readonly closures = signal<string[]>([]);
   readonly closureLoading = signal(false);
@@ -77,6 +78,7 @@ export class Absences {
   readonly loading = signal(false);
   readonly peopleLoading = signal(false);
   readonly busy = signal(false);
+  readonly exporting = signal(false);
   readonly daysOfWeek = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
   readonly days = computed<Day[]>(() => {
     const [year, month] = this.month().split('-').map(Number);
@@ -115,6 +117,8 @@ export class Absences {
   private closureGeneration = 0;
 
   constructor() {
+    const timer = setInterval(() => this.today.set(calendarDate(new Date(), this.zone)), 60_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
     void this.loadCalendar();
     void this.loadPeople();
     void this.loadClosures();
@@ -192,6 +196,33 @@ export class Absences {
     this.month.set(date.toISOString().slice(0, 7));
     void this.loadCalendar();
     void this.loadClosures();
+  }
+
+  goToToday(): void {
+    const today = calendarDate(new Date(), this.zone);
+    this.today.set(today);
+    this.month.set(today.slice(0, 7));
+    void this.loadCalendar();
+    void this.loadClosures();
+  }
+
+  async exportCapacity(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.error.set('');
+    try {
+      const blob = await this.api.download('absences/capacity.xlsx');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'assenze-capacity.xlsx';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   compact(item: Absence): string {
