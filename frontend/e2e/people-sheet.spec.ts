@@ -399,7 +399,7 @@ test('date/time filters and editor preserve UTC when typing or choosing a date',
   expect(savedDueAt).toBe('2026-11-05T23:30:00.000Z');
 });
 
-test('raise editor calculates upward-rounded percentage and keeps manual percentage without target', async ({
+test('raise editor synchronizes the target salary and percentage', async ({
   page,
 }) => {
   const person = {
@@ -416,6 +416,7 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
     effectiveOn: '2026-01-01',
   };
   const requests: Record<string, unknown>[] = [];
+  const updates: Record<string, unknown>[] = [];
   const makePage = (items: unknown[]) => ({
     items,
     page: 0,
@@ -440,7 +441,17 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
         json: { id: String(100 + requests.length), version: '0', status: 'draft', ...body },
       });
     }
-    if (path === 'raise-requests') return route.fulfill({ json: makePage(requests) });
+    if (path === 'raise-requests/101' && request.method() === 'PUT') {
+      updates.push(request.postDataJSON());
+      if (updates.length > 1) return route.fulfill({ status: 409, json: {} });
+      return route.fulfill({ json: { id: '101', status: 'draft', ...updates[0] } });
+    }
+    if (path === 'raise-requests')
+      return route.fulfill({
+        json: makePage(requests.map((body, index) => ({
+          id: String(101 + index), version: '0', status: 'draft', ...body,
+        }))),
+      });
     return route.fulfill({ json: makePage([]) });
   });
 
@@ -463,21 +474,54 @@ test('raise editor calculates upward-rounded percentage and keeps manual percent
     exact: true,
   });
   await expect(automaticPercentage).toHaveValue('0.6');
-  await expect(automaticPercentage).toBeDisabled();
-  await expect(automaticDialog.getByText(/backend salvera solo la RAL target/)).toBeVisible();
+  await expect(automaticPercentage).toBeEnabled();
   await automaticDialog.getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(automaticDialog).not.toBeVisible();
+  const successToast = page.locator('.toast-success .mdc-snackbar__surface');
+  await expect(successToast).toHaveCSS('background-color', 'rgb(22, 101, 52)');
+  const successBounds = await successToast.boundingBox();
+  expect(successBounds).not.toBeNull();
+  expect(successBounds!.x + successBounds!.width / 2).toBeGreaterThan(720);
+  expect(successBounds!.y + successBounds!.height / 2).toBeGreaterThan(500);
   expect(requests[0]).toEqual(
-    expect.objectContaining({ requestedSalary: '45250.00', requestedPercentage: null }),
+    expect.objectContaining({ requestedSalary: '45250.00', requestedPercentage: '0.6' }),
   );
 
   const manualDialog = await fillRequiredFields('');
   const manualPercentage = manualDialog.getByLabel('Percentuale aumento', { exact: true });
   await expect(manualPercentage).toBeEnabled();
   await manualPercentage.fill('5.25');
+  await expect(manualDialog.getByLabel('RAL annua target (non incremento)', { exact: true }))
+    .toHaveValue('47362.50');
   await manualDialog.getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(manualDialog).not.toBeVisible();
   expect(requests[1]).toEqual(
-    expect.objectContaining({ requestedSalary: null, requestedPercentage: '5.25' }),
+    expect.objectContaining({ requestedSalary: '47362.50', requestedPercentage: '5.25' }),
   );
+
+  await page.locator('tbody tr').first().getByRole('button', { name: 'Azioni' }).click();
+  await page.getByRole('menuitem', { name: 'Modifica' }).click();
+  const editDialog = page.getByRole('dialog');
+  const editTarget = editDialog.getByLabel('RAL annua target (non incremento)', { exact: true });
+  const editPercentage = editDialog.getByLabel('Percentuale aumento', { exact: true });
+  await expect(editTarget).toHaveValue('45250.00');
+  await expect(editPercentage).toHaveValue('0.6');
+  await editPercentage.fill('10');
+  await expect(editTarget).toHaveValue('49500.00');
+  await editTarget.fill('45250.00');
+  await expect(editPercentage).toHaveValue('0.6');
+  await editDialog.getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(editDialog).not.toBeVisible();
+  expect(updates[0]).toEqual(
+    expect.objectContaining({ requestedSalary: '45250.00', requestedPercentage: '0.6', version: '0' }),
+  );
+  await page.locator('tbody tr').first().getByRole('button', { name: 'Azioni' }).click();
+  await page.getByRole('menuitem', { name: 'Modifica' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Salva', exact: true }).click();
+  const errorToast = page.locator('.toast-error .mdc-snackbar__surface');
+  await expect(errorToast).toHaveCSS('background-color', 'rgb(161, 32, 32)');
+  const errorBounds = await errorToast.boundingBox();
+  expect(errorBounds).not.toBeNull();
+  expect(errorBounds!.x + errorBounds!.width / 2).toBeGreaterThan(720);
+  expect(errorBounds!.y + errorBounds!.height / 2).toBeGreaterThan(500);
 });

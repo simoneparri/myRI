@@ -12,10 +12,12 @@ describe('ResourcePage', () => {
   const get = vi.fn();
   const open = vi.fn();
   const success = vi.fn();
+  const toastError = vi.fn();
   const post = vi.fn();
   async function create() {
     open.mockReset().mockReturnValue({ afterClosed: () => of(false) });
     success.mockReset();
+    toastError.mockReset();
     post.mockReset().mockResolvedValue({});
     get.mockReset().mockResolvedValue(empty);
     TestBed.configureTestingModule({
@@ -24,7 +26,7 @@ describe('ResourcePage', () => {
         provideRouter([]),
         { provide: Api, useValue: { get, post, choices: vi.fn().mockResolvedValue([]) } },
         { provide: MatDialog, useValue: { open } },
-        { provide: Toast, useValue: { success } },
+        { provide: Toast, useValue: { success, error: toastError } },
       ],
     });
     const fixture = TestBed.createComponent(ResourcePage);
@@ -295,6 +297,7 @@ describe('ResourcePage', () => {
     await fixture.componentInstance.command({ id: '1', version: '4' }, 'archive');
     expect(success).not.toHaveBeenCalled();
     expect(fixture.componentInstance.error()).toContain('Conflitto');
+    expect(toastError).toHaveBeenCalledWith(fixture.componentInstance.error());
   });
   it('uses calendar presets without sending hidden full-list filters', async () => {
     const fixture = await create();

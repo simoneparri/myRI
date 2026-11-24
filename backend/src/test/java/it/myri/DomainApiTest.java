@@ -594,6 +594,70 @@ class DomainApiTest extends IntegrationTest {
     }
 
     @Test
+    void raiseMissingValuesAreCalculatedPersistedAndAuditedOnCreateAndUpdate() throws Exception {
+        String person = person();
+        var baseInput = salaryInput();
+        baseInput.put("amount", "45000.00");
+        var base = send(post("/api/v1/people/" + person + "/salaries"), baseInput, 201);
+        var input = raiseInput(person, base.get("id").asText());
+        input.put("requestedSalary", "45250.00");
+        var request = send(post("/api/v1/raise-requests"), input, 201);
+        String id = request.get("id").asText();
+        String path = "/api/v1/raise-requests/" + id;
+        assertEquals(0, new java.math.BigDecimal("0.6").compareTo(
+                jdbc.queryForObject("SELECT requested_percentage FROM raise_request WHERE id = ?",
+                        java.math.BigDecimal.class, id)));
+
+        input.put("version", request.get("version").asText());
+        var unchanged = send(put(path), input, 200);
+        assertEquals(request.get("version"), unchanged.get("version"));
+        input.remove("requestedSalary");
+        input.put("requestedPercentage", "5.25");
+        request = send(put(path), input, 200);
+        assertEquals(0, new java.math.BigDecimal("47362.50").compareTo(
+                jdbc.queryForObject("SELECT requested_salary FROM raise_request WHERE id = ?",
+                        java.math.BigDecimal.class, id)));
+        assertEquals(1, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM audit_event WHERE raise_request_id = ?
+                AND action = 'raise_updated' AND changed_fields = 'requestedSalary,requestedPercentage'
+                """, Integer.class, id));
+
+        input.put("version", request.get("version").asText());
+        input.remove("requestedPercentage");
+        input.put("requestedSalary", "45250.00");
+        request = send(put(path), input, 200);
+        assertEquals(0, new java.math.BigDecimal("0.6").compareTo(
+                jdbc.queryForObject("SELECT requested_percentage FROM raise_request WHERE id = ?",
+                        java.math.BigDecimal.class, id)));
+        request = send(post(path + "/submit"), Map.of("version", request.get("version").asText()), 200);
+        var approved = send(post(path + "/approve"), Map.of("version", request.get("version").asText(),
+                "outcomeOn", "2026-02-01", "createSalary", true, "effectiveOn", "2026-03-01"), 200);
+        assertEquals(0, new java.math.BigDecimal("45250.00").compareTo(
+                jdbc.queryForObject("SELECT amount FROM salary WHERE id = ?",
+                        java.math.BigDecimal.class, approved.get("salaryId").asText())));
+
+        input.remove("version");
+        input.remove("requestedSalary");
+        input.put("requestedPercentage", "5.25");
+        var percentageOnly = send(post("/api/v1/raise-requests"), input, 201);
+        assertEquals(0, new java.math.BigDecimal("47362.50").compareTo(
+                jdbc.queryForObject("SELECT requested_salary FROM raise_request WHERE id = ?",
+                        java.math.BigDecimal.class, percentageOnly.get("id").asText())));
+        input.put("requestedSalary", "45250.00");
+        input.put("requestedPercentage", "0.6");
+        send(post("/api/v1/raise-requests"), input, 201);
+        input.put("requestedPercentage", "0.7");
+        send(post("/api/v1/raise-requests"), input, 400);
+        input.remove("requestedPercentage");
+        input.put("requestedSalary", "1000000000.00");
+        baseInput.put("amount", "0.01");
+        baseInput.put("requestKey", UUID.randomUUID().toString());
+        var tinyBase = send(post("/api/v1/people/" + person + "/salaries"), baseInput, 201);
+        input.put("baseSalaryId", tinyBase.get("id").asText());
+        send(post("/api/v1/raise-requests"), input, 400);
+    }
+
+    @Test
     void submittedRaisesCanBeEditedThenApprovedExactlyOnce() throws Exception {
         String person = person();
         var base = send(post("/api/v1/people/" + person + "/salaries"), salaryInput(), 201);

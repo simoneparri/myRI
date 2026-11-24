@@ -59,7 +59,7 @@ public class RaiseService {
         request.initialize(clock);
         RaiseDtos.apply(request, input);
         request.status = "draft";
-        validateValues(request);
+        validateValues(request, true);
         if (!request.benefitsSpecified) {
             RaiseDtos.applyBenefits(request, SalaryDtos.benefits(salaryService.get(request.baseSalaryId)));
         }
@@ -78,10 +78,15 @@ public class RaiseService {
                 || !Objects.equals(request.baseSalaryId, input.baseSalaryId())) {
             throw ApiException.conflict("Persona e RAL di riferimento non sono modificabili.");
         }
-        String fields = changedFields(request, input);
+        RaiseRequest candidate = new RaiseRequest();
+        RaiseDtos.apply(candidate, input);
+        validateValues(candidate, true);
+        String fields = changedFields(request, input, candidate);
         if (fields.isEmpty()) { return view(request); }
         RaiseDtos.apply(request, input);
-        validateValues(request);
+        request.requestedSalary = candidate.requestedSalary;
+        request.requestedPercentage = candidate.requestedPercentage;
+        request.currency = candidate.currency;
         request.touch(clock);
         requests.saveAndFlush(request);
         record(request, "raise_updated", fields);
@@ -194,13 +199,33 @@ public class RaiseService {
     }
 
     private BigDecimal validateValues(RaiseRequest request) {
+        return validateValues(request, false);
+    }
+
+    private BigDecimal validateValues(RaiseRequest request, boolean complete) {
         Dates.check(request.requestedOn);
         Salary base = salaryService.get(request.baseSalaryId);
         if (!Objects.equals(base.personId, request.personId) || base.effectiveOn.isAfter(request.requestedOn)) {
             throw ApiException.invalid("La RAL base non e valida per persona e data richiesta.");
         }
         request.currency = base.currency;
-        return target(base.amount, request.requestedSalary, request.requestedPercentage);
+        BigDecimal target = target(base.amount, request.requestedSalary, request.requestedPercentage);
+        if (complete) {
+            if (request.requestedPercentage == null) {
+                request.requestedPercentage = percentage(base.amount, target);
+            }
+            request.requestedSalary = target;
+        }
+        return target;
+    }
+
+    private static BigDecimal percentage(BigDecimal base, BigDecimal target) {
+        BigDecimal result = target.subtract(base).multiply(new BigDecimal("100"))
+                .divide(base, 1, RoundingMode.CEILING);
+        if (result.compareTo(new BigDecimal("99999.9999")) > 0) {
+            throw ApiException.invalid("La percentuale richiesta supera il limite consentito.");
+        }
+        return result;
     }
 
     public static BigDecimal target(BigDecimal base, BigDecimal amount, BigDecimal percentage) {
@@ -209,12 +234,13 @@ public class RaiseService {
         }
         BigDecimal computed = percentage == null ? null
                 : base.multiply(BigDecimal.ONE.add(percentage.movePointLeft(2))).setScale(2, RoundingMode.HALF_UP);
-        if (amount != null && computed != null && amount.compareTo(computed) != 0) {
-            throw ApiException.invalid("RAL desiderata e percentuale non sono coerenti.");
-        }
         BigDecimal target = amount == null ? computed : amount;
         if (target.compareTo(base) <= 0 || target.compareTo(new BigDecimal("9999999999.99")) > 0) {
             throw ApiException.invalid("La RAL richiesta deve superare la base e rispettare il limite monetario.");
+        }
+        if (amount != null && computed != null && amount.compareTo(computed) != 0
+                && percentage.compareTo(percentage(base, amount)) != 0) {
+            throw ApiException.invalid("RAL desiderata e percentuale non sono coerenti.");
         }
         return target;
     }
@@ -227,11 +253,11 @@ public class RaiseService {
         audit.record(request.personId, null, request.id, action, fields);
     }
 
-    private static String changedFields(RaiseRequest r, RaiseDtos.Input i) {
+    private static String changedFields(RaiseRequest r, RaiseDtos.Input i, RaiseRequest candidate) {
         java.util.List<String> fields = new java.util.ArrayList<>();
         if (!Objects.equals(r.requestedOn, i.requestedOn())) { fields.add("requestedOn"); }
-        if (!sameDecimal(r.requestedSalary, i.requestedSalary())) { fields.add("requestedSalary"); }
-        if (!sameDecimal(r.requestedPercentage, i.requestedPercentage())) { fields.add("requestedPercentage"); }
+        if (!sameDecimal(r.requestedSalary, candidate.requestedSalary)) { fields.add("requestedSalary"); }
+        if (!sameDecimal(r.requestedPercentage, candidate.requestedPercentage)) { fields.add("requestedPercentage"); }
         if (!Objects.equals(r.motivation, i.motivation())) { fields.add("motivation"); }
         if (i.benefits() != null && (!r.benefitsSpecified
                 || !Objects.equals(r.mealVouchers, i.benefits().mealVouchers())

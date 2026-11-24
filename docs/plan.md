@@ -461,3 +461,16 @@ la RAL scelta, il frontend invia in quel caso solo la target (percentuale null)
 e mostra l'avviso; la percentuale automatica non viene quindi persistita.
 Estendere la regola di coerenza API richiede decisione e incarico separati,
 non compresi nell'autorizzazione frontend corrente.
+
+## Estensione autorizzata - valori della richiesta di aumento
+
+Il backend calcola e salva il valore mancante tra RAL target e percentuale in
+creazione e modifica. Su conferma dell'utente la percentuale derivata continua
+a essere arrotondata per eccesso al decimo, anche quando non ricostruisce la
+RAL target al centesimo; la regola di coerenza accetta tale approssimazione.
+Il frontend permette di modificare entrambi i campi e aggiorna l'altro usando
+la RAL base selezionata. I dati storici non sono modificati automaticamente.
+
+Le conferme delle azioni usano toast verdi in basso a destra; gli errori di
+salvataggio e delle azioni sulle risorse usano toast rossi nella stessa posizione,
+conservando i messaggi di errore gia visibili nei moduli e nelle pagine.

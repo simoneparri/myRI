@@ -217,6 +217,24 @@ h2 {
   background: #fff0ef;
   white-space: pre-wrap;
 }
+.toast-success {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: #166534,
+      supporting-text-color: #fff,
+      button-color: #fff,
+    )
+  );
+}
+.toast-error {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: #a12020,
+      supporting-text-color: #fff,
+      button-color: #fff,
+    )
+  );
+}
 .muted {
   color: #4b5c6e;
   font-size: 0.9rem;

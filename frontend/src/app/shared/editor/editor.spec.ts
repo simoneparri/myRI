@@ -8,13 +8,14 @@ import {
   EditorData,
   increasePercentage,
   payloadFor,
-  roundedPercentageMatchesTarget,
   resolvePhoneValue,
+  salaryFromPercentage,
   validatorsFor,
 } from './editor';
 import { TIMEZONE, decimalDisplay } from '../format';
 import { canEdit, definitions } from '../schema';
 import { frameworkIconClass, frameworkOptions } from '../framework-catalog';
+import { Toast } from '../toast';
 
 describe('precision and validation', () => {
   it('calculates increase percentages with exact decimal arithmetic and upward tenths', () => {
@@ -23,9 +24,10 @@ describe('precision and validation', () => {
     expect(increasePercentage('3.00', '3.01')).toBe('0.4');
     expect(increasePercentage('8.00', '8.01')).toBe('0.2');
     expect(increasePercentage('45000.00', '45000.01')).toBe('0.1');
-    expect(roundedPercentageMatchesTarget('100.00', '110.00', '10')).toBe(true);
-    expect(roundedPercentageMatchesTarget('3.00', '3.01', '0.4')).toBe(true);
-    expect(roundedPercentageMatchesTarget('45000.00', '45250.00', '0.6')).toBe(false);
+    expect(salaryFromPercentage('45000.00', '5.25')).toBe('47362.50');
+    expect(salaryFromPercentage('100.01', '1.5')).toBe('101.51');
+    expect(salaryFromPercentage('9999999999.99', '1')).toBeNull();
+    expect(salaryFromPercentage('100.00', '0.0001')).toBeNull();
     expect(increasePercentage('45000.00', '45000.00')).toBeNull();
     expect(increasePercentage('45000.00', '44999.99')).toBeNull();
     expect(increasePercentage('0.00', '1.00')).toBeNull();
@@ -151,11 +153,13 @@ describe('Editor', () => {
   const put = vi.fn();
   const choices = vi.fn();
   const close = vi.fn();
+  const toastError = vi.fn();
   function create(data: EditorData, salaryRows: Row[] = []): Editor {
     post.mockReset();
     put.mockReset();
     choices.mockReset().mockResolvedValue(salaryRows);
     close.mockReset();
+    toastError.mockReset();
     TestBed.configureTestingModule({
       imports: [Editor],
       providers: [
@@ -163,6 +167,7 @@ describe('Editor', () => {
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close, disableClose: false } },
         { provide: Api, useValue: { post, put, choices } },
+        { provide: Toast, useValue: { error: toastError } },
       ],
     });
     return TestBed.createComponent(Editor).componentInstance;
@@ -369,7 +374,7 @@ describe('Editor', () => {
     expect(editor.selectedFrameworks('frameworks')).toEqual(['Java', 'Legacy Toolkit', 'React']);
     expect(editor.form.controls['frameworks'].valid).toBe(true);
   });
-  it('derives percentage from the selected base and allows manual percentage without a target', async () => {
+  it('synchronizes editable raise fields in both directions without changing existing values on load', async () => {
     const editor = create(
       {
         resource: 'raise-requests',
@@ -381,7 +386,7 @@ describe('Editor', () => {
           baseSalaryId: '11',
           requestedOn: '2026-11-01',
           requestedSalary: '49500.00',
-          requestedPercentage: '1.2345',
+          requestedPercentage: '10',
           motivation: 'Motivazione fittizia',
         },
       },
@@ -389,19 +394,40 @@ describe('Editor', () => {
     );
     await vi.waitFor(() => expect(editor.loading()).toBe(false));
     expect(editor.form.controls['requestedPercentage'].value).toBe('10');
-    expect(editor.form.controls['requestedPercentage'].disabled).toBe(true);
-    expect(editor.percentageMatchesTarget()).toBe(true);
-
-    editor.form.controls['requestedSalary'].setValue('');
     expect(editor.form.controls['requestedPercentage'].enabled).toBe(true);
-    expect(editor.form.controls['requestedPercentage'].value).toBe('');
+
+    editor.form.controls['requestedSalary'].setValue('45250.00');
+    expect(editor.form.controls['requestedPercentage'].value).toBe('0.6');
     editor.form.controls['requestedPercentage'].setValue('5.25');
+    expect(editor.form.controls['requestedSalary'].value).toBe('47362.50');
     put.mockResolvedValue({});
     await editor.save();
     expect(put).toHaveBeenCalledWith(
       'raise-requests/3',
-      expect.objectContaining({ requestedSalary: null, requestedPercentage: '5.25' }),
+      expect.objectContaining({ requestedSalary: '47362.50', requestedPercentage: '5.25' }),
     );
+    editor.form.controls['requestedPercentage'].setValue('');
+    expect(editor.form.controls['requestedSalary'].value).toBe('');
+    editor.form.controls['requestedSalary'].setValue('45000.01');
+    expect(editor.form.controls['requestedPercentage'].value).toBe('0.1');
+    editor.form.controls['requestedSalary'].setValue('invalid');
+    expect(editor.form.controls['requestedPercentage'].value).toBe('');
+  });
+  it('recomputes the last edited field when the selected base changes', async () => {
+    const editor = create({ resource: 'raise-requests', path: 'raise-requests', personId: '1' }, [
+      { id: '3', amount: '50000.00' },
+      { id: '4', amount: '40000.00' },
+    ]);
+    await vi.waitFor(() => expect(editor.loading()).toBe(false));
+    editor.form.controls['requestedPercentage'].setValue('10');
+    editor.form.controls['baseSalaryId'].setValue('3');
+    expect(editor.form.controls['requestedSalary'].value).toBe('55000.00');
+    editor.form.controls['baseSalaryId'].setValue('4');
+    expect(editor.form.controls['requestedSalary'].value).toBe('44000.00');
+    editor.form.controls['requestedSalary'].setValue('42000.00');
+    expect(editor.form.controls['requestedPercentage'].value).toBe('5');
+    editor.form.controls['baseSalaryId'].setValue('3');
+    expect(editor.form.controls['requestedPercentage'].value).toBe('');
   });
   it('hides legacy manager fields and preserves their stored values when editing people', async () => {
     const editor = create({
@@ -714,6 +740,7 @@ describe('Editor', () => {
       expect.objectContaining({ version: '5', personId: '9', baseSalaryId: '11' }),
     );
     expect(editor.error()).toContain('Conflitto');
+    expect(toastError).toHaveBeenCalledWith(editor.error());
     expect(close).not.toHaveBeenCalled();
   });
 });

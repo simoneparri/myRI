@@ -132,15 +132,8 @@
                   }}.</mat-error
                 >
               }
-              @if (field.key === 'requestedPercentage' && automaticPercentage()) {
-                <mat-hint>
-                  @if (percentageMatchesTarget()) {
-                    Calcolata automaticamente dalla RAL base e dalla RAL target.
-                  } @else {
-                    Percentuale arrotondata: il backend salvera solo la RAL target se i valori non
-                    coincidono al centesimo.
-                  }
-                </mat-hint>
+              @if (field.key === 'requestedPercentage' && !data.command) {
+                <mat-hint>Calcolata dalla RAL target per eccesso al decimo; modificabile.</mat-hint>
               }
             </mat-form-field>
           }

@@ -43,9 +43,11 @@ describe('PersonPage', () => {
   const post = vi.fn();
   const open = vi.fn();
   const success = vi.fn();
+  const toastError = vi.fn();
 
   async function create(row: Row = person) {
     success.mockReset();
+    toastError.mockReset();
     post.mockReset().mockResolvedValue({});
     get
       .mockReset()
@@ -57,7 +59,7 @@ describe('PersonPage', () => {
         provideRouter([]),
         { provide: Api, useValue: { get, post } },
         { provide: MatDialog, useValue: { open } },
-        { provide: Toast, useValue: { success } },
+        { provide: Toast, useValue: { success, error: toastError } },
       ],
     });
     const fixture = TestBed.createComponent(PersonPage);
@@ -251,6 +253,7 @@ describe('PersonPage', () => {
 
     expect(fixture.componentInstance.error()).toContain('Conflitto');
     expect(success).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(fixture.componentInstance.error());
     expect(fixture.componentInstance.person()).toEqual(person);
     expect(fixture.componentInstance.archiving()).toBe(false);
   });

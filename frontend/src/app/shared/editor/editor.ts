@@ -33,6 +33,7 @@ import {
   frameworkIconClass,
 } from '../framework-catalog';
 import { FrameworkIcons } from '../framework-icons';
+import { Toast } from '../toast';
 import intlTelInput, { NUMBER_FORMAT, type Iti } from 'intl-tel-input';
 
 export interface EditorData {
@@ -149,19 +150,14 @@ export function increasePercentage(baseAmount: string, targetAmount: string): st
   return decimal === 0n ? whole.toString() : `${whole}.${decimal}`;
 }
 
-export function roundedPercentageMatchesTarget(
-  baseAmount: string,
-  targetAmount: string,
-  percentage: string,
-): boolean {
+export function salaryFromPercentage(baseAmount: string, percentage: string): string | null {
   const base = cents(baseAmount);
-  const target = cents(targetAmount);
-  const match = /^(\d+)(?:\.(\d))?$/.exec(percentage);
-  if (base === null || target === null || !match || base <= 0n) return false;
-  const percentageTenths = BigInt(match[1]) * 10n + BigInt(match[2] ?? '0');
-  const targetNumerator = base * (1000n + percentageTenths);
-  const roundedTarget = (targetNumerator + 500n) / 1000n;
-  return roundedTarget === target;
+  const match = /^(0|[1-9]\d{0,4})(?:\.(\d{1,4}))?$/.exec(percentage);
+  if (base === null || base <= 0n || !match) return null;
+  const units = BigInt(match[1]) * 10000n + BigInt((match[2] ?? '').padEnd(4, '0'));
+  const result = (base * (1000000n + units) + 500000n) / 1000000n;
+  if (units === 0n || result <= base || result > 999999999999n) return null;
+  return `${result / 100n}.${(result % 100n).toString().padStart(2, '0')}`;
 }
 
 export interface PhoneResolution {
@@ -209,6 +205,7 @@ export class Editor implements AfterViewInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly timezone = inject(TIMEZONE);
   private readonly frameworkIcons = inject(FrameworkIcons);
+  private readonly toast = inject(Toast);
   private readonly display = new DisplayPipe();
   readonly fields: Field[];
   readonly fieldGroups: { label?: string; fields: Field[] }[];
@@ -216,8 +213,9 @@ export class Editor implements AfterViewInit, OnDestroy {
   readonly form = new FormRecord<FormControl<string>>({});
   readonly error = signal('');
   readonly saving = signal(false);
-  readonly automaticPercentage = signal(false);
-  readonly percentageMatchesTarget = signal(false);
+  private raiseSource: 'salary' | 'percentage' = this.data.row?.['requestedSalary']
+    ? 'salary'
+    : 'percentage';
   readonly phoneNotice = signal('');
   readonly loading = signal(false);
   readonly referencesFailed = signal(false);
@@ -305,7 +303,7 @@ export class Editor implements AfterViewInit, OnDestroy {
         .subscribe(updateBenefits);
       updateBenefits();
     }
-    this.setupRaisePercentage();
+    this.setupRaiseValues();
     if (this.data.resource === 'raise-requests' && !this.data.command && !this.data.row) {
       this.form.controls['baseSalaryId'].valueChanges
         .pipe(takeUntilDestroyed(this.destroy))
@@ -383,40 +381,31 @@ export class Editor implements AfterViewInit, OnDestroy {
       'Il numero esistente non e valido e restera invariato finche non inserisci un numero valido.',
     );
   }
-  private setupRaisePercentage(): void {
+  private setupRaiseValues(): void {
     if (this.data.resource !== 'raise-requests' || this.data.command) return;
     const target = this.form.controls['requestedSalary'];
+    const percentage = this.form.controls['requestedPercentage'];
     const baseId = this.form.controls['baseSalaryId'];
-    if (!target || !baseId) return;
     target.valueChanges.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
-      this.updateRaisePercentage();
+      this.raiseSource = 'salary';
+      this.updateRaiseValues();
+    });
+    percentage.valueChanges.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
+      this.raiseSource = 'percentage';
+      this.updateRaiseValues();
     });
     baseId.valueChanges.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
-      this.updateRaisePercentage();
+      this.updateRaiseValues();
     });
-    this.updateRaisePercentage();
   }
-  private updateRaisePercentage(): void {
+  private updateRaiseValues(): void {
+    if (this.data.resource !== 'raise-requests' || this.data.command) return;
     const target = this.form.controls['requestedSalary'];
     const percentage = this.form.controls['requestedPercentage'];
-    if (!target || !percentage) return;
-    if (!target.value.trim()) {
-      if (this.automaticPercentage()) percentage.setValue('', { emitEvent: false });
-      this.automaticPercentage.set(false);
-      this.percentageMatchesTarget.set(false);
-      if (percentage.disabled) percentage.enable({ emitEvent: false });
-      return;
-    }
-    const baseAmount = this.baseSalaryAmounts()[this.form.controls['baseSalaryId']?.value];
-    const computed = baseAmount ? increasePercentage(baseAmount, target.value.trim()) : null;
-    this.automaticPercentage.set(true);
-    this.percentageMatchesTarget.set(
-      !!baseAmount &&
-        !!computed &&
-        roundedPercentageMatchesTarget(baseAmount, target.value.trim(), computed),
-    );
-    percentage.setValue(computed ?? '', { emitEvent: false });
-    percentage.disable({ emitEvent: false });
+    const base = this.baseSalaryAmounts()[this.form.controls['baseSalaryId'].value] ?? '';
+    if (this.raiseSource === 'salary')
+      percentage.setValue(increasePercentage(base, target.value.trim()) ?? '', { emitEvent: false });
+    else target.setValue(salaryFromPercentage(base, percentage.value.trim()) ?? '', { emitEvent: false });
   }
   private decisionFields(): Field[] {
     return [
@@ -520,7 +509,11 @@ export class Editor implements AfterViewInit, OnDestroy {
         this.baseSalaries.set(baseSalaries);
         if (this.data.resource === 'raise-requests' && !this.data.row) this.inheritBenefits();
         this.options.set(results);
-        this.updateRaisePercentage();
+        if (this.data.resource === 'raise-requests' && !this.data.command) {
+          const target = this.form.controls['requestedSalary'];
+          const percentage = this.form.controls['requestedPercentage'];
+          if (!this.data.row || !target.value || !percentage.value) this.updateRaiseValues();
+        }
       }
     } catch (error) {
       if (generation === this.generation) {
@@ -589,7 +582,10 @@ export class Editor implements AfterViewInit, OnDestroy {
   async save(): Promise<void> {
     if (this.saving() || this.loading() || this.referencesFailed()) return;
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.toast.error('Verifica i campi del modulo.');
+      return;
+    }
     this.error.set('');
     const values = this.form.getRawValue();
     if (
@@ -597,7 +593,7 @@ export class Editor implements AfterViewInit, OnDestroy {
       values['bornOn'] &&
       values['bornOn'] > calendarDate(new Date(), this.timezone)
     ) {
-      this.error.set('La data di nascita non puo essere futura.');
+      this.saveError('La data di nascita non puo essere futura.');
       return;
     }
     if (
@@ -605,7 +601,7 @@ export class Editor implements AfterViewInit, OnDestroy {
       values['careerStartedOn'] &&
       values['careerStartedOn'] > values['hiredOn']
     ) {
-      this.error.set("L'inizio lavoro non puo essere successivo all'assunzione.");
+      this.saveError("L'inizio lavoro non puo essere successivo all'assunzione.");
       return;
     }
     if (
@@ -614,7 +610,7 @@ export class Editor implements AfterViewInit, OnDestroy {
       values['endsOn'] &&
       values['startsOn'] > values['endsOn']
     ) {
-      this.error.set('La data di fine progetto non puo precedere quella di inizio.');
+      this.saveError('La data di fine progetto non puo precedere quella di inizio.');
       return;
     }
     if (
@@ -623,20 +619,16 @@ export class Editor implements AfterViewInit, OnDestroy {
       !values['requestedSalary'] &&
       !values['requestedPercentage']
     ) {
-      this.error.set('Indica una RAL target o una percentuale.');
+      this.saveError('Indica una RAL target o una percentuale.');
       return;
     }
     if (
       this.data.resource === 'raise-requests' &&
       !this.data.command &&
-      values['requestedSalary'] &&
-      !increasePercentage(
-        this.baseSalaryAmounts()[values['baseSalaryId']] ?? '',
-        values['requestedSalary'],
-      )
+      (!values['requestedSalary'] || !values['requestedPercentage'])
     ) {
-      this.error.set(
-        'La RAL target deve superare la RAL base selezionata e rientrare nei limiti della percentuale API.',
+      this.saveError(
+        'La RAL target e la percentuale devono essere calcolabili e rientrare nei limiti consentiti.',
       );
       return;
     }
@@ -645,32 +637,23 @@ export class Editor implements AfterViewInit, OnDestroy {
       (!!values['recurrenceFrequency'] !== !!values['recurrenceInterval'] ||
         (!!values['recurrenceFrequency'] && !values['dueAt']))
     ) {
-      this.error.set('La ricorrenza richiede frequenza, intervallo e scadenza.');
+      this.saveError('La ricorrenza richiede frequenza, intervallo e scadenza.');
       return;
     }
     if (
       this.data.command === 'approve' &&
       (values['createSalary'] === 'true') !== !!values['effectiveOn']
     ) {
-      this.error.set('Indica la decorrenza se e solo se generi una nuova RAL.');
+      this.saveError('Indica la decorrenza se e solo se generi una nuova RAL.');
       return;
     }
     this.saving.set(true);
     try {
       const payload = payloadFor(this.fields, values);
-      if (
-        this.data.resource === 'raise-requests' &&
-        !this.data.command &&
-        values['requestedSalary'] &&
-        !this.percentageMatchesTarget()
-      ) {
-        // The API rejects a target and rounded percentage that imply different cents.
-        payload['requestedPercentage'] = null;
-      }
       if (this.data.resource === 'people') {
         const phone = await this.phoneValueForSave(values['phone'] ?? '');
         if (phone.invalid) {
-          this.error.set('Inserisci un numero di telefono valido oppure lascia il campo vuoto.');
+          this.saveError('Inserisci un numero di telefono valido oppure lascia il campo vuoto.');
           return;
         }
         payload['phone'] = phone.value;
@@ -706,10 +689,14 @@ export class Editor implements AfterViewInit, OnDestroy {
       else await this.api.post(this.data.path, payload);
       this.ref.close(true);
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.saveError(errorMessage(error));
     } finally {
       this.saving.set(false);
     }
+  }
+  private saveError(message: string): void {
+    this.error.set(message);
+    this.toast.error(message);
   }
   private async phoneValueForSave(input: string): Promise<PhoneResolution> {
     if (!input.trim() && !this.phoneOriginalWasInvalid)

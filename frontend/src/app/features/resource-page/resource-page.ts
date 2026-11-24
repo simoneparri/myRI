@@ -285,7 +285,9 @@ export class ResourcePage {
       this.toast.success('Operazione completata.');
       await this.reload();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      const message = errorMessage(error);
+      this.error.set(message);
+      this.toast.error(message);
     } finally {
       this.busy.set(false);
     }

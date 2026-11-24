@@ -181,7 +181,9 @@ export class PersonPage {
       this.toast.success('Persona archiviata.');
       await this.load();
     } catch (error) {
-      this.error.set(errorMessage(error));
+      const message = errorMessage(error);
+      this.error.set(message);
+      this.toast.error(message);
     } finally {
       this.archiving.set(false);
     }

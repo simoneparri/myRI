@@ -98,7 +98,11 @@ L'export include anche i progetti archiviati nel limite complessivo di 1000 reco
   Importo = **nuova RAL annua desiderata**, non incremento.
 - Entrambi consentiti: verificare coerenza con la base immutabile referenziata.
   Formula: target = base * (1 + percentuale / 100), arrotondata a 2 decimali
-  con HALF_UP. Se solo percentuale, calcolare target nel service.
+  con HALF_UP. Il service salva entrambi i valori e, se manca la percentuale,
+  la calcola da base e target arrotondandola per eccesso al decimo. Una coppia
+  e coerente anche se la percentuale coincide con tale risultato arrotondato,
+  pur non ricostruendo esattamente il target; il target fornito resta invariato.
+  I valori calcolati fuori dai limiti DECIMAL sono rifiutati.
 - La RAL base e esplicita, della stessa persona/valuta e scelta tra le voci
   valide alla data richiesta. Target deve superare la base; controlli cross-table
   nel service, non esprimibili con un CHECK locale.

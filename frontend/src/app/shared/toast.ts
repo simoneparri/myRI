@@ -9,8 +9,19 @@ export class Toast {
     this.snackBar.open(message, 'Chiudi', {
       duration: 4000,
       horizontalPosition: 'end',
-      verticalPosition: 'top',
+      verticalPosition: 'bottom',
       politeness: 'polite',
+      panelClass: 'toast-success',
+    });
+  }
+
+  error(message: string): void {
+    this.snackBar.open(message, 'Chiudi', {
+      duration: 6000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom',
+      politeness: 'assertive',
+      panelClass: 'toast-error',
     });
   }
 }

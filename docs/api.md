@@ -233,9 +233,18 @@ azione, campi modificati e istante: non replica note, motivazioni o importi nei 
 Creazione in draft con personId, baseSalaryId, requestedOn, almeno uno tra
 requestedSalary (RAL target) e requestedPercentage, motivation.
 Persona e base non trasferibili tramite PUT. Base della stessa persona, valida
-alla data richiesta; valuta derivata dalla base. Se entrambi valorizzati,
-`base * (1 + percentuale/100)` arrotondato HALF_UP a due decimali deve coincidere
-con la RAL target. Il target deve superare la base e rientrare in DECIMAL(12,2).
+alla data richiesta; valuta derivata dalla base. Il backend calcola e salva
+entrambi i valori: la RAL da percentuale con
+`base * (1 + percentuale/100)` arrotondato HALF_UP a due decimali; la percentuale
+da RAL con `(target - base) / base * 100` arrotondato per eccesso al decimo.
+Se entrambi sono forniti, sono coerenti se la formula della RAL coincide al
+centesimo oppure se la percentuale coincide con quella calcolata per eccesso.
+Quest'ultima puo quindi non ricostruire la RAL al centesimo; la RAL fornita
+resta invariata e determina l'eventuale RAL generata. Il target deve superare
+la base e rientrare in DECIMAL(12,2); la percentuale deve rientrare in
+DECIMAL(9,4). Valori calcolati fuori limite sono rifiutati.
+In inserimento e modifica la UI aggiorna l'altro campo al variare di uno dei due.
+Le richieste preesistenti non vengono aggiornate automaticamente.
 
 ```mermaid
 stateDiagram-v2
