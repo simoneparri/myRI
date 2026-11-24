@@ -65,6 +65,19 @@ describe('Absences', () => {
     expect(component.month()).toBe('2026-03');
   });
 
+  it('styles month navigation buttons like the today button', async () => {
+    const { fixture } = setup();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    for (const label of ['Mese precedente', 'Mese successivo']) {
+      const button: HTMLButtonElement = fixture.nativeElement.querySelector(
+        `[aria-label="${label}"]`,
+      );
+      expect(button.classList.contains('mat-mdc-outlined-button')).toBe(true);
+    }
+  });
+
   it('shows compact hours and holiday precedence', async () => {
     const { fixture, component } = setup();
     component.month.set('2026-12');
