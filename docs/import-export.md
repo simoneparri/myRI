@@ -97,9 +97,10 @@ nel trasferimento persone JSON, ne nell'export dalla scheda persona.
 Le causali possono contenere dati particolarmente sensibili: proteggere il CSV
 e l'accesso all'installazione e non inserirli in repository, log o ticket.
 
-Nel calendario le assenze mostrano cognome, iniziale e ore totali dell'intera
-assenza, anche per ciascun giorno di un intervallo di piu giorni; selezionandole
-si aprono tutti i dettagli. Sono evidenziate in rosso le festivita nazionali
+Nel calendario le assenze mostrano cognome, iniziale e ore per giorno, limitate
+a un massimo di 8h (giornata lavorativa 9:00–18:00, con 8 ore effettive).
+Selezionandole si aprono tutti i dettagli, inclusi i valori originali importati.
+Sono evidenziate in rosso le festivita nazionali
 italiane (incluse Pasqua e Pasquetta); non sono incluse feste patronali locali.
 Le singole date di chiusura aziendale si inseriscono nel formato `gg/mm/aaaa`
 o tramite il calendario e sono gestibili nella pagina **Chiusure

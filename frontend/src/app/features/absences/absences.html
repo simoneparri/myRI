@@ -94,7 +94,11 @@
 </section>
 <section aria-labelledby="calendar-title">
   @if (closureLoading()) { <p role="status">Caricamento chiusure...</p> }
-  <p>Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso.</p>
+  <p>
+    Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso.
+    La giornata lavorativa è 9:00–18:00 (8 ore effettive): nel calendario le ore mostrate non
+    superano 8h per giorno.
+  </p>
   <div class="calendar-heading">
     <button mat-button (click)="changeMonth(-1)" aria-label="Mese precedente">←</button>
     <h2 id="calendar-title">Calendario {{ month() }}</h2>

@@ -77,7 +77,8 @@ describe('Absences', () => {
     ]);
     component.closures.set(['2026-12-25', '2026-12-24']);
     fixture.detectChanges();
-    expect(component.compact({ ...absence, hours: '8,50' })).toBe('Fittizia P. 8,5h');
+    expect(component.compact({ ...absence, hours: '8,50' })).toBe('Fittizia P. 8h');
+    expect(component.compact({ ...absence, hours: '1.000,00' })).toBe('Fittizia P. 8h');
     expect(component.compact({ ...absence, hours: '8,00' })).toBe('Fittizia P. 8h');
     expect(
       fixture.nativeElement

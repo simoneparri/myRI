@@ -196,7 +196,14 @@ export class Absences {
 
   compact(item: Absence): string {
     const initial = Array.from(item.firstName.trim())[0]?.toLocaleUpperCase('it-IT') ?? '';
-    const hours = item.hours
+    const rawHours = item.hours.trim();
+    const lastSeparator = Math.max(rawHours.lastIndexOf(','), rawHours.lastIndexOf('.'));
+    const normalizedHours =
+      lastSeparator < 0
+        ? rawHours
+        : `${rawHours.slice(0, lastSeparator).replace(/[,.]/g, '')}.${rawHours.slice(lastSeparator + 1)}`;
+    const numericHours = Number(normalizedHours);
+    const hours = (Number.isFinite(numericHours) && numericHours > 8 ? '8' : rawHours)
       .trim()
       .replace(/([,.]\d*?[1-9])0+$/, '$1')
       .replace(/[,.]0+$/, '');
