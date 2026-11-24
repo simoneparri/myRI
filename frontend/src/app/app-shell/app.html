@@ -9,23 +9,37 @@
             mat-button
             [matMenuTriggerFor]="sectionMenu"
             [class.selected]="sectionActive(section.children)"
+            [attr.aria-current]="sectionActive(section.children) ? 'location' : null"
           >
             {{ section.label }}
           </button>
           <mat-menu #sectionMenu="matMenu" [attr.aria-label]="section.label">
             @for (item of section.children; track item.path) {
-              <a mat-menu-item [routerLink]="item.path" routerLinkActive="selected">{{
-                item.label
-              }}</a>
+              <a
+                mat-menu-item
+                [routerLink]="item.path"
+                routerLinkActive="selected"
+                ariaCurrentWhenActive="page"
+                >{{ item.label }}</a
+              >
             }
           </mat-menu>
         } @else {
-          <a mat-button [routerLink]="section.path" routerLinkActive="selected">{{
-            section.label
-          }}</a>
+          <a
+            mat-button
+            [routerLink]="section.path"
+            routerLinkActive="selected"
+            ariaCurrentWhenActive="page"
+            >{{ section.label }}</a
+          >
         }
       }
-      <a mat-button class="nav-import" routerLink="/import-export" routerLinkActive="selected"
+      <a
+        mat-button
+        class="nav-import"
+        routerLink="/import-export"
+        routerLinkActive="selected"
+        ariaCurrentWhenActive="page"
         >Import/Export</a
       >
     </nav>

@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Api } from '../../core/api';
 import { Absences } from './absences';
@@ -49,13 +49,30 @@ describe('Absences', () => {
     return { fixture, component: fixture.componentInstance, api };
   }
 
+  async function openImportPanel(fixture: ComponentFixture<Absences>) {
+    const header = fixture.nativeElement.querySelector('mat-expansion-panel-header') as HTMLElement;
+    header.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
+  it('groups import and export in separate accordion panels', async () => {
+    const { fixture } = setup();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const headers = fixture.nativeElement.querySelectorAll('mat-expansion-panel-header');
+    expect(headers).toHaveLength(2);
+    expect(headers[0].textContent).toContain('Importa assenze Agresso');
+    expect(headers[1].textContent).toContain('Esporta assenze capacity');
+  });
+
   it('renders only the occupied calendar day and filters by string person ID', async () => {
     const { fixture, component, api } = setup();
     component.month.set('2026-02');
     await fixture.whenStable();
     expect(component.days().find((day) => day.date === '2026-02-01')?.items).toHaveLength(1);
     expect(component.days().find((day) => day.date === '2026-02-02')?.items).toHaveLength(0);
-    component.toggle(person, true);
+    component.updateSelection([person.id]);
     await fixture.whenStable();
     expect(api.get).toHaveBeenCalledWith('absences', {
       month: '2026-02',
@@ -63,6 +80,26 @@ describe('Absences', () => {
     });
     component.changeMonth(1);
     expect(component.month()).toBe('2026-03');
+  });
+
+  it('searches people from inside the multiselect and retains selected labels', async () => {
+    const { fixture, component, api } = setup();
+    await fixture.whenStable();
+    component.updateSelection([person.id]);
+    component.searchPeople('persona');
+    await new Promise((resolve) => setTimeout(resolve, 275));
+    await fixture.whenStable();
+    expect(api.get).toHaveBeenCalledWith('people', {
+      q: 'persona',
+      includeArchived: true,
+      page: 0,
+      size: 20,
+      sort: 'lastName,asc',
+    });
+    expect(component.selectablePeople()).toContainEqual({
+      id: person.id,
+      label: 'Fittizia Persona',
+    });
   });
 
   it('styles month navigation buttons like the today button', async () => {
@@ -143,11 +180,13 @@ describe('Absences', () => {
   it('exports all people independently of the current selection', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();
-    component.toggle(person, true);
+    component.updateSelection([person.id]);
     const create = vi.fn().mockReturnValue('blob:fittizio');
     const revoke = vi.fn();
     vi.stubGlobal('URL', { createObjectURL: create, revokeObjectURL: revoke });
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
     try {
       await component.exportCapacity();
       expect(api.download).toHaveBeenCalledWith('absences/capacity.xlsx');
@@ -176,6 +215,7 @@ describe('Absences', () => {
   it('uploads the original file and displays per-row results', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();
+    await openImportPanel(fixture);
     fixture.detectChanges();
     const importButton: HTMLButtonElement = fixture.nativeElement.querySelector(
       '.upload-actions button:last-child',
@@ -205,6 +245,7 @@ describe('Absences', () => {
   it('uploads XLSX with the spreadsheet content type and rejects other extensions', async () => {
     const { fixture, component, api } = setup();
     await fixture.whenStable();
+    await openImportPanel(fixture);
     const file = new File(['fittizio'], 'ASSENZE.XLSX');
     component.chooseFile({ target: { files: [file] } } as unknown as Event);
     await component.importFile();

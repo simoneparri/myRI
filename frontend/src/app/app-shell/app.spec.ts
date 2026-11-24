@@ -1,10 +1,14 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { App } from './app';
 import { Auth } from '../core/auth';
 import { NotificationInbox } from '../core/notification-inbox';
 import { Pwa } from '../core/pwa';
+
+@Component({ selector: 'app-test-page', template: '' })
+class TestPage {}
 
 describe('App', () => {
   it('shows navigation only for an authenticated user', async () => {
@@ -12,7 +16,10 @@ describe('App', () => {
     TestBed.configureTestingModule({
       imports: [App],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          { path: 'dashboard', component: TestPage },
+          { path: 'company-closures', component: TestPage },
+        ]),
         { provide: Auth, useValue: { user } },
         {
           provide: Pwa,
@@ -63,7 +70,29 @@ describe('App', () => {
       sections.find((section) => section.label === 'Assenze')?.children.map((item) => item.path),
     ).toEqual(['/absences', '/company-closures']);
     expect(element.textContent).toContain('Esci');
-    expect(element.textContent).toContain('Versione 0.0.0');
+
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/dashboard');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const dashboardLink = nav.querySelector('a[href="/dashboard"]');
+    expect(dashboardLink?.classList.contains('selected')).toBe(true);
+    expect(dashboardLink?.getAttribute('aria-current')).toBe('page');
+
+    await router.navigateByUrl('/company-closures');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const absencesButton = Array.from(nav.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Assenze'),
+    );
+    expect(absencesButton?.classList.contains('selected')).toBe(true);
+    expect(absencesButton?.getAttribute('aria-current')).toBe('location');
+    absencesButton?.click();
+    await fixture.whenStable();
+    const activeMenuItem = document.body.querySelector('.mat-mdc-menu-item.selected');
+    expect(activeMenuItem?.textContent).toContain('Chiusure Aziendali');
+    expect(activeMenuItem?.getAttribute('aria-current')).toBe('page');
+    expect(element.textContent).toMatch(/Versione \d+\.\d+\.\d+/);
     expect(element.querySelector('footer a')?.getAttribute('href')).toBe(
       'https://simoneparri.github.io/',
     );

@@ -15,6 +15,10 @@ capacity settimanale per tutte le persone. Calcolo dagli intervalli lavorativi
 09:00-13:00 e 14:00-18:00, dal lunedi al venerdi; limiti e dettagli in
 docs/import-export.md.
 
+Rifiniture UI autorizzate per la pagina Assenze: importazione ed export in un
+accordion, filtro persone con selezione multipla e ricerca interna, colore dei
+link invariato dopo la visita e stato attivo visibile nella navigazione.
+
 Riorganizzazione autorizzata: pagina dedicata alle chiusure aziendali e menu
 principale con sezioni Persone e Assenze; notifiche accessibili dalla campanella.
 

@@ -1,11 +1,11 @@
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 import { Api, Page, Row, errorMessage } from '../../core/api';
 import { calendarDate, TIMEZONE } from '../../shared/format';
 import { italianPaginator } from '../../shared/paginator';
@@ -44,13 +44,13 @@ interface Day {
 @Component({
   selector: 'app-absences',
   imports: [
-    FormsModule,
     MatButtonModule,
-    MatCheckboxModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatInputModule,
     MatMenuModule,
     MatPaginatorModule,
+    MatSelectModule,
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: italianPaginator }],
   templateUrl: './absences.html',
@@ -65,6 +65,7 @@ export class Absences {
   readonly closures = signal<string[]>([]);
   readonly closureLoading = signal(false);
   readonly selected = signal<ReadonlyMap<string, string>>(new Map());
+  readonly selectedIds = computed(() => [...this.selected().keys()]);
   readonly people = signal<Page<Row>>({
     items: [],
     page: 0,
@@ -115,10 +116,14 @@ export class Absences {
   private calendarGeneration = 0;
   private peopleGeneration = 0;
   private closureGeneration = 0;
+  private peopleSearchTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     const timer = setInterval(() => this.today.set(calendarDate(new Date(), this.zone)), 60_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(timer);
+      if (this.peopleSearchTimer) clearTimeout(this.peopleSearchTimer);
+    });
     void this.loadCalendar();
     void this.loadPeople();
     void this.loadClosures();
@@ -164,24 +169,40 @@ export class Absences {
     }
   }
 
-  search(): void {
+  searchPeople(query: string): void {
+    this.q = query;
     this.pageIndex = 0;
-    void this.loadPeople();
+    if (this.peopleSearchTimer) clearTimeout(this.peopleSearchTimer);
+    this.peopleSearchTimer = setTimeout(() => {
+      void this.loadPeople();
+      this.peopleSearchTimer = undefined;
+    }, 250);
   }
   paginate(event: PageEvent): void {
+    if (this.peopleSearchTimer) clearTimeout(this.peopleSearchTimer);
+    this.peopleSearchTimer = undefined;
     this.pageIndex = event.pageIndex;
     void this.loadPeople();
   }
 
-  toggle(person: Row, checked: boolean): void {
-    const selected = new Map(this.selected());
-    if (checked && selected.size >= 100) {
+  selectablePeople(): { id: string; label: string }[] {
+    const options = new Map([...this.selected()].map(([id, label]) => [id, { id, label }]));
+    for (const person of this.people().items) {
+      options.set(person.id, {
+        id: person.id,
+        label: `${person['lastName']} ${person['firstName']}${person['archivedAt'] ? ' (archiviata)' : ''}`,
+      });
+    }
+    return [...options.values()];
+  }
+
+  updateSelection(ids: string[]): void {
+    if (ids.length > 100) {
       this.error.set('Puoi selezionare al massimo 100 persone.');
       return;
     }
-    if (checked) selected.set(person.id, `${person['lastName']} ${person['firstName']}`);
-    else selected.delete(person.id);
-    this.selected.set(selected);
+    const labels = new Map(this.selectablePeople().map(({ id, label }) => [id, label]));
+    this.selected.set(new Map(ids.map((id) => [id, labels.get(id) ?? id])));
     void this.loadCalendar();
   }
 

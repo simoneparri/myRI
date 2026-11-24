@@ -3,94 +3,130 @@
 @if (error()) {
   <p role="alert" class="error">{{ error() }}</p>
 }
-<section aria-labelledby="absence-import-title">
-  <h2 id="absence-import-title">Importa assenze Agresso</h2>
-  <p>
-    Le righe sono associate tramite RSNO Agresso. Un'assenza sovrapposta viene annullata interamente
-    e sostituita; gli intervalli adiacenti restano distinti.
-  </p>
-  <div class="upload">
-    <label id="absence-file-label" for="absence-file">File CSV UTF-8 o XLSX (massimo 2 MiB)</label>
-    <div class="upload-actions">
-      <input
-        #fileInput
-        id="absence-file"
-        type="file"
-        accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        (change)="chooseFile($event)"
-        [disabled]="busy()"
-        hidden
-      />
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="fileInput.click()"
-        [disabled]="busy()"
-        aria-describedby="absence-file-label absence-file-name"
+<mat-accordion multi>
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Importa assenze Agresso</mat-panel-title>
+    </mat-expansion-panel-header>
+    <p>
+      Le righe sono associate tramite RSNO Agresso. Un'assenza sovrapposta viene annullata
+      interamente e sostituita; gli intervalli adiacenti restano distinti.
+    </p>
+    <div class="upload">
+      <label id="absence-file-label" for="absence-file"
+        >File CSV UTF-8 o XLSX (massimo 2 MiB)</label
       >
-        Scegli file
-      </button>
-      <span id="absence-file-name" class="file-name" aria-live="polite">
-        {{ file()?.name ?? 'Nessun file selezionato' }}
-      </span>
-      <button mat-flat-button type="button" (click)="importFile()" [disabled]="!file() || busy()">
-        Importa file
-      </button>
+      <div class="upload-actions">
+        <input
+          #fileInput
+          id="absence-file"
+          type="file"
+          accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          (change)="chooseFile($event)"
+          [disabled]="busy()"
+          hidden
+        />
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="fileInput.click()"
+          [disabled]="busy()"
+          aria-describedby="absence-file-label absence-file-name"
+        >
+          Scegli file
+        </button>
+        <span id="absence-file-name" class="file-name" aria-live="polite">
+          {{ file()?.name ?? 'Nessun file selezionato' }}
+        </span>
+        <button mat-flat-button type="button" (click)="importFile()" [disabled]="!file() || busy()">
+          Importa file
+        </button>
+      </div>
     </div>
-  </div>
-  @if (busy()) {
-    <p role="status">Importazione in corso...</p>
-  }
-  @if (report(); as result) {
-    <div role="status">
-      <p>
-        Importate: {{ result.imported }}. Invariate: {{ result.unchanged }}. Saltate:
-        {{ result.skipped }}. Assenze sostituite: {{ result.replaced }}.
-      </p>
-      @if (result.errors.length) {
-        <ul>
-          @for (item of result.errors; track $index) {
-            <li>Record {{ item.row }}: {{ item.reason }}</li>
-          }
-        </ul>
-      }
-    </div>
-  }
-</section>
-<section aria-labelledby="absence-export-title">
-  <h2 id="absence-export-title">Esporta assenze capacity</h2>
-  <p>Il file include tutte le persone, indipendentemente dal filtro del calendario.</p>
-  <button mat-stroked-button type="button" (click)="exportCapacity()" [disabled]="exporting()">
-    Esporta Excel
-  </button>
-  @if (exporting()) {
-    <p role="status">Esportazione in corso...</p>
-  }
-</section>
+    @if (busy()) {
+      <p role="status">Importazione in corso...</p>
+    }
+    @if (report(); as result) {
+      <div role="status">
+        <p>
+          Importate: {{ result.imported }}. Invariate: {{ result.unchanged }}. Saltate:
+          {{ result.skipped }}. Assenze sostituite: {{ result.replaced }}.
+        </p>
+        @if (result.errors.length) {
+          <ul>
+            @for (item of result.errors; track $index) {
+              <li>Record {{ item.row }}: {{ item.reason }}</li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </mat-expansion-panel>
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Esporta assenze capacity</mat-panel-title>
+    </mat-expansion-panel-header>
+    <p>Il file include tutte le persone, indipendentemente dal filtro del calendario.</p>
+    <button mat-stroked-button type="button" (click)="exportCapacity()" [disabled]="exporting()">
+      Esporta Excel
+    </button>
+    @if (exporting()) {
+      <p role="status">Esportazione in corso...</p>
+    }
+  </mat-expansion-panel>
+</mat-accordion>
 <section aria-labelledby="absence-filter-title">
   <h2 id="absence-filter-title">Filtra persone</h2>
-  <form (ngSubmit)="search()" class="filters">
-    <mat-form-field
-      ><mat-label>Cerca persone</mat-label><input matInput name="q" [(ngModel)]="q"
-    /></mat-form-field>
-    <button mat-button type="submit" [disabled]="peopleLoading()">Cerca</button>
-  </form>
-  <p>Selezionate: {{ selected().size }}. Nessuna selezione mostra tutte le persone.</p>
-  @for (person of people().items; track person.id) {
-    <mat-checkbox [checked]="selected().has(person.id)" (change)="toggle(person, $event.checked)">
-      {{ person['lastName'] }} {{ person['firstName'] }}
-      @if (person['archivedAt']) {
-        (archiviata)
+  <mat-form-field appearance="outline">
+    <mat-label>Persone</mat-label>
+    <mat-select
+      [value]="selectedIds()"
+      (selectionChange)="updateSelection($event.value)"
+      panelClass="people-select-panel"
+      multiple
+      aria-label="Filtra persone"
+    >
+      <div
+        class="people-search-panel"
+        role="presentation"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Cerca persone</mat-label>
+          <input
+            matInput
+            #peopleSearchInput
+            [value]="q"
+            (input)="searchPeople(peopleSearchInput.value)"
+            autocomplete="off"
+            aria-label="Cerca persone"
+          />
+        </mat-form-field>
+      </div>
+      @for (person of selectablePeople(); track person.id) {
+        <mat-option
+          [value]="person.id"
+          [disabled]="selected().size >= 100 && !selected().has(person.id)"
+        >
+          {{ person.label }}
+        </mat-option>
+      } @empty {
+        <mat-option disabled>Nessuna persona trovata</mat-option>
       }
-    </mat-checkbox>
+    </mat-select>
+  </mat-form-field>
+  @if (peopleLoading()) {
+    <p role="status">Ricerca persone...</p>
   }
+  <p>Selezionate: {{ selected().size }}. Nessuna selezione mostra tutte le persone.</p>
   <mat-paginator
     [length]="people().totalElements"
     [pageIndex]="pageIndex"
     [pageSize]="20"
     [disabled]="peopleLoading()"
     (page)="paginate($event)"
-    aria-label="Pagine persone"
+    aria-label="Risultati persone"
   />
   <button mat-button (click)="clearSelection()" [disabled]="!selected().size">Mostra tutte</button>
   @if (selected().size) {
@@ -103,28 +139,20 @@
   }
 </section>
 <section aria-labelledby="calendar-title">
-  @if (closureLoading()) { <p role="status">Caricamento chiusure...</p> }
+  @if (closureLoading()) {
+    <p role="status">Caricamento chiusure...</p>
+  }
   <p>
-    Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso.
-    La giornata lavorativa è 9:00–18:00 (8 ore effettive): nel calendario le ore mostrate non
-    superano 8h per giorno.
+    Rosso: festività nazionale. Blu: chiusura aziendale. Se coincidono, prevale il rosso. La
+    giornata lavorativa è 9:00–18:00 (8 ore effettive): nel calendario le ore mostrate non superano
+    8h per giorno.
   </p>
   <div class="calendar-heading">
-    <button
-      mat-stroked-button
-      type="button"
-      (click)="changeMonth(-1)"
-      aria-label="Mese precedente"
-    >
+    <button mat-stroked-button type="button" (click)="changeMonth(-1)" aria-label="Mese precedente">
       ←
     </button>
     <h2 id="calendar-title">Calendario {{ month() }}</h2>
-    <button
-      mat-stroked-button
-      type="button"
-      (click)="changeMonth(1)"
-      aria-label="Mese successivo"
-    >
+    <button mat-stroked-button type="button" (click)="changeMonth(1)" aria-label="Mese successivo">
       →
     </button>
     <button mat-stroked-button type="button" (click)="goToToday()">Vai a oggi</button>

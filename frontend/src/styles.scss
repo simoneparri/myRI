@@ -109,6 +109,20 @@ body {
 .framework-search-panel mat-form-field {
   width: 100%;
 }
+.people-search-panel {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: 0.5rem 1rem 0;
+  background: white;
+}
+.people-search-panel mat-form-field {
+  width: 100%;
+}
+a:link,
+a:visited {
+  color: inherit;
+}
 header {
   display: flex;
   align-items: center;
@@ -118,7 +132,8 @@ header {
   border-bottom: 1px solid #d6e0ea;
   flex-wrap: wrap;
 }
-.brand {
+.brand:link,
+.brand:visited {
   font-size: 1.65rem;
   font-weight: 750;
   color: #004d7b;
@@ -129,6 +144,18 @@ nav {
   flex-wrap: wrap;
   gap: 0.25rem;
   flex: 1 1 auto;
+}
+nav .mat-mdc-button.selected {
+  background-color: #e1eefb;
+  font-weight: 650;
+}
+nav a.mat-mdc-button:link,
+nav a.mat-mdc-button:visited {
+  color: #003b60;
+}
+.mat-mdc-menu-item.selected {
+  background-color: #e1eefb;
+  font-weight: 650;
 }
 .nav-import {
   margin-left: auto;
